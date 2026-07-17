@@ -224,7 +224,15 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch (e) {
       console.error("Erreur lors du chargement des données locales :", e);
     }
-    return getDemoData();
+    return {
+      contents: [],
+      sales: [],
+      prospects: [],
+      launches: {},
+      collabs: [],
+      expenses: [],
+      objectives: DEFAULT_OBJECTIVES
+    };
   });
 
   const [savingStatus, setSavingStatus] = useState<SavingStatus>('idle');
@@ -994,8 +1002,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const clearAllData = () => {
-    if (window.confirm("Êtes-vous sûr de vouloir vider toutes vos données ? Cette action est irréversible.")) {
+  const clearAllData = async () => {
+    if (window.confirm("Êtes-vous sûr de vouloir vider toutes vos données ? Cette action est irréversible (cela effacera également votre base de données Supabase connectée).")) {
       setStore({
         contents: [],
         sales: [],
@@ -1005,6 +1013,28 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         expenses: [],
         objectives: DEFAULT_OBJECTIVES
       });
+
+      if (supabase) {
+        setSavingStatus('saving');
+        try {
+          // Supprimer toutes les lignes de chaque table de façon sécurisée
+          await Promise.all([
+            supabase.from('contents').delete().neq('id', ''),
+            supabase.from('sales').delete().neq('id', ''),
+            supabase.from('prospects').delete().neq('id', ''),
+            supabase.from('launches').delete().neq('id', ''),
+            supabase.from('collabs').delete().neq('id', ''),
+            supabase.from('expenses').delete().neq('id', ''),
+            supabase.from('objectives').delete().neq('month', '')
+          ]);
+          setSavingStatus('saved');
+          setTimeout(() => setSavingStatus('idle'), 1500);
+        } catch (err: any) {
+          console.error("Erreur lors de la vidange Supabase :", err);
+          setSavingStatus('error');
+          setSavingError(err.message || "Erreur de vidange Supabase");
+        }
+      }
     }
   };
 
