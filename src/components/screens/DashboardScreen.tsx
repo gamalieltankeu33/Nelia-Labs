@@ -65,81 +65,229 @@ export const DashboardScreen: React.FC = () => {
     return new Date().toISOString().substring(0, 7); // YYYY-MM
   });
 
+  const [timeFrame, setTimeFrame] = useState<'monthly' | 'yearly' | 'all-time'>('monthly');
+  const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear().toString());
+
   const [isEditingObjective, setIsEditingObjective] = useState(false);
   const [objectiveInput, setObjectiveInput] = useState('');
 
-  // Lancement du mois
+  // Extract all unique years dynamically from the store
+  const availableYears = Array.from(new Set([
+    new Date().getFullYear().toString(),
+    ...sales.map(s => s.date.substring(0, 4)),
+    ...Object.keys(launches).map(m => m.substring(0, 4)),
+    ...collabs.map(c => c.publishDate.substring(0, 4)),
+    ...prospects.map(p => p.dealDate?.substring(0, 4)).filter(Boolean) as string[],
+    ...expenses.map(e => e.date.substring(0, 4))
+  ])).sort().reverse();
+
+  // Basic financial trackers
+  let totalCA = 0;
+  let totalOutflow = 0;
+  let netProfit = 0;
+  let monthlyObjective = 0;
+  let objectiveProgress = 0;
+  let monthlyContentsCount = 0;
+  let adsSpent = 0;
+  let charges = 0;
+  
+  let digitalProductsBreakdown: { name: string; count: number; total: number }[] = [];
+  
+  let barChartLabels: string[] = [];
+  let barChartRealData: number[] = [];
+  let barChartObjectiveData: number[] = [];
+  
+  let cumulativeLaunch = 0;
+  let cumulativePremium = 0;
+  let cumulativeDigital = 0;
+  let cumulativeCollabs = 0;
+
+  let chartTitle = '';
+  let breakdownTitle = '';
+
   const launch = launches[selectedMonth];
 
-  // Calculs financiers pour le mois sélectionné
-  const launchCA = calculateLaunchCA(launch);
-  const premiumCA = calculatePremiumCA(prospects, selectedMonth);
-  const digitalCA = calculateDigitalCA(sales, selectedMonth);
-  const collabsCA = calculateCollabsCA(collabs, selectedMonth);
+  if (timeFrame === 'monthly') {
+    const launchCA = calculateLaunchCA(launch);
+    const premiumCA = calculatePremiumCA(prospects, selectedMonth);
+    const digitalCA = calculateDigitalCA(sales, selectedMonth);
+    const collabsCA = calculateCollabsCA(collabs, selectedMonth);
+    totalCA = launchCA + premiumCA + digitalCA + collabsCA;
+    
+    adsSpent = launch ? launch.adsSpent : 0;
+    charges = calculateChargesForMonth(expenses, selectedMonth);
+    totalOutflow = charges + adsSpent;
+    netProfit = totalCA - totalOutflow;
+    
+    monthlyContentsCount = contents.filter(c => getYearMonth(c.date) === selectedMonth).length;
+    monthlyObjective = objectives[selectedMonth] || 5000;
+    objectiveProgress = monthlyObjective > 0 ? (totalCA / monthlyObjective) * 100 : 0;
+    
+    const digitalProductsMap: Record<string, { count: number; total: number }> = {};
+    sales.filter(s => getYearMonth(s.date) === selectedMonth).forEach(s => {
+      if (!digitalProductsMap[s.product]) {
+        digitalProductsMap[s.product] = { count: 0, total: 0 };
+      }
+      digitalProductsMap[s.product].count += 1;
+      digitalProductsMap[s.product].total += s.price;
+    });
+    digitalProductsBreakdown = Object.entries(digitalProductsMap).map(([name, stats]) => ({
+      name,
+      ...stats
+    }));
 
-  const totalCA = launchCA + premiumCA + digitalCA + collabsCA;
-  const adsSpent = launch ? launch.adsSpent : 0;
-  const charges = calculateChargesForMonth(expenses, selectedMonth);
-  const totalOutflow = charges + adsSpent;
-  const netProfit = totalCA - totalOutflow;
+    const year = selectedMonth.split('-')[0];
+    const monthNum = parseInt(selectedMonth.split('-')[1], 10);
+    const isSecondSemester = monthNum >= 7;
+    const semesterMonths = isSecondSemester 
+      ? ['07', '08', '09', '10', '11', '12'] 
+      : ['01', '02', '03', '04', '05', '06'];
+    barChartLabels = isSecondSemester
+      ? ['Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
+      : ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'];
+      
+    barChartRealData = semesterMonths.map(m => {
+      const key = `${year}-${m}`;
+      return calculateTotalCA(key, launches[key], prospects, sales, collabs);
+    });
+    barChartObjectiveData = semesterMonths.map(m => {
+      const key = `${year}-${m}`;
+      return objectives[key] || 5000;
+    });
 
-  // Nombre de contenus publiés sur ce mois
-  const monthlyContentsCount = contents.filter(c => getYearMonth(c.date) === selectedMonth).length;
+    cumulativeLaunch = launchCA;
+    cumulativePremium = premiumCA;
+    cumulativeDigital = digitalCA;
+    cumulativeCollabs = collabsCA;
 
-  // Objectif de CA
-  const monthlyObjective = objectives[selectedMonth] || 5000;
-  const objectiveProgress = monthlyObjective > 0 ? (totalCA / monthlyObjective) * 100 : 0;
+    chartTitle = `Performance Semestrielle (${isSecondSemester ? 'S2' : 'S1'} ${year})`;
+    const monthLabelName = new Date(selectedMonth + '-02').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+    breakdownTitle = `Sources de Revenu (${monthLabelName.charAt(0).toUpperCase() + monthLabelName.slice(1)})`;
 
-  // Statistiques de prospection du mois
+  } else if (timeFrame === 'yearly') {
+    const yearMonths = Array.from({ length: 12 }, (_, i) => `${selectedYear}-${String(i + 1).padStart(2, '0')}`);
+    
+    yearMonths.forEach(m => {
+      const l = launches[m];
+      const lCA = calculateLaunchCA(l);
+      const pCA = calculatePremiumCA(prospects, m);
+      const dCA = calculateDigitalCA(sales, m);
+      const cCA = calculateCollabsCA(collabs, m);
+      totalCA += lCA + pCA + dCA + cCA;
+      
+      const aSpent = l ? l.adsSpent : 0;
+      const chg = calculateChargesForMonth(expenses, m);
+      totalOutflow += chg + aSpent;
+      adsSpent += aSpent;
+      charges += chg;
+      
+      monthlyObjective += objectives[m] || 5000;
+      monthlyContentsCount += contents.filter(c => getYearMonth(c.date) === m).length;
+      
+      cumulativeLaunch += lCA;
+      cumulativePremium += pCA;
+      cumulativeDigital += dCA;
+      cumulativeCollabs += cCA;
+    });
+    
+    netProfit = totalCA - totalOutflow;
+    objectiveProgress = monthlyObjective > 0 ? (totalCA / monthlyObjective) * 100 : 0;
+
+    const digitalProductsMap: Record<string, { count: number; total: number }> = {};
+    sales.filter(s => s.date.startsWith(selectedYear)).forEach(s => {
+      if (!digitalProductsMap[s.product]) {
+        digitalProductsMap[s.product] = { count: 0, total: 0 };
+      }
+      digitalProductsMap[s.product].count += 1;
+      digitalProductsMap[s.product].total += s.price;
+    });
+    digitalProductsBreakdown = Object.entries(digitalProductsMap).map(([name, stats]) => ({
+      name,
+      ...stats
+    }));
+
+    barChartLabels = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+    barChartRealData = yearMonths.map(m => calculateTotalCA(m, launches[m], prospects, sales, collabs));
+    barChartObjectiveData = yearMonths.map(m => objectives[m] || 5000);
+
+    chartTitle = `Performance Annuelle (${selectedYear})`;
+    breakdownTitle = `Sources de Revenu (${selectedYear})`;
+
+  } else {
+    availableYears.forEach(y => {
+      const yearMonths = Array.from({ length: 12 }, (_, i) => `${y}-${String(i + 1).padStart(2, '0')}`);
+      yearMonths.forEach(m => {
+        const l = launches[m];
+        const lCA = calculateLaunchCA(l);
+        const pCA = calculatePremiumCA(prospects, m);
+        const dCA = calculateDigitalCA(sales, m);
+        const cCA = calculateCollabsCA(collabs, m);
+        totalCA += lCA + pCA + dCA + cCA;
+        
+        const aSpent = l ? l.adsSpent : 0;
+        const chg = calculateChargesForMonth(expenses, m);
+        totalOutflow += chg + aSpent;
+        adsSpent += aSpent;
+        charges += chg;
+        
+        monthlyObjective += objectives[m] || 5000;
+        monthlyContentsCount += contents.filter(c => getYearMonth(c.date) === m).length;
+        
+        cumulativeLaunch += lCA;
+        cumulativePremium += pCA;
+        cumulativeDigital += dCA;
+        cumulativeCollabs += cCA;
+      });
+    });
+    
+    netProfit = totalCA - totalOutflow;
+    objectiveProgress = monthlyObjective > 0 ? (totalCA / monthlyObjective) * 100 : 0;
+
+    const digitalProductsMap: Record<string, { count: number; total: number }> = {};
+    sales.forEach(s => {
+      if (!digitalProductsMap[s.product]) {
+        digitalProductsMap[s.product] = { count: 0, total: 0 };
+      }
+      digitalProductsMap[s.product].count += 1;
+      digitalProductsMap[s.product].total += s.price;
+    });
+    digitalProductsBreakdown = Object.entries(digitalProductsMap).map(([name, stats]) => ({
+      name,
+      ...stats
+    }));
+
+    barChartLabels = [...availableYears].reverse();
+    barChartRealData = barChartLabels.map(y => {
+      let yrCA = 0;
+      for (let i = 1; i <= 12; i++) {
+        const key = `${y}-${String(i).padStart(2, '0')}`;
+        yrCA += calculateTotalCA(key, launches[key], prospects, sales, collabs);
+      }
+      return yrCA;
+    });
+    barChartObjectiveData = barChartLabels.map(y => {
+      let yrObj = 0;
+      for (let i = 1; i <= 12; i++) {
+        const key = `${y}-${String(i).padStart(2, '0')}`;
+        yrObj += objectives[key] || 5000;
+      }
+      return yrObj;
+    });
+
+    chartTitle = "Performance Historique (Toutes les années)";
+    breakdownTitle = "Sources de Revenu (Tout l'historique)";
+  }
+
+  // Monthly stats (retained for pipeline analytics)
   const prospectStats = calculateMonthlyProspectStats(prospects, selectedMonth);
-
-  // Activité quotidienne de prospection (nouveaux DM par jour, objectif par défaut de 10)
   const dailyProspecting = calculateDailyProspectingActivity(prospects, selectedMonth, 10);
 
-  // Groupement des produits digitaux vendus sur ce mois
-  const digitalProductsMap: Record<string, { count: number; total: number }> = {};
-  sales.filter(s => getYearMonth(s.date) === selectedMonth).forEach(s => {
-    if (!digitalProductsMap[s.product]) {
-      digitalProductsMap[s.product] = { count: 0, total: 0 };
-    }
-    digitalProductsMap[s.product].count += 1;
-    digitalProductsMap[s.product].total += s.price;
-  });
-  const digitalProductsBreakdown = Object.entries(digitalProductsMap).map(([name, stats]) => ({
-    name,
-    ...stats
-  }));
-
-  // Déterminer le semestre du mois sélectionné
-  const year = selectedMonth.split('-')[0];
-  const monthNum = parseInt(selectedMonth.split('-')[1], 10);
-  const isSecondSemester = monthNum >= 7;
-  
-  const semesterMonths = isSecondSemester 
-    ? ['07', '08', '09', '10', '11', '12'] 
-    : ['01', '02', '03', '04', '05', '06'];
-
-  const semesterLabels = isSecondSemester
-    ? ['Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
-    : ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'];
-
-  // Données pour le graphique réel vs objectif du semestre
-  const realCAData = semesterMonths.map(m => {
-    const key = `${year}-${m}`;
-    return calculateTotalCA(key, launches[key], prospects, sales, collabs);
-  });
-
-  const objectiveCAData = semesterMonths.map(m => {
-    const key = `${year}-${m}`;
-    return objectives[key] || 5000;
-  });
-
   const barChartData = {
-    labels: semesterLabels,
+    labels: barChartLabels,
     datasets: [
       {
         label: 'CA Réel (€)',
-        data: realCAData,
+        data: barChartRealData,
         backgroundColor: '#635BFF',
         borderColor: '#635BFF',
         borderWidth: 1,
@@ -147,7 +295,7 @@ export const DashboardScreen: React.FC = () => {
       },
       {
         label: 'Objectif CA (€)',
-        data: objectiveCAData,
+        data: barChartObjectiveData,
         backgroundColor: '#E2E8F0',
         borderColor: '#E2E8F0',
         borderWidth: 1,
@@ -248,25 +396,6 @@ export const DashboardScreen: React.FC = () => {
     }
   };
 
-  // Calcul du CA cumulé par source sur l'ensemble de la période
-  const allMonthsSet = new Set<string>();
-  Object.keys(launches).forEach(m => allMonthsSet.add(m));
-  prospects.forEach(p => { if (p.dealDate) allMonthsSet.add(getYearMonth(p.dealDate)); });
-  sales.forEach(s => allMonthsSet.add(getYearMonth(s.date)));
-  collabs.forEach(c => allMonthsSet.add(getYearMonth(c.publishDate)));
-  
-  let cumulativeLaunch = 0;
-  let cumulativePremium = 0;
-  let cumulativeDigital = 0;
-  let cumulativeCollabs = 0;
-
-  allMonthsSet.forEach(m => {
-    cumulativeLaunch += calculateLaunchCA(launches[m]);
-    cumulativePremium += calculatePremiumCA(prospects, m);
-    cumulativeDigital += calculateDigitalCA(sales, m);
-    cumulativeCollabs += calculateCollabsCA(collabs, m);
-  });
-
   const totalCumulativeCA = cumulativeLaunch + cumulativePremium + cumulativeDigital + cumulativeCollabs;
 
   const pieChartData = {
@@ -320,13 +449,20 @@ export const DashboardScreen: React.FC = () => {
     }
   };
 
-  // Filtrer les clients premium closés sur ce mois
-  const monthlyPremiumClients = prospects.filter(p => 
-    p.currentStatus === 'Closé gagné' && p.dealDate && getYearMonth(p.dealDate) === selectedMonth
-  );
+  // Filtrer les clients premium closés
+  const monthlyPremiumClients = prospects.filter(p => {
+    if (p.currentStatus !== 'Closé gagné' || !p.dealDate) return false;
+    if (timeFrame === 'monthly') return getYearMonth(p.dealDate) === selectedMonth;
+    if (timeFrame === 'yearly') return p.dealDate.startsWith(selectedYear);
+    return true;
+  });
 
-  // Filtrer les collaborations publiées sur ce mois
-  const monthlyCollabsList = collabs.filter(c => getYearMonth(c.publishDate) === selectedMonth);
+  // Filtrer les collaborations
+  const monthlyCollabsList = collabs.filter(c => {
+    if (timeFrame === 'monthly') return getYearMonth(c.publishDate) === selectedMonth;
+    if (timeFrame === 'yearly') return c.publishDate.startsWith(selectedYear);
+    return true;
+  });
 
   return (
     <div className="fade-in">
@@ -338,15 +474,49 @@ export const DashboardScreen: React.FC = () => {
           <p className="screen-subtitle">Analysez les performances et la rentabilité globale de votre structure</p>
         </div>
 
-        {/* Sélecteur de mois */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <label style={{ margin: 0, whiteSpace: 'nowrap' }}>Mois d'analyse :</label>
-          <input 
-            type="month" 
-            value={selectedMonth}
-            onChange={e => setSelectedMonth(e.target.value)}
-            style={{ width: '160px', padding: '8px 12px' }}
-          />
+        {/* Sélecteur de période Stripe Soft UI */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div className="timeframe-tabs">
+            <button 
+              className={`timeframe-tab ${timeFrame === 'monthly' ? 'active' : ''}`}
+              onClick={() => setTimeFrame('monthly')}
+            >
+              Mensuel
+            </button>
+            <button 
+              className={`timeframe-tab ${timeFrame === 'yearly' ? 'active' : ''}`}
+              onClick={() => setTimeFrame('yearly')}
+            >
+              Annuel
+            </button>
+            <button 
+              className={`timeframe-tab ${timeFrame === 'all-time' ? 'active' : ''}`}
+              onClick={() => setTimeFrame('all-time')}
+            >
+              Global
+            </button>
+          </div>
+
+          {timeFrame === 'monthly' && (
+            <input 
+              type="month" 
+              value={selectedMonth}
+              onChange={e => setSelectedMonth(e.target.value)}
+              style={{ width: '160px', padding: '8px 12px' }}
+            />
+          )}
+
+          {timeFrame === 'yearly' && (
+            <select 
+              value={selectedYear}
+              onChange={e => setSelectedYear(e.target.value)}
+              style={{ width: '120px', padding: '8px 12px' }}
+            >
+              {availableYears.map(yr => (
+                <option key={yr} value={yr}>{yr}</option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
 
@@ -360,16 +530,18 @@ export const DashboardScreen: React.FC = () => {
           <div className="stat-meta">
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span className="stat-label">Chiffre d'Affaires</span>
-              <button 
-                className="edit-objective-btn" 
-                onClick={() => {
-                  setObjectiveInput(monthlyObjective.toString());
-                  setIsEditingObjective(true);
-                }}
-                title="Modifier l'objectif"
-              >
-                <Edit3 className="size-3" />
-              </button>
+              {timeFrame === 'monthly' && (
+                <button 
+                  className="edit-objective-btn" 
+                  onClick={() => {
+                    setObjectiveInput(monthlyObjective.toString());
+                    setIsEditingObjective(true);
+                  }}
+                  title="Modifier l'objectif"
+                >
+                  <Edit3 className="size-3" />
+                </button>
+              )}
             </div>
             <span className="stat-val">{totalCA.toLocaleString('fr-FR')} €</span>
             <span className="stat-subtext">
@@ -544,7 +716,7 @@ export const DashboardScreen: React.FC = () => {
         {/* Graphique de performance du semestre */}
         <div className="card" style={{ gridColumn: 'span 2' }}>
           <h3 className="section-title" style={{ marginBottom: '20px' }}>
-            Performance Semestrielle ({isSecondSemester ? 'S2' : 'S1'} {year})
+            {chartTitle}
           </h3>
           <div style={{ height: '300px', position: 'relative' }}>
             <Bar data={barChartData} options={barChartOptions} />
@@ -553,31 +725,31 @@ export const DashboardScreen: React.FC = () => {
 
         {/* Répartition par source du mois en tableau */}
         <div className="card">
-          <h3 className="section-title" style={{ marginBottom: '20px' }}>Sources de Revenu ({new Date(selectedMonth + '-02').toLocaleDateString('fr-FR', { month: 'long' })})</h3>
+          <h3 className="section-title" style={{ marginBottom: '20px' }}>{breakdownTitle}</h3>
           
           <div className="source-breakdown">
             <div className="source-row">
               <span className="source-color-dot" style={{ backgroundColor: '#C9A227' }} />
               <span className="source-name">Lancements (Club IA)</span>
-              <span className="source-value">{launchCA.toLocaleString('fr-FR')} €</span>
+              <span className="source-value">{cumulativeLaunch.toLocaleString('fr-FR')} €</span>
             </div>
             <div className="source-row">
               <span className="source-color-dot" style={{ backgroundColor: '#3FBF8F' }} />
               <span className="source-name">Premium (Business IA)</span>
-              <span className="source-value">{premiumCA.toLocaleString('fr-FR')} €</span>
+              <span className="source-value">{cumulativePremium.toLocaleString('fr-FR')} €</span>
             </div>
             <div className="source-row">
               <span className="source-color-dot" style={{ backgroundColor: '#8B5CF6' }} />
               <span className="source-name">Produits Digitaux</span>
-              <span className="source-value">{digitalCA.toLocaleString('fr-FR')} €</span>
+              <span className="source-value">{cumulativeDigital.toLocaleString('fr-FR')} €</span>
             </div>
             <div className="source-row">
               <span className="source-color-dot" style={{ backgroundColor: '#3B82F6' }} />
               <span className="source-name">Collaborations</span>
-              <span className="source-value">{collabsCA.toLocaleString('fr-FR')} €</span>
+              <span className="source-value">{cumulativeCollabs.toLocaleString('fr-FR')} €</span>
             </div>
             <div className="source-total-row">
-              <span>Total CA Mensuel</span>
+              <span>Total CA ({timeFrame === 'monthly' ? 'Mensuel' : timeFrame === 'yearly' ? 'Annuel' : 'Global'})</span>
               <span>{totalCA.toLocaleString('fr-FR')} €</span>
             </div>
           </div>
@@ -707,11 +879,13 @@ export const DashboardScreen: React.FC = () => {
               <h4 className="detail-subsection-title">
                 <TrendingUp className="size-4 text-gold" /> Lancement Mensuel Club IA
               </h4>
-              {!launch ? (
+              {timeFrame !== 'monthly' ? (
+                <p className="no-detail-text">Sélectionnez le mode mensuel pour voir les détails d'un lancement spécifique.</p>
+              ) : !launch ? (
                 <p className="no-detail-text">Aucun lancement enregistré pour ce mois.</p>
               ) : (
                 (() => {
-                  const totalLaunchSales = launch.daySalesCount + launch.reminders.reduce((sum, r) => sum + r.count, 0);
+                  const totalLaunchSales = launch.daySalesCount + launch.reminders.reduce((sum: number, r: any) => sum + r.count, 0);
                   const launchShowUpRate = launch.registered > 0 ? (launch.live / launch.registered) * 100 : 0;
                   const launchLiveConvRate = launch.live > 0 ? (launch.daySalesCount / launch.live) * 100 : 0;
                   const launchGlobalConvRate = launch.registered > 0 ? (totalLaunchSales / launch.registered) * 100 : 0;
@@ -731,7 +905,7 @@ export const DashboardScreen: React.FC = () => {
                       <div className="launch-detail-item">
                         <span>Ventes post-webinaire (Relances) :</span>
                         <span className="val-highlight">
-                          {launch.reminders.reduce((sum, r) => sum + r.count, 0)} unités ({launch.reminders.reduce((sum, r) => sum + r.amount, 0).toLocaleString('fr-FR')} €)
+                          {launch.reminders.reduce((sum: number, r: any) => sum + r.count, 0)} unités ({launch.reminders.reduce((sum: number, r: any) => sum + r.amount, 0).toLocaleString('fr-FR')} €)
                         </span>
                       </div>
 
@@ -759,7 +933,7 @@ export const DashboardScreen: React.FC = () => {
                               </tr>
                             </thead>
                             <tbody>
-                              {launch.reminders.map((rem, idx) => (
+                              {launch.reminders.map((rem: any, idx: number) => (
                                 <tr key={idx}>
                                   <td>{new Date(rem.date).toLocaleDateString('fr-FR')}</td>
                                   <td>{rem.count}</td>
@@ -845,6 +1019,37 @@ export const DashboardScreen: React.FC = () => {
       )}
 
       <style>{`
+        .timeframe-tabs {
+          display: flex;
+          background-color: #F1F5F9;
+          border-radius: var(--radius-md);
+          padding: 3px;
+          border: 1px solid var(--border-color);
+        }
+
+        .timeframe-tab {
+          padding: 6px 14px;
+          font-size: 12.5px;
+          font-weight: 500;
+          color: var(--text-secondary);
+          background: none;
+          border: none;
+          border-radius: var(--radius-sm);
+          cursor: pointer;
+          transition: var(--transition-fast);
+        }
+
+        .timeframe-tab:hover {
+          color: var(--text-primary);
+        }
+
+        .timeframe-tab.active {
+          background-color: #FFFFFF;
+          color: var(--accent-violet);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+          font-weight: 600;
+        }
+
         .stat-subtext {
           font-size: 11px;
           color: var(--text-secondary);
