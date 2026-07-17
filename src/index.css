@@ -44,6 +44,8 @@
   --font-body: 'Inter', 'SF Pro Display', -apple-system, sans-serif;
 
   /* Grid Layout Spacings */
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 80px;
   --radius-lg: 22px; /* Coins très arrondis pour les cartes */
   --radius-md: 12px;
   --radius-sm: 8px;
@@ -360,14 +362,6 @@ tr:hover td {
   margin-left: var(--sidebar-width);
   transition: margin-left var(--transition-normal);
   padding-bottom: 100px;
-}
-
-@media (max-width: 1024px) {
-  .main-content {
-    margin-left: var(--sidebar-collapsed-width);
-    padding: 32px 24px;
-    padding-bottom: 96px;
-  }
 }
 
 @media (max-width: 768px) {

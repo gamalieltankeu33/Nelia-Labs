@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { StoreProvider } from './context/StoreContext';
 import { Sidebar } from './components/Sidebar';
+import { HomeScreen } from './components/screens/HomeScreen';
 import { TodayScreen } from './components/screens/TodayScreen';
 import { ContentScreen } from './components/screens/ContentScreen';
 import { ProspectsScreen } from './components/screens/ProspectsScreen';
@@ -8,14 +9,16 @@ import { LaunchScreen } from './components/screens/LaunchScreen';
 import { CollabsScreen } from './components/screens/CollabsScreen';
 import { ExpensesScreen } from './components/screens/ExpensesScreen';
 import { DashboardScreen } from './components/screens/DashboardScreen';
-import { Calendar, FileText, Users, Send, PieChart } from 'lucide-react';
+import { Home, Calendar, Users, Send, PieChart } from 'lucide-react';
 
 const AppContent: React.FC = () => {
-  const [activeScreen, setActiveScreen] = useState('today');
+  const [activeScreen, setActiveScreen] = useState('home');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const renderActiveScreen = () => {
     switch (activeScreen) {
+      case 'home':
+        return <HomeScreen setActiveScreen={setActiveScreen} />;
       case 'today':
         return <TodayScreen />;
       case 'content':
@@ -31,13 +34,13 @@ const AppContent: React.FC = () => {
       case 'dashboard':
         return <DashboardScreen />;
       default:
-        return <TodayScreen />;
+        return <HomeScreen setActiveScreen={setActiveScreen} />;
     }
   };
 
   const mobileNavItems = [
+    { id: 'home', name: 'Accueil', icon: Home },
     { id: 'today', name: "Auj.", icon: Calendar },
-    { id: 'content', name: 'Contenu', icon: FileText },
     { id: 'prospects', name: 'Prosp.', icon: Users },
     { id: 'launch', name: 'Lanc.', icon: Send },
     { id: 'dashboard', name: 'Stats', icon: PieChart },
