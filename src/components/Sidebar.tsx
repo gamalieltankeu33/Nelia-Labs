@@ -81,7 +81,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="mobile-header">
         <div className="mobile-logo">
           <CloudLightning className="logo-icon-dark animate-pulse" />
-          <span className="logo-text">NEXTIA</span>
+          <span className="logo-text">NEXT IA LABS</span>
         </div>
         <button className="mobile-toggle" onClick={() => setIsOpen(!isOpen)}>
           {isOpen ? <X className="size-5" /> : <Menu className="size-5" />}
@@ -93,7 +93,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="sidebar-logo">
           <CloudLightning className="logo-icon-dark" />
           <div className="logo-meta">
-            <span className="logo-text">NEXTIA</span>
+            <span className="logo-text">NEXT IA LABS</span>
             <span className="logo-tagline">Pilotage Business</span>
           </div>
         </div>

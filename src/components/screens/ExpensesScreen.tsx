@@ -48,7 +48,7 @@ export const ExpensesScreen: React.FC = () => {
     const dataStr = exportData();
     const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
     
-    const exportFileDefaultName = `nextia_backup_${new Date().toISOString().split('T')[0]}.json`;
+    const exportFileDefaultName = `next_ia_labs_backup_${new Date().toISOString().split('T')[0]}.json`;
     
     const linkElement = document.createElement('a');
     linkElement.setAttribute('href', dataUri);
@@ -216,7 +216,7 @@ export const ExpensesScreen: React.FC = () => {
           {/* Exporter / Utilitaires */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <p className="screen-subtitle">
-              Puisque Nextia est une application locale stockant ses données dans votre navigateur, nous vous recommandons d'exporter régulièrement vos données pour éviter toute perte.
+              Puisque Next IA labs est une application locale stockant ses données dans votre navigateur, nous vous recommandons d'exporter régulièrement vos données pour éviter toute perte.
             </p>
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '8px' }}>
               <button onClick={handleExport} className="btn btn-secondary">
