@@ -140,16 +140,16 @@ export const DashboardScreen: React.FC = () => {
       {
         label: 'CA Réel (€)',
         data: realCAData,
-        backgroundColor: '#EAB308',
-        borderColor: '#EAB308',
+        backgroundColor: '#635BFF',
+        borderColor: '#635BFF',
         borderWidth: 1,
         borderRadius: 4,
       },
       {
         label: 'Objectif CA (€)',
         data: objectiveCAData,
-        backgroundColor: '#2E2A20',
-        borderColor: 'rgba(234, 179, 8, 0.1)',
+        backgroundColor: '#E2E8F0',
+        borderColor: '#E2E8F0',
         borderWidth: 1,
         borderRadius: 4,
       }
@@ -162,28 +162,28 @@ export const DashboardScreen: React.FC = () => {
     plugins: {
       legend: {
         labels: {
-          color: '#F5F5F4',
+          color: '#475569',
           font: { family: 'Inter' }
         }
       },
       tooltip: {
-        backgroundColor: '#121211',
-        borderColor: 'rgba(234, 179, 8, 0.2)',
+        backgroundColor: '#FFFFFF',
+        borderColor: '#E2E8F0',
         borderWidth: 1,
-        titleColor: '#F5F5F4',
-        bodyColor: '#A8A29E',
+        titleColor: '#0F172A',
+        bodyColor: '#475569',
         titleFont: { family: 'Inter', weight: 'bold' as const },
         bodyFont: { family: 'Inter' }
       }
     },
     scales: {
       x: {
-        grid: { color: 'rgba(255, 255, 255, 0.03)' },
-        ticks: { color: '#A8A29E', font: { family: 'Inter' } }
+        grid: { color: '#F1F5F9' },
+        ticks: { color: '#475569', font: { family: 'Inter' } }
       },
       y: {
-        grid: { color: 'rgba(255, 255, 255, 0.03)' },
-        ticks: { color: '#A8A29E', font: { family: 'Inter' } }
+        grid: { color: '#F1F5F9' },
+        ticks: { color: '#475569', font: { family: 'Inter' } }
       }
     }
   };
@@ -220,30 +220,30 @@ export const DashboardScreen: React.FC = () => {
     plugins: {
       legend: {
         labels: {
-          color: '#F5F5F4',
+          color: '#475569',
           font: { family: 'Inter', size: 11 }
         }
       },
       tooltip: {
-        backgroundColor: '#121211',
-        borderColor: 'rgba(234, 179, 8, 0.2)',
+        backgroundColor: '#FFFFFF',
+        borderColor: '#E2E8F0',
         borderWidth: 1,
-        titleColor: '#F5F5F4',
-        bodyColor: '#A8A29E',
+        titleColor: '#0F172A',
+        bodyColor: '#475569',
         titleFont: { family: 'Inter', weight: 'bold' as const },
         bodyFont: { family: 'Inter' }
       }
     },
     scales: {
       x: {
-        grid: { color: 'rgba(255, 255, 255, 0.03)' },
-        ticks: { color: '#A8A29E', font: { family: 'Inter', size: 10 } }
+        grid: { color: '#F1F5F9' },
+        ticks: { color: '#475569', font: { family: 'Inter', size: 10 } }
       },
       y: {
         min: 0,
         suggestedMax: 15,
-        grid: { color: 'rgba(255, 255, 255, 0.03)' },
-        ticks: { color: '#A8A29E', font: { family: 'Inter' } }
+        grid: { color: '#F1F5F9' },
+        ticks: { color: '#475569', font: { family: 'Inter' } }
       }
     }
   };
@@ -275,13 +275,13 @@ export const DashboardScreen: React.FC = () => {
       {
         data: [cumulativeLaunch, cumulativePremium, cumulativeDigital, cumulativeCollabs],
         backgroundColor: [
-          '#EAB308', // Or brillant
-          '#CA8A04', // Or sombre
-          '#D97706', // Bronze/Ambre
-          '#78350F'  // Marron chaud/Terre d'ombre
+          '#635BFF', // Violet Stripe
+          '#93C5FD', // Bleu poudré
+          '#FCA5A5', // Corail doux
+          '#E2E8F0'  // Gris neutre
         ],
         borderWidth: 2,
-        borderColor: '#121211',
+        borderColor: '#FFFFFF',
       }
     ]
   };
@@ -293,13 +293,13 @@ export const DashboardScreen: React.FC = () => {
       legend: {
         position: 'right' as const,
         labels: {
-          color: '#F5F5F4',
+          color: '#475569',
           font: { family: 'Inter', size: 12 }
         }
       },
       tooltip: {
-        backgroundColor: '#121211',
-        borderColor: 'rgba(234, 179, 8, 0.2)',
+        backgroundColor: '#FFFFFF',
+        borderColor: '#E2E8F0',
         borderWidth: 1,
         callbacks: {
           label: function(context: any) {

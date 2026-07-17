@@ -294,23 +294,23 @@ export const TodayScreen: React.FC = () => {
 
       <style>{`
         .content-icon {
-          color: var(--accent-gold);
-          background-color: rgba(234, 179, 8, 0.05);
+          color: var(--accent-violet);
+          background-color: rgba(99, 91, 255, 0.06);
         }
 
         .dm-icon {
-          color: var(--data-blue);
-          background-color: rgba(147, 197, 253, 0.05);
+          color: #3B82F6;
+          background-color: rgba(59, 130, 246, 0.06);
         }
 
         .relance-icon {
-          color: var(--data-coral);
-          background-color: rgba(252, 165, 165, 0.05);
+          color: #F59E0B;
+          background-color: rgba(245, 158, 11, 0.06);
         }
 
         .sale-icon {
           color: var(--status-success);
-          background-color: rgba(52, 211, 153, 0.05);
+          background-color: rgba(16, 185, 129, 0.06);
         }
 
         .stat-icon {

@@ -133,7 +133,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <style>{`
         .sidebar {
           width: var(--sidebar-width);
-          background-color: var(--bg-card);
+          background-color: #F8FAFC;
           border-right: 1px solid var(--border-color);
           height: 100vh;
           position: fixed;
@@ -154,8 +154,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }
 
         .logo-icon-dark {
-          color: var(--accent-gold);
-          filter: drop-shadow(0 0 6px rgba(234, 179, 8, 0.4));
+          color: var(--accent-violet);
           width: 24px;
           height: 24px;
         }
@@ -208,15 +207,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }
 
         .nav-item:hover {
-          background-color: rgba(255, 255, 255, 0.03);
+          background-color: #F1F5F9;
           color: var(--text-primary);
         }
 
         .nav-item-active {
-          background-color: rgba(234, 179, 8, 0.08);
-          color: var(--accent-gold);
+          background-color: var(--accent-violet-glow);
+          color: var(--accent-violet);
           font-weight: 600;
-          border-left: 2px solid var(--accent-gold);
+          border-left: 2px solid var(--accent-violet);
           border-radius: 0 var(--radius-md) var(--radius-md) 0;
         }
 
@@ -228,13 +227,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }
 
         .nav-icon-active {
-          color: var(--accent-gold);
+          color: var(--accent-violet);
         }
 
         .sidebar-footer {
           padding: 16px;
           border-top: 1px solid var(--border-color);
-          background-color: var(--bg-card);
+          background-color: #F8FAFC;
         }
 
         .status-indicator {
