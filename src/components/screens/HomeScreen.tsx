@@ -12,7 +12,6 @@ import {
   Users, 
   FileText, 
   Briefcase, 
-  Coins,
   ChevronRight,
   Sparkles,
   DollarSign
@@ -54,15 +53,6 @@ export const HomeScreen: React.FC<{ setActiveScreen: (screen: string) => void }>
   // Monthly contents
   const monthlyContents = contents.filter(c => c.date.startsWith(currentMonth)).length;
 
-  // Mock Market Ticker
-  const marketRates = [
-    { name: 'Bitcoin (BTC)', value: '$67,420', change: '+2.4%', isPositive: true },
-    { name: 'Ethereum (ETH)', value: '$3,485', change: '-1.1%', isPositive: false },
-    { name: 'Solana (SOL)', value: '$146.80', change: '+6.2%', isPositive: true },
-    { name: 'EUR / USD', value: '1.0862', change: '-0.05%', isPositive: false },
-    { name: 'Stripe Fee', value: '1.5% + 0.25€', change: 'Stable', isPositive: true, isNeutral: true }
-  ];
-
   // Last 5 Sales/Collabs combined
   const recentActivities = [
     ...sales.map(s => ({ id: s.id, type: 'Vente', desc: s.product, value: s.price, date: s.date, channel: s.channel })),
@@ -79,24 +69,6 @@ export const HomeScreen: React.FC<{ setActiveScreen: (screen: string) => void }>
           <p className="welcome-subtitle">
             Ravi de vous revoir. Voici un aperçu rapide des performances de votre business en ce mois de {currentMonthName}.
           </p>
-        </div>
-      </div>
-
-      {/* Currency & Crypto Ticker Widget (Finexa Style) */}
-      <div className="ticker-section">
-        <h4 className="section-title-discrete"><Coins className="size-4 text-violet" /> Marché & Indicateurs Fintech</h4>
-        <div className="ticker-grid">
-          {marketRates.map((rate, i) => (
-            <div key={i} className="ticker-card card">
-              <span className="ticker-name">{rate.name}</span>
-              <div className="ticker-meta">
-                <span className="ticker-val">{rate.value}</span>
-                <span className={rate.isNeutral ? 'pastille-neutral' : rate.isPositive ? 'pastille-success' : 'pastille-error'}>
-                  {rate.change}
-                </span>
-              </div>
-            </div>
-          ))}
         </div>
       </div>
 
@@ -292,64 +264,7 @@ export const HomeScreen: React.FC<{ setActiveScreen: (screen: string) => void }>
           margin-bottom: 12px;
         }
 
-        /* Ticker Widget */
-        .ticker-section {
-          margin-top: -8px;
-        }
 
-        .ticker-grid {
-          display: grid;
-          grid-template-columns: repeat(5, 1fr);
-          gap: 16px;
-        }
-
-        @media (max-width: 1024px) {
-          .ticker-grid {
-            grid-template-columns: repeat(3, 1fr);
-          }
-        }
-
-        @media (max-width: 640px) {
-          .ticker-grid {
-            grid-template-columns: 1fr;
-          }
-        }
-
-        .ticker-card {
-          padding: 16px 20px;
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-
-        .ticker-name {
-          font-size: 11px;
-          color: var(--text-secondary);
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.02em;
-        }
-
-        .ticker-meta {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-
-        .ticker-val {
-          font-size: 15px;
-          font-weight: 700;
-          color: var(--text-primary);
-        }
-
-        .pastille-neutral {
-          background-color: #F1F5F9;
-          color: var(--text-secondary);
-          padding: 1px 6px;
-          border-radius: 9999px;
-          font-size: 10px;
-          font-weight: 600;
-        }
 
         .progress-bar-container {
           width: 100%;
