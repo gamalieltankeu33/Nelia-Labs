@@ -121,10 +121,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Sidebar Container */}
       <div className={`sidebar ${isOpen ? 'sidebar-open' : ''}`}>
         <div className="sidebar-logo">
-          <CloudLightning className="logo-icon-dark" />
-          <div className="logo-meta">
-            <span className="logo-text">NEXT IA LABS</span>
-            <span className="logo-tagline">Pilotage Business</span>
+          <div className="logo-icon-wrapper-premium">
+            <CloudLightning className="logo-icon-premium" />
           </div>
         </div>
 
@@ -193,37 +191,37 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }
 
         .sidebar-logo {
-          padding: 24px;
+          padding: 24px 0;
           display: flex;
           align-items: center;
-          gap: 12px;
+          justify-content: center;
           border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .logo-icon-dark {
-          color: #FFFFFF;
-          width: 24px;
-          height: 24px;
-        }
-
-        .logo-meta {
+        .logo-icon-wrapper-premium {
+          width: 42px;
+          height: 42px;
+          border-radius: 12px;
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.15);
           display: flex;
-          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+          transition: var(--transition-fast);
         }
 
-        .logo-text {
-          font-family: var(--font-heading);
-          font-weight: 700;
-          font-size: 16px;
-          letter-spacing: 0.05em;
+        .logo-icon-wrapper-premium:hover {
+          background: rgba(255, 255, 255, 0.15);
+          border-color: rgba(255, 255, 255, 0.25);
+          transform: rotate(5deg) scale(1.05);
+        }
+
+        .logo-icon-premium {
           color: #FFFFFF;
-        }
-
-        .logo-tagline {
-          font-size: 10px;
-          color: rgba(255, 255, 255, 0.7);
-          letter-spacing: 0.01em;
-          font-weight: 500;
+          width: 20px;
+          height: 20px;
+          filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.3));
         }
 
         .sidebar-nav {
