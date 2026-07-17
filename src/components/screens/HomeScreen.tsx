@@ -64,7 +64,13 @@ export const HomeScreen: React.FC<{ setActiveScreen: (screen: string) => void }>
       {/* Welcome Banner */}
       <div className="welcome-banner card">
         <div className="welcome-text">
-          <span className="welcome-tag"><Sparkles className="size-3 text-violet inline mr-1" /> NEXT IA LABS COCKPIT</span>
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+            <span className="welcome-tag"><Sparkles className="size-3 text-violet inline mr-1" /> NEXT IA LABS COCKPIT</span>
+            <span className="system-status-indicator">
+              <span className="system-status-dot" />
+              Système connecté à Supabase
+            </span>
+          </div>
           <h1 className="welcome-title">Bonjour Gamaliel 👋</h1>
           <p className="welcome-subtitle">
             Ravi de vous revoir. Voici un aperçu rapide des performances de votre business en ce mois de {currentMonthName}.
@@ -228,6 +234,49 @@ export const HomeScreen: React.FC<{ setActiveScreen: (screen: string) => void }>
           background: linear-gradient(135deg, #FFFFFF 0%, #FAFAFF 100%);
           border-left: 5px solid var(--accent-violet);
           padding: 40px;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .welcome-banner::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          right: 0;
+          width: 200px;
+          height: 200px;
+          background: radial-gradient(circle at 100% 0%, rgba(99, 91, 255, 0.04) 0%, rgba(99, 91, 255, 0) 70%);
+          pointer-events: none;
+        }
+
+        .system-status-indicator {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 10px;
+          font-weight: 600;
+          color: var(--status-success);
+          background-color: rgba(16, 185, 129, 0.05);
+          border: 1px solid rgba(16, 185, 129, 0.12);
+          padding: 2px 8px;
+          border-radius: 9999px;
+          text-transform: uppercase;
+          letter-spacing: 0.02em;
+        }
+
+        .system-status-dot {
+          width: 5px;
+          height: 5px;
+          border-radius: 9999px;
+          background-color: var(--status-success);
+          display: inline-block;
+          box-shadow: 0 0 6px var(--status-success);
+          animation: statusPulse 1.8s infinite ease-in-out;
+        }
+
+        @keyframes statusPulse {
+          0%, 100% { opacity: 0.4; transform: scale(0.9); }
+          50% { opacity: 1; transform: scale(1.1); box-shadow: 0 0 10px var(--status-success); }
         }
 
         .welcome-tag {

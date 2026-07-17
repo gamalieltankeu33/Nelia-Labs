@@ -16,6 +16,12 @@ import {
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { supabase } from '../supabaseClient';
+import { 
+  calculateLaunchCA, 
+  calculatePremiumCA, 
+  calculateDigitalCA, 
+  calculateCollabsCA 
+} from '../utils/calculations';
 
 interface SidebarProps {
   activeScreen: string;
@@ -30,7 +36,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isOpen, 
   setIsOpen 
 }) => {
-  const { savingStatus, savingError } = useStore();
+  const { 
+    savingStatus, 
+    savingError,
+    sales,
+    prospects,
+    launches,
+    collabs,
+    objectives 
+  } = useStore();
+
+  const currentMonth = new Date().toISOString().substring(0, 7);
+  const currentMonthName = new Date().toLocaleDateString('fr-FR', { month: 'long' });
+  const capitalizedMonth = currentMonthName.charAt(0).toUpperCase() + currentMonthName.slice(1);
+  
+  // Calculate current month's CA
+  const launch = launches[currentMonth];
+  const launchCA = calculateLaunchCA(launch);
+  const premiumCA = calculatePremiumCA(prospects, currentMonth);
+  const digitalCA = calculateDigitalCA(sales, currentMonth);
+  const collabsCA = calculateCollabsCA(collabs, currentMonth);
+  const totalCA = launchCA + premiumCA + digitalCA + collabsCA;
+  
+  const monthlyObjective = objectives[currentMonth] || 5000;
+  const progressPercent = monthlyObjective > 0 ? Math.min((totalCA / monthlyObjective) * 100, 100) : 0;
 
   const menuItems = [
     { id: 'home', name: 'Accueil', icon: Home },
@@ -118,6 +147,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
             );
           })}
         </nav>
+
+        {/* Mini Objectif Widget */}
+        <div className="sidebar-goal-widget">
+          <div className="goal-widget-header">
+            <span className="goal-widget-title">Objectif {capitalizedMonth}</span>
+            <span className="goal-widget-percent">{progressPercent.toFixed(0)}%</span>
+          </div>
+          <div className="goal-widget-bar-track">
+            <div className="goal-widget-bar-fill" style={{ width: `${progressPercent}%` }} />
+          </div>
+          <div className="goal-widget-footer">
+            <span>{totalCA.toLocaleString('fr-FR')} € / {monthlyObjective.toLocaleString('fr-FR')} €</span>
+          </div>
+        </div>
 
         {/* Sidebar Footer with Saving Status */}
         <div className="sidebar-footer">
@@ -213,11 +256,68 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }
 
         .nav-item-active {
-          background-color: var(--accent-violet-glow);
+          background: linear-gradient(135deg, rgba(99, 91, 255, 0.08) 0%, rgba(99, 91, 255, 0.02) 100%);
+          border: 1px solid rgba(99, 91, 255, 0.12);
+          border-left: 3.5px solid var(--accent-violet);
           color: var(--accent-violet);
           font-weight: 600;
-          border-left: 2px solid var(--accent-violet);
-          border-radius: 0 var(--radius-md) var(--radius-md) 0;
+          border-radius: var(--radius-md);
+          box-shadow: 0 4px 12px rgba(99, 91, 255, 0.02);
+        }
+
+        /* Sidebar Goal Widget Styles */
+        .sidebar-goal-widget {
+          margin: 16px;
+          padding: 16px;
+          background: linear-gradient(135deg, #FFFFFF 0%, #FAF9FF 100%);
+          border: 1px solid var(--border-color);
+          border-top: 1px solid rgba(255, 255, 255, 0.95);
+          border-radius: var(--radius-md);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+        }
+
+        .goal-widget-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 8px;
+        }
+
+        .goal-widget-title {
+          font-size: 10px;
+          font-weight: 700;
+          color: var(--text-secondary);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .goal-widget-percent {
+          font-size: 11px;
+          font-weight: 700;
+          color: var(--accent-violet);
+        }
+
+        .goal-widget-bar-track {
+          width: 100%;
+          height: 6px;
+          background-color: #E2E8F0;
+          border-radius: 9999px;
+          overflow: hidden;
+          margin-bottom: 8px;
+        }
+
+        .goal-widget-bar-fill {
+          height: 100%;
+          background-color: var(--accent-violet);
+          border-radius: 9999px;
+          transition: width 0.4s ease;
+        }
+
+        .goal-widget-footer {
+          font-size: 11px;
+          color: var(--text-muted);
+          font-weight: 600;
+          font-variant-numeric: tabular-nums;
         }
 
         .nav-icon {
