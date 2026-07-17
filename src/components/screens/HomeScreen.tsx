@@ -46,8 +46,7 @@ ChartJS.register(
 );
 
 export const HomeScreen: React.FC<{ setActiveScreen: (screen: string) => void }> = ({ setActiveScreen }) => {
-  const savedUser = localStorage.getItem('nextia_user');
-  const userName = savedUser ? JSON.parse(savedUser).name : 'Gamaliel';
+  const userName = 'Gamaliel';
 
   const { 
     contents, 
