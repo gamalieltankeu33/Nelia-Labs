@@ -293,68 +293,31 @@ export const TodayScreen: React.FC = () => {
       </div>
 
       <style>{`
-        .stat-card {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-          padding: 20px;
-        }
-
-        .stat-icon-wrapper {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 48px;
-          height: 48px;
-          border-radius: var(--radius-md);
-          background-color: var(--bg-input);
-          border: 1px solid var(--border-color);
-        }
-
         .content-icon {
           color: var(--accent-gold);
-          background-color: rgba(201, 162, 39, 0.1);
+          background-color: rgba(234, 179, 8, 0.05);
         }
 
         .dm-icon {
-          color: #8B5CF6;
-          background-color: rgba(139, 92, 246, 0.1);
+          color: var(--data-blue);
+          background-color: rgba(147, 197, 253, 0.05);
         }
 
         .relance-icon {
-          color: #F97316;
-          background-color: rgba(249, 115, 22, 0.1);
+          color: var(--data-coral);
+          background-color: rgba(252, 165, 165, 0.05);
         }
 
         .sale-icon {
           color: var(--status-success);
-          background-color: rgba(63, 191, 143, 0.1);
+          background-color: rgba(52, 211, 153, 0.05);
         }
 
         .stat-icon {
-          width: 24px;
-          height: 24px;
+          width: 20px;
+          height: 20px;
         }
 
-        .stat-meta {
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-        }
-
-        .stat-label {
-          font-size: 12px;
-          color: var(--text-secondary);
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-        }
-
-        .stat-val {
-          font-family: var(--font-heading);
-          font-size: 24px;
-          font-weight: 800;
-          color: var(--text-primary);
-        }
 
         .form-header {
           display: flex;
