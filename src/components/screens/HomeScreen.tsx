@@ -81,38 +81,36 @@ export const HomeScreen: React.FC<{ setActiveScreen: (screen: string) => void }>
   // Monthly contents
   const monthlyContents = contents.filter(c => c.date.startsWith(currentMonth)).length;
 
-  // Generate data for the line chart (last 6 months CA vs Objective)
-  const yearStr = new Date().getFullYear().toString();
-  const currentMonthNum = new Date().getMonth() + 1; // 1-indexed
+  // Generate data for the line chart (starting in June, the founding month)
+  const startMonth = 6; // June (Juin)
+  const currentYear = new Date().getFullYear();
+  const currentMonthNum = new Date().getMonth() + 1; // 1-indexed (e.g. 7 for July)
   
-  const last6MonthsKeys: string[] = [];
-  const last6MonthsLabels: string[] = [];
+  const chartMonthsKeys: string[] = [];
+  const chartMonthsLabels: string[] = [];
   
-  for (let i = 5; i >= 0; i--) {
-    let m = currentMonthNum - i;
-    let y = parseInt(yearStr, 10);
-    if (m <= 0) {
-      m += 12;
-      y -= 1;
-    }
-    const key = `${y}-${String(m).padStart(2, '0')}`;
-    last6MonthsKeys.push(key);
+  // Show at least 6 months starting from June to look complete
+  const endMonth = Math.max(11, currentMonthNum);
+  
+  for (let m = startMonth; m <= endMonth; m++) {
+    const key = `${currentYear}-${String(m).padStart(2, '0')}`;
+    chartMonthsKeys.push(key);
     
-    const dateObj = new Date(y, m - 1, 2);
+    const dateObj = new Date(currentYear, m - 1, 2);
     const label = dateObj.toLocaleDateString('fr-FR', { month: 'short' });
-    last6MonthsLabels.push(label.charAt(0).toUpperCase() + label.slice(1));
+    chartMonthsLabels.push(label.charAt(0).toUpperCase() + label.slice(1));
   }
   
-  const chartRealCA = last6MonthsKeys.map(k => 
+  const chartRealCA = chartMonthsKeys.map(k => 
     calculateTotalCA(k, launches[k], prospects, sales, collabs)
   );
   
-  const chartObjectiveCA = last6MonthsKeys.map(k => 
+  const chartObjectiveCA = chartMonthsKeys.map(k => 
     objectives[k] || 5000
   );
 
   const lineChartData = {
-    labels: last6MonthsLabels,
+    labels: chartMonthsLabels,
     datasets: [
       {
         label: 'Revenus Réels (€)',
@@ -339,8 +337,8 @@ export const HomeScreen: React.FC<{ setActiveScreen: (screen: string) => void }>
               </div>
             </div>
 
-            <button className="btn-primary btn-full-width" style={{ marginTop: '20px' }} onClick={() => setActiveScreen('dashboard')}>
-              Voir les statistiques <ArrowUpRight className="size-4 ml-1" />
+            <button className="btn-view-stats" onClick={() => setActiveScreen('dashboard')}>
+              Voir les statistiques <ArrowUpRight className="size-4" />
             </button>
           </div>
 
@@ -781,6 +779,34 @@ export const HomeScreen: React.FC<{ setActiveScreen: (screen: string) => void }>
         .todo-desc {
           font-size: 11px;
           color: var(--text-secondary);
+        }
+
+        .btn-view-stats {
+          width: 100%;
+          background: linear-gradient(135deg, #635BFF 0%, #4F46E5 100%);
+          color: #FFFFFF;
+          font-weight: 600;
+          font-size: 12.5px;
+          padding: 12px 24px;
+          border-radius: 12px;
+          border: none;
+          cursor: pointer;
+          transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          box-shadow: 0 4px 14px rgba(99, 91, 255, 0.2);
+          margin-top: 20px;
+        }
+
+        .btn-view-stats:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 20px rgba(99, 91, 255, 0.3);
+        }
+
+        .btn-view-stats:active {
+          transform: scale(0.985);
         }
       `}</style>
     </div>
