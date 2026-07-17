@@ -46,6 +46,9 @@ ChartJS.register(
 );
 
 export const HomeScreen: React.FC<{ setActiveScreen: (screen: string) => void }> = ({ setActiveScreen }) => {
+  const savedUser = localStorage.getItem('nextia_user');
+  const userName = savedUser ? JSON.parse(savedUser).name : 'Gamaliel';
+
   const { 
     contents, 
     sales, 
@@ -189,7 +192,7 @@ export const HomeScreen: React.FC<{ setActiveScreen: (screen: string) => void }>
                   Système connecté à Supabase
                 </span>
               </div>
-              <h1 className="welcome-title">Bonjour Gamaliel 👋</h1>
+              <h1 className="welcome-title">Bonjour {userName} 👋</h1>
               <p className="welcome-subtitle">
                 Ravi de vous revoir. Voici un aperçu rapide des performances de votre business en ce mois de {currentMonthName}.
               </p>

@@ -163,8 +163,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Sidebar Footer with Saving Status */}
-        <div className="sidebar-footer">
+        <div className="sidebar-footer" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {renderSavingStatus()}
+          <button 
+            className="logout-btn" 
+            onClick={() => {
+              localStorage.removeItem('nextia_user');
+              window.location.reload();
+            }}
+          >
+            Se déconnecter
+          </button>
         </div>
       </div>
 
@@ -336,6 +345,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
         .sidebar-footer {
           padding: 16px;
           border-top: 1px solid rgba(255, 255, 255, 0.1);
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .logout-btn {
+          width: 100%;
+          background: none;
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          color: rgba(255, 255, 255, 0.65);
+          border-radius: var(--radius-md);
+          padding: 8px 12px;
+          font-size: 11.5px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: var(--transition-fast);
+          text-align: center;
+          font-family: var(--font-body);
+        }
+
+        .logout-btn:hover {
+          background-color: rgba(255, 255, 255, 0.08);
+          color: #FFFFFF;
+          border-color: rgba(255, 255, 255, 0.3);
+          transform: translateY(-0.5px);
+        }
+
+        .logout-btn:active {
+          transform: scale(0.98);
         }
 
         .status-indicator {
