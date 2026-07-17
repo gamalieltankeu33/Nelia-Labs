@@ -1,26 +1,26 @@
 :root {
-  /* Color Palette - Premium Dark Theme (inspired by Linear/Stripe) */
-  --bg-primary: #09090F; /* Noir profond avec nuance violette très subtile */
-  --bg-card: #12111F;    /* Surfaces des cartes */
-  --bg-input: #171627;   /* Arrière-plan des champs de saisie */
-  --border-color: rgba(255, 255, 255, 0.06); /* Bordures très fines et transparentes */
-  --border-hover: rgba(139, 92, 246, 0.2);
-  --border-focus: rgba(139, 92, 246, 0.5);
+  /* Color Palette - Premium Obsidian & Gold Theme (inspired by Finexa) */
+  --bg-primary: #0A0A0A; /* Noir obsidienne chaud et profond */
+  --bg-card: #121211;    /* Surfaces des cartes en carbone chaud */
+  --bg-input: #161614;   /* Arrière-plan des champs de saisie */
+  --border-color: rgba(229, 184, 59, 0.06); /* Bordures ultra-fines or/bronze */
+  --border-hover: rgba(229, 184, 59, 0.15);
+  --border-focus: rgba(234, 179, 8, 0.40);
   
-  --accent-violet: #8B5CF6;      /* Violet électrique principal */
-  --accent-violet-deep: #4C1D95; /* Violet foncé */
-  --accent-violet-glow: rgba(139, 92, 246, 0.15);
+  --accent-gold: #EAB308;      /* Or brillant principal */
+  --accent-gold-deep: #9A3412;  /* Bronze/Orange terreux */
+  --accent-gold-glow: rgba(234, 179, 8, 0.12);
   
-  --text-primary: #F4F4F6;   /* Texte principal clair */
-  --text-secondary: #9F9EB2; /* Texte secondaire estompé */
-  --text-muted: #5F5E73;     /* Détails très estompés */
+  --text-primary: #F5F5F4;   /* Texte principal blanc chaud */
+  --text-secondary: #A8A29E; /* Texte secondaire gris pierre (Stone-400) */
+  --text-muted: #57534E;     /* Détails très estompés (Stone-600) */
   
   --status-success: #10B981; /* Vert pastel pour validation / gains */
   --status-error: #EF4444;   /* Rouge doux pour erreurs / pertes */
-  --status-warning: #F59E0B; /* Orange chaud pour alertes */
+  --status-warning: #F59E0B; /* Ambre/Orange chaud */
 
-  /* Funnel 10 steps colors - Sophisticated dark-mode palette */
-  --funnel-0: #374151; /* 1er DM envoyé (Zinc) */
+  /* Funnel 10 steps colors - Sophisticated obsidian & gold/bronze palette */
+  --funnel-0: #44403C; /* 1er DM envoyé (Stone) */
   --funnel-1: #1E3A8A; /* Relancé (Deep Blue) */
   --funnel-2: #0D9488; /* Conversation déclenchée (Teal) */
   --funnel-3: #0F766E; /* Conversation en cours (Dark Teal) */
@@ -49,7 +49,7 @@
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -4px rgba(0, 0, 0, 0.2);
-  --shadow-premium: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+  --shadow-premium: 0 20px 25px -5px rgba(234, 179, 8, 0.02), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
 }
 
 /* Reset & Base Styles */
@@ -59,7 +59,7 @@
   padding: 0;
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar matching Gold & Obsidian */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -68,11 +68,11 @@
   background: var(--bg-primary);
 }
 ::-webkit-scrollbar-thumb {
-  background: #252438;
+  background: #232220;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3B3958;
+  background: #383633;
 }
 
 body {
@@ -93,13 +93,13 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 a {
-  color: var(--accent-violet);
+  color: var(--accent-gold);
   text-decoration: none;
   transition: var(--transition-fast);
 }
 
 a:hover {
-  color: #A78BFA;
+  color: #FDE047;
 }
 
 /* Form controls */
@@ -119,15 +119,15 @@ input, select, textarea {
 
 input:focus, select:focus, textarea:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px var(--accent-violet-glow);
-  background-color: #1A192D;
+  box-shadow: 0 0 0 3px var(--accent-gold-glow);
+  background-color: #1A1A18;
 }
 
 select {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%239F9EB2' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23A8A29E' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
   background-position: right 12px center;
   background-repeat: no-repeat;
   background-size: 1.1rem;
@@ -136,7 +136,7 @@ select {
 }
 
 select:hover {
-  background-color: #201F35;
+  background-color: #1E1E1C;
   border-color: var(--border-hover);
 }
 
@@ -147,7 +147,7 @@ select:hover {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(9, 9, 15, 0.70);
+  background-color: rgba(10, 10, 10, 0.75);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
@@ -172,10 +172,10 @@ select:hover {
 }
 
 input:disabled, select:disabled, textarea:disabled {
-  background-color: rgba(255, 255, 255, 0.03);
+  background-color: rgba(255, 255, 255, 0.02);
   color: var(--text-muted);
   cursor: not-allowed;
-  border-color: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.02);
 }
 
 input::placeholder {
@@ -211,14 +211,15 @@ label {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%);
-  color: #FFFFFF;
-  box-shadow: 0 2px 4px rgba(139, 92, 246, 0.15);
+  background: linear-gradient(135deg, #FDE047 0%, #D97706 100%);
+  color: #0A0A0A;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(234, 179, 8, 0.1);
 }
 
 .btn-primary:hover {
   transform: translateY(-0.5px);
-  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35);
+  box-shadow: 0 4px 14px rgba(234, 179, 8, 0.3);
 }
 
 .btn-primary:active {
@@ -272,7 +273,7 @@ label {
 
 .card:hover {
   border-color: var(--border-hover);
-  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.05);
+  box-shadow: 0 4px 16px rgba(234, 179, 8, 0.03);
 }
 
 /* Table styling */
@@ -292,7 +293,7 @@ table {
 }
 
 th {
-  background-color: rgba(255, 255, 255, 0.01);
+  background-color: rgba(255, 255, 255, 0.005);
   color: var(--text-secondary);
   font-family: var(--font-body);
   font-weight: 600;
@@ -315,7 +316,7 @@ tr:last-child td {
 }
 
 tr:hover td {
-  background-color: rgba(255, 255, 255, 0.02);
+  background-color: rgba(255, 255, 255, 0.015);
 }
 
 /* Tabular figures for visual alignment */
@@ -422,8 +423,8 @@ tr:hover td {
 }
 
 .screen-title-icon {
-  color: var(--accent-violet);
-  filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.4));
+  color: var(--accent-gold);
+  filter: drop-shadow(0 0 8px rgba(234, 179, 8, 0.4));
 }
 
 .screen-subtitle {
@@ -464,7 +465,7 @@ tr:hover td {
 }
 
 .funnel-bar-wrapper {
-  background-color: rgba(255, 255, 255, 0.03);
+  background-color: rgba(255, 255, 255, 0.02);
   height: 20px;
   border-radius: var(--radius-sm);
   overflow: hidden;
@@ -476,7 +477,7 @@ tr:hover td {
   height: 100%;
   border-radius: var(--radius-sm) 0 0 var(--radius-sm);
   transition: width 0.6s cubic-bezier(0.1, 0.76, 0.55, 0.94);
-  box-shadow: 0 0 10px rgba(139, 92, 246, 0.1);
+  box-shadow: 0 0 10px rgba(234, 179, 8, 0.1);
 }
 
 .funnel-count {
@@ -528,7 +529,7 @@ tr:hover td {
   align-items: center;
   justify-content: space-around;
   padding: 0 12px;
-  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .mobile-nav-item {
@@ -556,8 +557,8 @@ tr:hover td {
 }
 
 .mobile-nav-item.active {
-  color: var(--accent-violet);
-  filter: drop-shadow(0 0 4px rgba(139, 92, 246, 0.5));
+  color: var(--accent-gold);
+  filter: drop-shadow(0 0 4px rgba(234, 179, 8, 0.5));
 }
 
 @media (max-width: 768px) {

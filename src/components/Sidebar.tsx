@@ -154,8 +154,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }
 
         .logo-icon-dark {
-          color: var(--accent-violet);
-          filter: drop-shadow(0 0 6px rgba(139, 92, 246, 0.3));
+          color: var(--accent-gold);
+          filter: drop-shadow(0 0 6px rgba(234, 179, 8, 0.4));
           width: 24px;
           height: 24px;
         }
@@ -213,9 +213,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }
 
         .nav-item-active {
-          background-color: rgba(139, 92, 246, 0.15);
-          color: #C084FC;
+          background-color: rgba(234, 179, 8, 0.08);
+          color: var(--accent-gold);
           font-weight: 600;
+          border-left: 2px solid var(--accent-gold);
+          border-radius: 0 var(--radius-md) var(--radius-md) 0;
         }
 
         .nav-icon {
@@ -226,7 +228,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }
 
         .nav-icon-active {
-          color: #C084FC;
+          color: var(--accent-gold);
         }
 
         .sidebar-footer {
