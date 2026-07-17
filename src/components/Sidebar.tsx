@@ -133,7 +133,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <style>{`
         .sidebar {
           width: var(--sidebar-width);
-          background-color: #FFFFFF;
+          background-color: var(--bg-card);
           border-right: 1px solid var(--border-color);
           height: 100vh;
           position: fixed;
@@ -154,7 +154,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }
 
         .logo-icon-dark {
-          color: var(--text-primary);
+          color: var(--accent-violet);
+          filter: drop-shadow(0 0 6px rgba(139, 92, 246, 0.3));
           width: 24px;
           height: 24px;
         }
@@ -207,13 +208,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }
 
         .nav-item:hover {
-          background-color: #F4F4F5;
+          background-color: rgba(255, 255, 255, 0.03);
           color: var(--text-primary);
         }
 
         .nav-item-active {
-          background-color: #F4F4F5;
-          color: var(--text-primary);
+          background-color: rgba(139, 92, 246, 0.15);
+          color: #C084FC;
           font-weight: 600;
         }
 
@@ -225,13 +226,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }
 
         .nav-icon-active {
-          color: var(--text-primary);
+          color: #C084FC;
         }
 
         .sidebar-footer {
           padding: 16px;
           border-top: 1px solid var(--border-color);
-          background-color: #FAFAFA;
+          background-color: var(--bg-card);
         }
 
         .status-indicator {
@@ -242,7 +243,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           font-weight: 600;
           padding: 6px 10px;
           border-radius: var(--radius-md);
-          background-color: #FFFFFF;
+          background-color: var(--bg-input);
           border: 1px solid var(--border-color);
           text-transform: uppercase;
           letter-spacing: 0.02em;
@@ -250,17 +251,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         .status-saving {
           color: var(--status-warning);
-          border-color: #FCD34D;
+          border-color: rgba(245, 158, 11, 0.2);
+          background-color: rgba(245, 158, 11, 0.05);
         }
 
         .status-saved {
           color: var(--status-success);
-          border-color: #A7F3D0;
+          border-color: rgba(16, 185, 129, 0.2);
+          background-color: rgba(16, 185, 129, 0.05);
         }
 
         .status-error {
           color: var(--status-error);
-          border-color: #FCA5A5;
+          border-color: rgba(239, 68, 68, 0.2);
+          background-color: rgba(239, 68, 68, 0.05);
         }
 
         .status-idle {
@@ -291,7 +295,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             left: 0;
             right: 0;
             height: 56px;
-            background-color: #FFFFFF;
+            background-color: var(--bg-card);
             border-bottom: 1px solid var(--border-color);
             padding: 0 16px;
             z-index: 110;
@@ -316,7 +320,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           .sidebar {
             transform: translateX(-100%);
             top: 56px;
-            height: calc(100vh - 56px - 64px); /* Eviter le chevauchement avec la barre du bas */
+            height: calc(100vh - 56px - 64px);
           }
 
           .sidebar-open {
@@ -333,7 +337,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             left: 0;
             right: 0;
             bottom: 64px;
-            background-color: rgba(9, 9, 11, 0.4);
+            background-color: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(2px);
             z-index: 90;
           }

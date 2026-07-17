@@ -140,16 +140,16 @@ export const DashboardScreen: React.FC = () => {
       {
         label: 'CA Réel (€)',
         data: realCAData,
-        backgroundColor: '#09090B', // Zinc-950 (Stripe style)
-        borderColor: '#09090B',
+        backgroundColor: '#8B5CF6',
+        borderColor: '#8B5CF6',
         borderWidth: 1,
         borderRadius: 4,
       },
       {
         label: 'Objectif CA (€)',
         data: objectiveCAData,
-        backgroundColor: '#E4E4E7', // Zinc-200
-        borderColor: '#E4E4E7',
+        backgroundColor: '#2A2840',
+        borderColor: 'rgba(255, 255, 255, 0.08)',
         borderWidth: 1,
         borderRadius: 4,
       }
@@ -162,28 +162,28 @@ export const DashboardScreen: React.FC = () => {
     plugins: {
       legend: {
         labels: {
-          color: '#09090B',
+          color: '#F4F4F6',
           font: { family: 'Inter' }
         }
       },
       tooltip: {
-        backgroundColor: '#FFFFFF',
-        borderColor: '#E4E4E7',
+        backgroundColor: '#12111F',
+        borderColor: 'rgba(255, 255, 255, 0.08)',
         borderWidth: 1,
-        titleColor: '#09090B',
-        bodyColor: '#71717A',
+        titleColor: '#F4F4F6',
+        bodyColor: '#9F9EB2',
         titleFont: { family: 'Inter', weight: 'bold' as const },
         bodyFont: { family: 'Inter' }
       }
     },
     scales: {
       x: {
-        grid: { color: 'rgba(228, 228, 231, 0.5)' },
-        ticks: { color: '#71717A', font: { family: 'Inter' } }
+        grid: { color: 'rgba(255, 255, 255, 0.04)' },
+        ticks: { color: '#9F9EB2', font: { family: 'Inter' } }
       },
       y: {
-        grid: { color: 'rgba(228, 228, 231, 0.5)' },
-        ticks: { color: '#71717A', font: { family: 'Inter' } }
+        grid: { color: 'rgba(255, 255, 255, 0.04)' },
+        ticks: { color: '#9F9EB2', font: { family: 'Inter' } }
       }
     }
   };
@@ -220,30 +220,30 @@ export const DashboardScreen: React.FC = () => {
     plugins: {
       legend: {
         labels: {
-          color: '#09090B',
+          color: '#F4F4F6',
           font: { family: 'Inter', size: 11 }
         }
       },
       tooltip: {
-        backgroundColor: '#FFFFFF',
-        borderColor: '#E4E4E7',
+        backgroundColor: '#12111F',
+        borderColor: 'rgba(255, 255, 255, 0.08)',
         borderWidth: 1,
-        titleColor: '#09090B',
-        bodyColor: '#71717A',
+        titleColor: '#F4F4F6',
+        bodyColor: '#9F9EB2',
         titleFont: { family: 'Inter', weight: 'bold' as const },
         bodyFont: { family: 'Inter' }
       }
     },
     scales: {
       x: {
-        grid: { color: 'rgba(228, 228, 231, 0.3)' },
-        ticks: { color: '#71717A', font: { family: 'Inter', size: 10 } }
+        grid: { color: 'rgba(255, 255, 255, 0.04)' },
+        ticks: { color: '#9F9EB2', font: { family: 'Inter', size: 10 } }
       },
       y: {
         min: 0,
         suggestedMax: 15,
-        grid: { color: 'rgba(228, 228, 231, 0.3)' },
-        ticks: { color: '#71717A', font: { family: 'Inter' } }
+        grid: { color: 'rgba(255, 255, 255, 0.04)' },
+        ticks: { color: '#9F9EB2', font: { family: 'Inter' } }
       }
     }
   };
@@ -281,7 +281,7 @@ export const DashboardScreen: React.FC = () => {
           '#F59E0B'  // Ambre
         ],
         borderWidth: 2,
-        borderColor: '#FFFFFF',
+        borderColor: '#12111F',
       }
     ]
   };
@@ -293,13 +293,13 @@ export const DashboardScreen: React.FC = () => {
       legend: {
         position: 'right' as const,
         labels: {
-          color: '#09090B',
+          color: '#F4F4F6',
           font: { family: 'Inter', size: 12 }
         }
       },
       tooltip: {
-        backgroundColor: '#FFFFFF',
-        borderColor: '#E4E4E7',
+        backgroundColor: '#12111F',
+        borderColor: 'rgba(255, 255, 255, 0.08)',
         borderWidth: 1,
         callbacks: {
           label: function(context: any) {
