@@ -577,8 +577,14 @@ export const DashboardScreen: React.FC = () => {
             <span className={`stat-val ${netProfit >= 0 ? 'text-success' : 'text-red'}`}>
               {netProfit.toLocaleString('fr-FR')} €
             </span>
-            <span className="stat-subtext">
-              Marge nette: {totalCA > 0 ? ((netProfit / totalCA) * 100).toFixed(0) : '0'} %
+            <span className="stat-subtext" style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '4px' }}>
+              <span>Marge nette: {totalCA > 0 ? ((netProfit / totalCA) * 100).toFixed(0) : '0'} %</span>
+              <span style={{ fontWeight: 600, color: netProfit >= 0 ? 'var(--status-success)' : 'var(--status-warning)' }}>
+                {netProfit >= 0 
+                  ? `Seuil de rentabilité dépassé ! (+${netProfit.toLocaleString('fr-FR')} €)` 
+                  : `Point mort à ${Math.abs(netProfit).toLocaleString('fr-FR')} €`
+                }
+              </span>
             </span>
           </div>
         </div>

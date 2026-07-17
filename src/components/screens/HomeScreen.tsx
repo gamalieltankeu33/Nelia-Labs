@@ -228,7 +228,15 @@ export const HomeScreen: React.FC<{ setActiveScreen: (screen: string) => void }>
                 <span className={`stat-val ${netProfit >= 0 ? 'text-success' : 'text-error'}`}>
                   {netProfit.toLocaleString('fr-FR')} €
                 </span>
-                <span className="stat-subtext" style={{ marginTop: '6px' }}>Marge: {totalCA > 0 ? ((netProfit / totalCA) * 100).toFixed(0) : 0}%</span>
+                <span className="stat-subtext" style={{ marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span>Marge: {totalCA > 0 ? ((netProfit / totalCA) * 100).toFixed(0) : 0}%</span>
+                  <span style={{ fontWeight: 600, color: netProfit >= 0 ? 'var(--status-success)' : 'var(--status-warning)' }}>
+                    {netProfit >= 0 
+                      ? `Seuil atteint ! (+${netProfit.toLocaleString('fr-FR')} €)` 
+                      : `Seuil à ${Math.abs(netProfit).toLocaleString('fr-FR')} €`
+                    }
+                  </span>
+                </span>
               </div>
             </div>
 
