@@ -323,8 +323,12 @@ export const HomeScreen: React.FC<{ setActiveScreen: (screen: string) => void }>
               <button className="hdr-btn" onClick={() => setActiveScreen('prospects')} title="Prospection"><MessageSquare className="size-4" /></button>
               <button className="hdr-btn" title="Notifications"><Bell className="size-4" /></button>
             </div>
-            <div className="header-profile-avatar" onClick={() => setActiveScreen('today')}>
-              G
+            <div className="header-profile-avatar" onClick={() => setActiveScreen('today')} style={{ overflow: 'hidden' }}>
+              <img 
+                src="/avatar.jpg" 
+                alt="Gamaliel" 
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+              />
             </div>
           </div>
 

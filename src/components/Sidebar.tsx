@@ -124,6 +124,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="logo-icon-wrapper-premium">
             <CloudLightning className="logo-icon-premium" />
           </div>
+          <span className="logo-text-below">NEXT IA LABS</span>
         </div>
 
         <nav className="sidebar-nav">
@@ -191,11 +192,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }
 
         .sidebar-logo {
-          padding: 24px 0;
+          padding: 24px 0 16px 0;
           display: flex;
+          flex-direction: column;
           align-items: center;
           justify-content: center;
+          gap: 10px;
           border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo-text-below {
+          font-family: var(--font-heading);
+          font-weight: 700;
+          font-size: 11px;
+          color: #FFFFFF;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
         }
 
         .logo-icon-wrapper-premium {
