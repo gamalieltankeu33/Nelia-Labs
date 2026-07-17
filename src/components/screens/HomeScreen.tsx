@@ -5,17 +5,45 @@ import {
   calculatePremiumCA, 
   calculateDigitalCA, 
   calculateCollabsCA,
-  calculateChargesForMonth
+  calculateChargesForMonth,
+  calculateTotalCA
 } from '../../utils/calculations';
 import { 
   TrendingUp, 
   Users, 
   FileText, 
-  Briefcase, 
-  ChevronRight,
   Sparkles,
-  DollarSign
+  DollarSign,
+  Bell,
+  MessageSquare,
+  Calendar,
+  CheckSquare,
+  ArrowUpRight,
+  Target
 } from 'lucide-react';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Filler,
+  Legend
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Filler,
+  Legend
+);
 
 export const HomeScreen: React.FC<{ setActiveScreen: (screen: string) => void }> = ({ setActiveScreen }) => {
   const { 
@@ -53,181 +81,346 @@ export const HomeScreen: React.FC<{ setActiveScreen: (screen: string) => void }>
   // Monthly contents
   const monthlyContents = contents.filter(c => c.date.startsWith(currentMonth)).length;
 
-  // Last 5 Sales/Collabs combined
+  // Generate data for the line chart (last 6 months CA vs Objective)
+  const yearStr = new Date().getFullYear().toString();
+  const currentMonthNum = new Date().getMonth() + 1; // 1-indexed
+  
+  const last6MonthsKeys: string[] = [];
+  const last6MonthsLabels: string[] = [];
+  
+  for (let i = 5; i >= 0; i--) {
+    let m = currentMonthNum - i;
+    let y = parseInt(yearStr, 10);
+    if (m <= 0) {
+      m += 12;
+      y -= 1;
+    }
+    const key = `${y}-${String(m).padStart(2, '0')}`;
+    last6MonthsKeys.push(key);
+    
+    const dateObj = new Date(y, m - 1, 2);
+    const label = dateObj.toLocaleDateString('fr-FR', { month: 'short' });
+    last6MonthsLabels.push(label.charAt(0).toUpperCase() + label.slice(1));
+  }
+  
+  const chartRealCA = last6MonthsKeys.map(k => 
+    calculateTotalCA(k, launches[k], prospects, sales, collabs)
+  );
+  
+  const chartObjectiveCA = last6MonthsKeys.map(k => 
+    objectives[k] || 5000
+  );
+
+  const lineChartData = {
+    labels: last6MonthsLabels,
+    datasets: [
+      {
+        label: 'Revenus Réels (€)',
+        data: chartRealCA,
+        borderColor: '#635BFF',
+        backgroundColor: 'rgba(99, 91, 255, 0.04)',
+        fill: true,
+        tension: 0.4,
+        borderWidth: 3,
+        pointBackgroundColor: '#635BFF',
+        pointHoverRadius: 7,
+      },
+      {
+        label: 'Objectif de Vente (€)',
+        data: chartObjectiveCA,
+        borderColor: '#94A3B8',
+        borderDash: [5, 5],
+        backgroundColor: 'transparent',
+        fill: false,
+        tension: 0.4,
+        borderWidth: 2,
+        pointBackgroundColor: '#94A3B8',
+      }
+    ]
+  };
+
+  const lineChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false, // Custom header instead
+      },
+      tooltip: {
+        backgroundColor: '#FFFFFF',
+        borderColor: '#E2E8F0',
+        borderWidth: 1,
+        titleColor: '#0F172A',
+        bodyColor: '#475569',
+        titleFont: { family: 'Inter', weight: 'bold' as const },
+        bodyFont: { family: 'Inter' }
+      }
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { color: '#94A3B8', font: { family: 'Inter', size: 11 } }
+      },
+      y: {
+        grid: { color: '#F1F5F9' },
+        ticks: { color: '#94A3B8', font: { family: 'Inter', size: 11 } }
+      }
+    }
+  };
+
+  // Last 4 Sales/Collabs combined (Recent Emails style)
   const recentActivities = [
     ...sales.map(s => ({ id: s.id, type: 'Vente', desc: s.product, value: s.price, date: s.date, channel: s.channel })),
     ...collabs.map(c => ({ id: c.id, type: 'Partenariat', desc: `Collab ${c.brand}`, value: c.amount, date: c.publishDate, channel: c.brand }))
-  ].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
+  ].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 4);
 
   return (
     <div className="fade-in home-container">
-      {/* Welcome Banner */}
-      <div className="welcome-banner card">
-        <div className="welcome-text">
-          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-            <span className="welcome-tag"><Sparkles className="size-3 text-violet inline mr-1" /> NEXT IA LABS COCKPIT</span>
-            <span className="system-status-indicator">
-              <span className="system-status-dot" />
-              Système connecté à Supabase
-            </span>
+      {/* 2-Column Home Layout */}
+      <div className="home-grid">
+        
+        {/* Left/Center Main Dashboard Column */}
+        <div className="home-main-col">
+          {/* Welcome Banner */}
+          <div className="welcome-banner card">
+            <div className="welcome-text">
+              <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                <span className="welcome-tag"><Sparkles className="size-3 text-violet inline mr-1" /> NEXT IA LABS COCKPIT</span>
+                <span className="system-status-indicator">
+                  <span className="system-status-dot" />
+                  Système connecté à Supabase
+                </span>
+              </div>
+              <h1 className="welcome-title">Bonjour Gamaliel 👋</h1>
+              <p className="welcome-subtitle">
+                Ravi de vous revoir. Voici un aperçu rapide des performances de votre business en ce mois de {currentMonthName}.
+              </p>
+            </div>
           </div>
-          <h1 className="welcome-title">Bonjour Gamaliel 👋</h1>
-          <p className="welcome-subtitle">
-            Ravi de vous revoir. Voici un aperçu rapide des performances de votre business en ce mois de {currentMonthName}.
-          </p>
-        </div>
-      </div>
 
-      {/* 4 Financial KPIs Grid */}
-      <div className="grid-cols-4" style={{ marginTop: '12px' }}>
-        {/* KPI: Chiffre d'Affaires */}
-        <div className="card stat-card" onClick={() => setActiveScreen('dashboard')} style={{ cursor: 'pointer' }}>
-          <div className="stat-icon-wrapper content-icon">
-            <TrendingUp className="stat-icon" />
+          {/* 4 Financial KPIs Grid */}
+          <div className="stats-grid-home" style={{ marginTop: '24px' }}>
+            {/* KPI: Chiffre d'Affaires */}
+            <div className="card stat-card" onClick={() => setActiveScreen('dashboard')} style={{ cursor: 'pointer' }}>
+              <div className="stat-icon-wrapper content-icon">
+                <TrendingUp className="stat-icon" />
+              </div>
+              <div className="stat-meta">
+                <span className="stat-label">Chiffre d'Affaires</span>
+                <span className="stat-val">{totalCA.toLocaleString('fr-FR')} €</span>
+                <div className="progress-bar-container" style={{ marginTop: '8px' }}>
+                  <div className="progress-bar-track">
+                    <div 
+                      className="progress-bar-fill" 
+                      style={{ width: `${Math.min(objectiveProgress, 100)}%` }}
+                    />
+                  </div>
+                  <span className="stat-subtext">Prog: {objectiveProgress.toFixed(0)}%</span>
+                </div>
+              </div>
+            </div>
+
+            {/* KPI: Profit Net */}
+            <div className="card stat-card" onClick={() => setActiveScreen('dashboard')} style={{ cursor: 'pointer' }}>
+              <div className="stat-icon-wrapper" style={{ color: netProfit >= 0 ? 'var(--status-success)' : 'var(--status-error)', backgroundColor: netProfit >= 0 ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)' }}>
+                <DollarSign className="stat-icon" />
+              </div>
+              <div className="stat-meta">
+                <span className="stat-label">Bénéfice Net</span>
+                <span className={`stat-val ${netProfit >= 0 ? 'text-success' : 'text-error'}`}>
+                  {netProfit.toLocaleString('fr-FR')} €
+                </span>
+                <span className="stat-subtext" style={{ marginTop: '6px' }}>Marge: {totalCA > 0 ? ((netProfit / totalCA) * 100).toFixed(0) : 0}%</span>
+              </div>
+            </div>
+
+            {/* KPI: Prospects Actifs */}
+            <div className="card stat-card" onClick={() => setActiveScreen('prospects')} style={{ cursor: 'pointer' }}>
+              <div className="stat-icon-wrapper prospects-icon">
+                <Users className="stat-icon" />
+              </div>
+              <div className="stat-meta">
+                <span className="stat-label">Prospects Actifs</span>
+                <span className="stat-val">{activeProspects}</span>
+                <span className="stat-subtext" style={{ marginTop: '6px' }}>Dans le pipeline</span>
+              </div>
+            </div>
+
+            {/* KPI: Contenus Créés */}
+            <div className="card stat-card" onClick={() => setActiveScreen('content')} style={{ cursor: 'pointer' }}>
+              <div className="stat-icon-wrapper collab-icon">
+                <FileText className="stat-icon" />
+              </div>
+              <div className="stat-meta">
+                <span className="stat-label">Contenus Créés</span>
+                <span className="stat-val">{monthlyContents}</span>
+                <span className="stat-subtext" style={{ marginTop: '6px' }}>Publiés ce mois</span>
+              </div>
+            </div>
           </div>
-          <div className="stat-meta">
-            <span className="stat-label">Chiffre d'Affaires</span>
-            <span className="stat-val">{totalCA.toLocaleString('fr-FR')} €</span>
-            <div className="progress-bar-container" style={{ marginTop: '8px' }}>
-              <div className="progress-bar-track">
+
+          {/* Large Performance Line Chart */}
+          <div className="card performance-chart-card" style={{ marginTop: '24px' }}>
+            <div className="chart-header">
+              <div>
+                <h3 className="section-title">Revenus & Croissance</h3>
+                <p className="section-subtitle">Comparaison sur les 6 derniers mois par rapport à l'objectif de vente</p>
+              </div>
+              <div className="chart-legend-custom">
+                <span className="legend-item"><span className="legend-dot bg-violet" /> CA Réel</span>
+                <span className="legend-item"><span className="legend-dot bg-slate" /> Objectif</span>
+              </div>
+            </div>
+            <div style={{ height: '240px', position: 'relative', marginTop: '16px' }}>
+              <Line data={lineChartData} options={lineChartOptions} />
+            </div>
+          </div>
+
+          {/* Recent Activities List (Recent Emails style) */}
+          <div className="card recent-list-card" style={{ marginTop: '24px' }}>
+            <h3 className="section-title">Transactions Récentes</h3>
+            <p className="section-subtitle">Dernières ventes de produits digitaux et collaborations de marques enregistrées</p>
+            
+            <div className="recent-list-wrapper" style={{ marginTop: '16px' }}>
+              {recentActivities.length === 0 ? (
+                <p className="empty-text">Aucune transaction récente enregistrée.</p>
+              ) : (
+                recentActivities.map(activity => (
+                  <div key={activity.id} className="recent-activity-row">
+                    <div className="recent-activity-left">
+                      <div className={`avatar-initials ${activity.type === 'Vente' ? 'avatar-sale' : 'avatar-collab'}`}>
+                        {activity.type === 'Vente' ? 'D' : 'C'}
+                      </div>
+                      <div className="recent-activity-meta">
+                        <span className="activity-desc">{activity.desc}</span>
+                        <span className="activity-details">Via {activity.channel} • {new Date(activity.date).toLocaleDateString('fr-FR')}</span>
+                      </div>
+                    </div>
+                    <div className="recent-activity-right">
+                      <span className="activity-value">+{activity.value.toLocaleString('fr-FR')} €</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Sidebar Context Column */}
+        <div className="home-sidebar-col">
+          {/* Header Action Menu & Avatar */}
+          <div className="sidebar-action-header">
+            <div className="header-icon-buttons">
+              <button className="hdr-btn" onClick={() => setActiveScreen('today')} title="Aujourd'hui"><Calendar className="size-4" /></button>
+              <button className="hdr-btn" onClick={() => setActiveScreen('prospects')} title="Prospection"><MessageSquare className="size-4" /></button>
+              <button className="hdr-btn" title="Notifications"><Bell className="size-4" /></button>
+            </div>
+            <div className="header-profile-avatar" onClick={() => setActiveScreen('today')}>
+              G
+            </div>
+          </div>
+
+          {/* Formation Status / Goal Card */}
+          <div className="card context-goal-card" style={{ marginTop: '12px' }}>
+            <span className="context-card-tag">STATUT DES RÉSULTATS</span>
+            <h3 className="context-card-title">Objectif du mois</h3>
+            <p className="context-card-desc">En cours de traitement</p>
+            
+            <div className="progress-bar-container" style={{ marginTop: '16px' }}>
+              <div className="progress-bar-track" style={{ height: '8px' }}>
                 <div 
-                  className="progress-bar-fill" 
+                  className="progress-bar-fill fill-glow" 
                   style={{ width: `${Math.min(objectiveProgress, 100)}%` }}
                 />
               </div>
-              <span className="stat-subtext">Obj: {monthlyObjective.toLocaleString('fr-FR')} € ({objectiveProgress.toFixed(0)}%)</span>
+              <div className="progress-bar-meta-row" style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
+                <span className="progress-meta-text">Estimation complétion</span>
+                <span className="progress-meta-text font-bold" style={{ color: 'var(--accent-violet)' }}>{objectiveProgress.toFixed(0)} %</span>
+              </div>
+            </div>
+
+            <button className="btn-primary btn-full-width" style={{ marginTop: '20px' }} onClick={() => setActiveScreen('dashboard')}>
+              Voir les statistiques <ArrowUpRight className="size-4 ml-1" />
+            </button>
+          </div>
+
+          {/* Your to-Do list */}
+          <div className="card todo-list-card" style={{ marginTop: '24px' }}>
+            <h4 className="todo-card-title">Vos actions du jour</h4>
+            
+            <div className="todo-items-wrapper" style={{ marginTop: '16px' }}>
+              <div className="todo-item-row" onClick={() => setActiveScreen('prospects')}>
+                <div className="todo-bullet">
+                  <Users className="size-4 text-violet" />
+                </div>
+                <div className="todo-meta">
+                  <span className="todo-title">Suivi des prospects</span>
+                  <span className="todo-desc">{activeProspects} prospects dans le tunnel</span>
+                </div>
+              </div>
+
+              <div className="todo-item-row" onClick={() => setActiveScreen('content')}>
+                <div className="todo-bullet">
+                  <FileText className="size-4 text-violet" />
+                </div>
+                <div className="todo-meta">
+                  <span className="todo-title">Création de contenu</span>
+                  <span className="todo-desc">Enregistrer un nouveau script</span>
+                </div>
+              </div>
+
+              <div className="todo-item-row" onClick={() => setActiveScreen('today')}>
+                <div className="todo-bullet">
+                  <CheckSquare className="size-4 text-violet" />
+                </div>
+                <div className="todo-meta">
+                  <span className="todo-title">Actions quotidiennes</span>
+                  <span className="todo-desc">Consigner les KPIs du jour</span>
+                </div>
+              </div>
+
+              <div className="todo-item-row" onClick={() => setActiveScreen('dashboard')}>
+                <div className="todo-bullet">
+                  <Target className="size-4 text-violet" />
+                </div>
+                <div className="todo-meta">
+                  <span className="todo-title">Objectifs long terme</span>
+                  <span className="todo-desc">Analyser le rapport annuel</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* KPI: Profit Net */}
-        <div className="card stat-card" onClick={() => setActiveScreen('dashboard')} style={{ cursor: 'pointer' }}>
-          <div className="stat-icon-wrapper" style={{ color: netProfit >= 0 ? 'var(--status-success)' : 'var(--status-error)' }}>
-            <DollarSign className="stat-icon" />
-          </div>
-          <div className="stat-meta">
-            <span className="stat-label">Bénéfice Net</span>
-            <span className={`stat-val ${netProfit >= 0 ? 'text-success' : 'text-red'}`}>{netProfit.toLocaleString('fr-FR')} €</span>
-            <span className="stat-subtext">Marge net: {totalCA > 0 ? ((netProfit / totalCA) * 100).toFixed(0) : '0'}%</span>
-          </div>
-        </div>
-
-        {/* KPI: Active Prospects */}
-        <div className="card stat-card" onClick={() => setActiveScreen('prospects')} style={{ cursor: 'pointer' }}>
-          <div className="stat-icon-wrapper" style={{ color: '#3B82F6' }}>
-            <Users className="stat-icon" />
-          </div>
-          <div className="stat-meta">
-            <span className="stat-label">Prospects Actifs</span>
-            <span className="stat-val">{activeProspects}</span>
-            <span className="stat-subtext">Pipeline commercial en cours</span>
-          </div>
-        </div>
-
-        {/* KPI: Published Content */}
-        <div className="card stat-card" onClick={() => setActiveScreen('content')} style={{ cursor: 'pointer' }}>
-          <div className="stat-icon-wrapper" style={{ color: '#F59E0B' }}>
-            <FileText className="stat-icon" />
-          </div>
-          <div className="stat-meta">
-            <span className="stat-label">Contenus créés</span>
-            <span className="stat-val">{monthlyContents}</span>
-            <span className="stat-subtext">Vidéos et posts ce mois-ci</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Section: Recent Activities & Shortcuts */}
-      <div className="grid-cols-3" style={{ marginTop: '16px' }}>
-        {/* Recent Transactions Table */}
-        <div className="card" style={{ gridColumn: 'span 2' }}>
-          <h3 className="section-title-discrete" style={{ marginBottom: '20px' }}>
-            <TrendingUp className="size-4 text-violet" /> Ventes & Partenariats Récents
-          </h3>
-          {recentActivities.length === 0 ? (
-            <div className="empty-state">
-              <span className="empty-text">Aucune transaction enregistrée.</span>
-              <button className="btn btn-secondary btn-sm" onClick={() => setActiveScreen('today')} style={{ marginTop: '12px' }}>
-                Saisir une vente
-              </button>
-            </div>
-          ) : (
-            <div className="table-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Type</th>
-                    <th>Description</th>
-                    <th>Date</th>
-                    <th style={{ textAlign: 'right' }}>Montant</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentActivities.map((act, idx) => (
-                    <tr key={idx}>
-                      <td>
-                        <span className={`badge ${act.type === 'Vente' ? 'pastille-success' : 'badge-collab'}`}>
-                          {act.type}
-                        </span>
-                      </td>
-                      <td style={{ fontWeight: 500 }}>{act.desc}</td>
-                      <td style={{ color: 'var(--text-secondary)' }}>
-                        {new Date(act.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
-                      </td>
-                      <td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-primary)' }}>
-                        {act.value.toLocaleString('fr-FR')} €
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* Quick Access Actions */}
-        <div className="card shortcut-card">
-          <h3 className="section-title-discrete" style={{ marginBottom: '20px' }}>
-            <Briefcase className="size-4 text-violet" /> Raccourcis Rapides
-          </h3>
-          <div className="shortcut-list">
-            <button className="shortcut-btn" onClick={() => setActiveScreen('today')}>
-              <div className="shortcut-info">
-                <span className="shortcut-title">Cockpit quotidien</span>
-                <span className="shortcut-desc">Enregistrer vos actions du jour</span>
-              </div>
-              <ChevronRight className="size-4" />
-            </button>
-            <button className="shortcut-btn" onClick={() => setActiveScreen('prospects')}>
-              <div className="shortcut-info">
-                <span className="shortcut-title">Pipeline commercial</span>
-                <span className="shortcut-desc">Gérer vos 10 étapes de vente</span>
-              </div>
-              <ChevronRight className="size-4" />
-            </button>
-            <button className="shortcut-btn" onClick={() => setActiveScreen('launch')}>
-              <div className="shortcut-info">
-                <span className="shortcut-title">Lancement mensuel</span>
-                <span className="shortcut-desc">Vérifier vos objectifs de CA</span>
-              </div>
-              <ChevronRight className="size-4" />
-            </button>
-            <button className="shortcut-btn" onClick={() => setActiveScreen('expenses')}>
-              <div className="shortcut-info">
-                <span className="shortcut-title">Charges & Sauvegarde</span>
-                <span className="shortcut-desc">Gérer vos dépenses de business</span>
-              </div>
-              <ChevronRight className="size-4" />
-            </button>
-          </div>
-        </div>
       </div>
 
       <style>{`
         .home-container {
           display: flex;
           flex-direction: column;
+        }
+
+        .home-grid {
+          display: grid;
+          grid-template-columns: 1fr 340px;
           gap: 32px;
+          align-items: start;
+        }
+
+        @media (max-width: 1200px) {
+          .home-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        .home-main-col {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .home-sidebar-col {
+          display: flex;
+          flex-direction: column;
         }
 
         .welcome-banner {
@@ -301,19 +494,23 @@ export const HomeScreen: React.FC<{ setActiveScreen: (screen: string) => void }>
           line-height: 1.6;
         }
 
-        .section-title-discrete {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 12px;
-          font-weight: 700;
-          text-transform: uppercase;
-          color: var(--text-secondary);
-          letter-spacing: 0.05em;
-          margin-bottom: 12px;
+        .stats-grid-home {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 20px;
         }
 
+        @media (max-width: 1400px) {
+          .stats-grid-home {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
 
+        @media (max-width: 640px) {
+          .stats-grid-home {
+            grid-template-columns: 1fr;
+          }
+        }
 
         .progress-bar-container {
           width: 100%;
@@ -337,72 +534,251 @@ export const HomeScreen: React.FC<{ setActiveScreen: (screen: string) => void }>
           transition: width 0.4s ease;
         }
 
-        .badge-collab {
-          background-color: rgba(99, 91, 255, 0.08);
-          color: var(--accent-violet);
-          border: 1px solid rgba(99, 91, 255, 0.15);
+        .fill-glow {
+          box-shadow: 0 0 8px rgba(99, 91, 255, 0.4);
         }
 
-        .empty-state {
-          padding: 32px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          text-align: center;
-        }
-
-        .empty-text {
-          font-size: 13.5px;
+        .progress-meta-text {
+          font-size: 11px;
           color: var(--text-secondary);
         }
 
-        /* Shortcuts */
-        .shortcut-card {
-          display: flex;
-          flex-direction: column;
+        .performance-chart-card {
+          padding: 24px;
         }
 
-        .shortcut-list {
+        .chart-header {
           display: flex;
-          flex-direction: column;
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: wrap;
           gap: 12px;
         }
 
-        .shortcut-btn {
-          width: 100%;
-          background: #FFFFFF;
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
-          padding: 16px;
+        .chart-legend-custom {
+          display: flex;
+          gap: 16px;
+          font-size: 12px;
+          color: var(--text-secondary);
+        }
+
+        .legend-item {
           display: flex;
           align-items: center;
+          gap: 6px;
+        }
+
+        .legend-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 9999px;
+          display: inline-block;
+        }
+
+        .bg-violet { background-color: #635BFF; }
+        .bg-slate { background-color: #94A3B8; }
+
+        .recent-list-card {
+          padding: 24px;
+        }
+
+        .recent-activity-row {
+          display: flex;
           justify-content: space-between;
-          text-align: left;
-          cursor: pointer;
-          transition: var(--transition-fast);
+          align-items: center;
+          padding: 12px 0;
+          border-bottom: 1px solid var(--border-color);
         }
 
-        .shortcut-btn:hover {
-          border-color: var(--accent-violet);
-          background-color: #FAFAFF;
-          transform: translateX(2px);
-          box-shadow: 0 4px 12px rgba(99, 91, 255, 0.04);
+        .recent-activity-row:last-child {
+          border-bottom: none;
         }
 
-        .shortcut-info {
+        .recent-activity-left {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .avatar-initials {
+          width: 36px;
+          height: 36px;
+          border-radius: 9999px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12.5px;
+          font-weight: 700;
+        }
+
+        .avatar-sale {
+          background-color: rgba(99, 91, 255, 0.08);
+          color: var(--accent-violet);
+        }
+
+        .avatar-collab {
+          background-color: rgba(59, 130, 246, 0.08);
+          color: #3B82F6;
+        }
+
+        .recent-activity-meta {
           display: flex;
           flex-direction: column;
           gap: 2px;
         }
 
-        .shortcut-title {
+        .activity-desc {
           font-size: 13.5px;
           font-weight: 600;
           color: var(--text-primary);
         }
 
-        .shortcut-desc {
+        .activity-details {
+          font-size: 11px;
+          color: var(--text-secondary);
+        }
+
+        .activity-value {
+          font-size: 14px;
+          font-weight: 700;
+          color: var(--status-success);
+        }
+
+        /* Sidebar profile and icons */
+        .sidebar-action-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 8px 0;
+          margin-bottom: 12px;
+        }
+
+        .header-icon-buttons {
+          display: flex;
+          gap: 8px;
+        }
+
+        .hdr-btn {
+          width: 36px;
+          height: 36px;
+          border-radius: 9999px;
+          background-color: #FFFFFF;
+          border: 1px solid var(--border-color);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          color: var(--text-secondary);
+          transition: var(--transition-fast);
+        }
+
+        .hdr-btn:hover {
+          color: var(--accent-violet);
+          border-color: var(--accent-violet);
+          background-color: rgba(99, 91, 255, 0.02);
+        }
+
+        .header-profile-avatar {
+          width: 36px;
+          height: 36px;
+          border-radius: 9999px;
+          background-color: var(--accent-violet);
+          color: #FFFFFF;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
+          font-size: 13.5px;
+          cursor: pointer;
+          box-shadow: 0 4px 12px rgba(99, 91, 255, 0.2);
+        }
+
+        /* Context Goal Card */
+        .context-goal-card {
+          padding: 24px;
+        }
+
+        .context-card-tag {
+          font-size: 9px;
+          font-weight: 700;
+          color: var(--text-muted);
+          letter-spacing: 0.08em;
+        }
+
+        .context-card-title {
+          font-size: 18px;
+          font-weight: 700;
+          margin-top: 4px;
+          margin-bottom: 2px;
+          color: var(--text-primary);
+        }
+
+        .context-card-desc {
+          font-size: 12px;
+          color: var(--text-secondary);
+        }
+
+        .btn-full-width {
+          width: 100%;
+        }
+
+        /* Todo List Context Widget */
+        .todo-list-card {
+          padding: 24px;
+        }
+
+        .todo-card-title {
+          font-size: 14px;
+          font-weight: 700;
+          color: var(--text-primary);
+          text-transform: uppercase;
+          letter-spacing: 0.02em;
+        }
+
+        .todo-items-wrapper {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        .todo-item-row {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 8px;
+          border-radius: var(--radius-md);
+          cursor: pointer;
+          transition: var(--transition-fast);
+        }
+
+        .todo-item-row:hover {
+          background-color: #F8FAFC;
+          transform: translateX(2px);
+        }
+
+        .todo-bullet {
+          width: 28px;
+          height: 28px;
+          border-radius: 9999px;
+          background-color: #F1F5F9;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .todo-meta {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+
+        .todo-title {
+          font-size: 13px;
+          font-weight: 600;
+          color: var(--text-primary);
+        }
+
+        .todo-desc {
           font-size: 11px;
           color: var(--text-secondary);
         }

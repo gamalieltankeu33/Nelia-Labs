@@ -366,12 +366,12 @@ tr:hover td {
 
 .main-content {
   flex: 1;
-  padding: 64px 48px; /* Great respiration spacing */
+  padding: 40px 48px; /* Clean premium breathing space */
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 48px; /* Large space between sections */
-  margin-left: var(--sidebar-width);
+  gap: 32px;
+  margin-left: calc(var(--sidebar-width) + 32px);
   transition: margin-left var(--transition-normal);
   padding-bottom: 100px;
 }

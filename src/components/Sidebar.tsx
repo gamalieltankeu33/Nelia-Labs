@@ -177,16 +177,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <style>{`
         .sidebar {
           width: var(--sidebar-width);
-          background-color: #F8FAFC;
-          border-right: 1px solid var(--border-color);
-          height: 100vh;
+          background: linear-gradient(135deg, #635BFF 0%, #4F46E5 100%);
+          border: none;
+          height: calc(100vh - 32px);
           position: fixed;
-          left: 0;
-          top: 0;
+          left: 16px;
+          top: 16px;
           display: flex;
           flex-direction: column;
           z-index: 100;
           transition: transform var(--transition-normal);
+          border-radius: 24px;
+          box-shadow: 0 10px 40px rgba(99, 91, 255, 0.15);
+          overflow: hidden;
         }
 
         .sidebar-logo {
@@ -194,11 +197,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           display: flex;
           align-items: center;
           gap: 12px;
-          border-bottom: 1px solid var(--border-color);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .logo-icon-dark {
-          color: var(--accent-violet);
+          color: #FFFFFF;
           width: 24px;
           height: 24px;
         }
@@ -213,12 +216,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
           font-weight: 700;
           font-size: 16px;
           letter-spacing: 0.05em;
-          color: var(--text-primary);
+          color: #FFFFFF;
         }
 
         .logo-tagline {
           font-size: 10px;
-          color: var(--text-secondary);
+          color: rgba(255, 255, 255, 0.7);
           letter-spacing: 0.01em;
           font-weight: 500;
         }
@@ -239,7 +242,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           padding: 10px 14px;
           background: none;
           border: none;
-          color: var(--text-secondary);
+          color: rgba(255, 255, 255, 0.75);
           border-radius: var(--radius-md);
           cursor: pointer;
           font-family: var(--font-body);
@@ -251,29 +254,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }
 
         .nav-item:hover {
-          background-color: #F1F5F9;
-          color: var(--text-primary);
+          background-color: rgba(255, 255, 255, 0.08);
+          color: #FFFFFF;
+          transform: translateX(2px);
         }
 
         .nav-item-active {
-          background: linear-gradient(135deg, rgba(99, 91, 255, 0.08) 0%, rgba(99, 91, 255, 0.02) 100%);
-          border: 1px solid rgba(99, 91, 255, 0.12);
-          border-left: 3.5px solid var(--accent-violet);
-          color: var(--accent-violet);
+          background: rgba(255, 255, 255, 0.15);
+          color: #FFFFFF;
           font-weight: 600;
           border-radius: var(--radius-md);
-          box-shadow: 0 4px 12px rgba(99, 91, 255, 0.02);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
 
         /* Sidebar Goal Widget Styles */
         .sidebar-goal-widget {
           margin: 16px;
           padding: 16px;
-          background: linear-gradient(135deg, #FFFFFF 0%, #FAF9FF 100%);
-          border: 1px solid var(--border-color);
-          border-top: 1px solid rgba(255, 255, 255, 0.95);
+          background: rgba(255, 255, 255, 0.06);
+          border: 1px solid rgba(255, 255, 255, 0.08);
           border-radius: var(--radius-md);
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+          color: #FFFFFF;
         }
 
         .goal-widget-header {
@@ -286,7 +288,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         .goal-widget-title {
           font-size: 10px;
           font-weight: 700;
-          color: var(--text-secondary);
+          color: rgba(255, 255, 255, 0.75);
           text-transform: uppercase;
           letter-spacing: 0.05em;
         }
@@ -294,13 +296,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         .goal-widget-percent {
           font-size: 11px;
           font-weight: 700;
-          color: var(--accent-violet);
+          color: #FFFFFF;
         }
 
         .goal-widget-bar-track {
           width: 100%;
           height: 6px;
-          background-color: #E2E8F0;
+          background-color: rgba(255, 255, 255, 0.15);
           border-radius: 9999px;
           overflow: hidden;
           margin-bottom: 8px;
@@ -308,14 +310,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         .goal-widget-bar-fill {
           height: 100%;
-          background-color: var(--accent-violet);
+          background-color: #FFFFFF;
           border-radius: 9999px;
           transition: width 0.4s ease;
         }
 
         .goal-widget-footer {
           font-size: 11px;
-          color: var(--text-muted);
+          color: rgba(255, 255, 255, 0.6);
           font-weight: 600;
           font-variant-numeric: tabular-nums;
         }
@@ -323,18 +325,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
         .nav-icon {
           width: 18px;
           height: 18px;
-          color: var(--text-secondary);
+          color: rgba(255, 255, 255, 0.75);
           transition: var(--transition-fast);
         }
 
         .nav-icon-active {
-          color: var(--accent-violet);
+          color: #FFFFFF;
         }
 
         .sidebar-footer {
           padding: 16px;
-          border-top: 1px solid var(--border-color);
-          background-color: #F8FAFC;
+          border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .status-indicator {
@@ -345,8 +346,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           font-weight: 600;
           padding: 6px 10px;
           border-radius: var(--radius-md);
-          background-color: var(--bg-input);
-          border: 1px solid var(--border-color);
+          background-color: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.1);
           text-transform: uppercase;
           letter-spacing: 0.02em;
         }
@@ -370,7 +371,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }
 
         .status-idle {
-          color: var(--text-muted);
+          color: rgba(255, 255, 255, 0.5);
         }
 
         .animate-spin {
@@ -422,7 +423,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           .sidebar {
             transform: translateX(-100%);
             top: 56px;
+            left: 0;
             height: calc(100vh - 56px - 64px);
+            margin: 0;
+            border-radius: 0;
           }
 
           .sidebar-open {
