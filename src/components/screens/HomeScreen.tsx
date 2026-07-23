@@ -4,9 +4,11 @@ import {
   calculateLaunchCA, 
   calculatePremiumCA, 
   calculateDigitalCA, 
-  calculateCollabsCA,
+  calculateCollabsContractedCA,
+  calculateCollabsCollectedCA,
   calculateChargesForMonth,
-  calculateTotalCA
+  calculateTotalCollectedCA,
+  calculateTotalContractedCA
 } from '../../utils/calculations';
 import { 
   TrendingUp, 
@@ -61,21 +63,28 @@ export const HomeScreen: React.FC<{ setActiveScreen: (screen: string) => void }>
   const currentMonth = new Date().toISOString().substring(0, 7); // YYYY-MM
   const currentMonthName = new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
 
-  // Calculations for current month
+  // Calculations for current month (Collected vs Contracted)
   const launch = launches[currentMonth];
   const launchCA = calculateLaunchCA(launch);
   const premiumCA = calculatePremiumCA(prospects, currentMonth);
   const digitalCA = calculateDigitalCA(sales, currentMonth);
-  const collabsCA = calculateCollabsCA(collabs, currentMonth);
-  const totalCA = launchCA + premiumCA + digitalCA + collabsCA;
+  const collabsCollectedCA = calculateCollabsCollectedCA(collabs, currentMonth);
+  const collabsContractedCA = calculateCollabsContractedCA(collabs, currentMonth);
+  
+  const totalCollectedCA = launchCA + premiumCA + digitalCA + collabsCollectedCA;
+  const totalContractedCA = launchCA + premiumCA + digitalCA + collabsContractedCA;
 
   const adsSpent = launch ? launch.adsSpent : 0;
   const charges = calculateChargesForMonth(expenses, currentMonth);
   const totalOutflow = charges + adsSpent;
-  const netProfit = totalCA - totalOutflow;
+  const netProfitCollected = totalCollectedCA - totalOutflow;
+  const netProfitContracted = totalContractedCA - totalOutflow;
 
   const monthlyObjective = objectives[currentMonth] || 5000;
-  const objectiveProgress = monthlyObjective > 0 ? (totalCA / monthlyObjective) * 100 : 0;
+  const objectiveProgressCollected = monthlyObjective > 0 ? (totalCollectedCA / monthlyObjective) * 100 : 0;
+
+  // Legacy mappings for safe local variables usage
+  const objectiveProgress = objectiveProgressCollected;
 
   // Active prospects count (not closed or lost)
   const activeProspects = prospects.filter(p => p.currentStatus !== 'Closé gagné' && p.currentStatus !== 'Perdu').length;
@@ -103,8 +112,12 @@ export const HomeScreen: React.FC<{ setActiveScreen: (screen: string) => void }>
     chartMonthsLabels.push(label.charAt(0).toUpperCase() + label.slice(1));
   }
   
-  const chartRealCA = chartMonthsKeys.map(k => 
-    calculateTotalCA(k, launches[k], prospects, sales, collabs)
+  const chartCollectedCA = chartMonthsKeys.map(k => 
+    calculateTotalCollectedCA(k, launches[k], prospects, sales, collabs)
+  );
+  
+  const chartContractedCA = chartMonthsKeys.map(k => 
+    calculateTotalContractedCA(k, launches[k], prospects, sales, collabs)
   );
   
   const chartObjectiveCA = chartMonthsKeys.map(k => 
@@ -115,8 +128,19 @@ export const HomeScreen: React.FC<{ setActiveScreen: (screen: string) => void }>
     labels: chartMonthsLabels,
     datasets: [
       {
-        label: 'Revenus Réels (€)',
-        data: chartRealCA,
+        label: 'Revenus Encaissés (€)',
+        data: chartCollectedCA,
+        borderColor: '#10B981',
+        backgroundColor: 'rgba(16, 185, 129, 0.04)',
+        fill: true,
+        tension: 0.4,
+        borderWidth: 3,
+        pointBackgroundColor: '#10B981',
+        pointHoverRadius: 7,
+      },
+      {
+        label: 'Revenus Contractés (€)',
+        data: chartContractedCA,
         borderColor: '#635BFF',
         backgroundColor: 'rgba(99, 91, 255, 0.04)',
         fill: true,
@@ -206,36 +230,38 @@ export const HomeScreen: React.FC<{ setActiveScreen: (screen: string) => void }>
                 <TrendingUp className="stat-icon" />
               </div>
               <div className="stat-meta">
-                <span className="stat-label">Chiffre d'Affaires</span>
-                <span className="stat-val">{totalCA.toLocaleString('fr-FR')} €</span>
+                <span className="stat-label">Chiffre d'Affaires Encaissé</span>
+                <span className="stat-val">{totalCollectedCA.toLocaleString('fr-FR')} €</span>
                 <div className="progress-bar-container" style={{ marginTop: '8px' }}>
                   <div className="progress-bar-track">
                     <div 
                       className="progress-bar-fill" 
-                      style={{ width: `${Math.min(objectiveProgress, 100)}%` }}
+                      style={{ width: `${Math.min(objectiveProgressCollected, 100)}%`, backgroundColor: '#10B981' }}
                     />
                   </div>
-                  <span className="stat-subtext">Prog: {objectiveProgress.toFixed(0)}%</span>
+                  <span className="stat-subtext" style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '4px' }}>
+                    <span>Prog: {objectiveProgressCollected.toFixed(0)}% | Contracté: {totalContractedCA.toLocaleString('fr-FR')} €</span>
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* KPI: Profit Net */}
             <div className="card stat-card" onClick={() => setActiveScreen('dashboard')} style={{ cursor: 'pointer' }}>
-              <div className="stat-icon-wrapper" style={{ color: netProfit >= 0 ? 'var(--status-success)' : 'var(--status-error)', backgroundColor: netProfit >= 0 ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)' }}>
+              <div className="stat-icon-wrapper" style={{ color: netProfitCollected >= 0 ? 'var(--status-success)' : 'var(--status-error)', backgroundColor: netProfitCollected >= 0 ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)' }}>
                 <DollarSign className="stat-icon" />
               </div>
               <div className="stat-meta">
-                <span className="stat-label">Bénéfice Net</span>
-                <span className={`stat-val ${netProfit >= 0 ? 'text-success' : 'text-error'}`}>
-                  {netProfit.toLocaleString('fr-FR')} €
+                <span className="stat-label">Bénéfice Net Encaissé</span>
+                <span className={`stat-val ${netProfitCollected >= 0 ? 'text-success' : 'text-error'}`}>
+                  {netProfitCollected.toLocaleString('fr-FR')} €
                 </span>
                 <span className="stat-subtext" style={{ marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span>Marge: {totalCA > 0 ? ((netProfit / totalCA) * 100).toFixed(0) : 0}%</span>
-                  <span style={{ fontWeight: 600, color: netProfit >= 0 ? 'var(--status-success)' : 'var(--status-warning)' }}>
-                    {netProfit >= 0 
-                      ? `Seuil atteint ! (+${netProfit.toLocaleString('fr-FR')} €)` 
-                      : `Seuil à ${Math.abs(netProfit).toLocaleString('fr-FR')} €`
+                  <span>Marge: {totalCollectedCA > 0 ? ((netProfitCollected / totalCollectedCA) * 100).toFixed(0) : 0}%</span>
+                  <span style={{ fontWeight: 600, color: netProfitCollected >= 0 ? 'var(--status-success)' : 'var(--status-warning)' }}>
+                    {netProfitCollected >= 0 
+                      ? `Seuil atteint ! (Contracté: ${netProfitContracted.toLocaleString('fr-FR')} €)` 
+                      : `Seuil à ${Math.abs(netProfitCollected).toLocaleString('fr-FR')} € (Contracté: ${netProfitContracted.toLocaleString('fr-FR')} €)`
                     }
                   </span>
                 </span>
@@ -275,7 +301,8 @@ export const HomeScreen: React.FC<{ setActiveScreen: (screen: string) => void }>
                 <p className="section-subtitle">Comparaison sur les 6 derniers mois par rapport à l'objectif de vente</p>
               </div>
               <div className="chart-legend-custom">
-                <span className="legend-item"><span className="legend-dot bg-violet" /> CA Réel</span>
+                <span className="legend-item"><span className="legend-dot" style={{ backgroundColor: '#10B981' }} /> CA Encaissé</span>
+                <span className="legend-item"><span className="legend-dot" style={{ backgroundColor: '#635BFF' }} /> CA Contracté</span>
                 <span className="legend-item"><span className="legend-dot bg-slate" /> Objectif</span>
               </div>
             </div>

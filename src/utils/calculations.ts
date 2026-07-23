@@ -38,10 +38,29 @@ export function calculateDigitalCA(sales: DigitalSale[], month: string): number 
 /**
  * Calcule le CA Collaborations pour un mois donné
  */
-export function calculateCollabsCA(collabs: CommercialCollab[], month: string): number {
+/**
+ * Calcule le CA Collaborations contracté pour un mois donné (Confirmé, Publié, Payé - exclut En discussion)
+ */
+export function calculateCollabsContractedCA(collabs: CommercialCollab[], month: string): number {
   return collabs
-    .filter(c => getYearMonth(c.publishDate) === month)
+    .filter(c => getYearMonth(c.publishDate) === month && c.status !== 'En discussion')
     .reduce((sum, c) => sum + c.amount, 0);
+}
+
+/**
+ * Calcule le CA Collaborations encaissé/collecté pour un mois donné (Payé uniquement)
+ */
+export function calculateCollabsCollectedCA(collabs: CommercialCollab[], month: string): number {
+  return collabs
+    .filter(c => getYearMonth(c.publishDate) === month && c.status === 'Payé')
+    .reduce((sum, c) => sum + c.amount, 0);
+}
+
+/**
+ * Calcule le CA Collaborations pour un mois donné (Legacy: par défaut Encaissé)
+ */
+export function calculateCollabsCA(collabs: CommercialCollab[], month: string): number {
+  return calculateCollabsCollectedCA(collabs, month);
 }
 
 /**
@@ -62,9 +81,9 @@ export function calculateChargesForMonth(expenses: Expense[], month: string): nu
 }
 
 /**
- * Calcule le CA total pour un mois donné
+ * Calcule le CA total contracté pour un mois donné
  */
-export function calculateTotalCA(
+export function calculateTotalContractedCA(
   month: string,
   launch: MonthlyLaunch | undefined,
   prospects: Prospect[],
@@ -74,12 +93,76 @@ export function calculateTotalCA(
   const launchCA = calculateLaunchCA(launch);
   const premiumCA = calculatePremiumCA(prospects, month);
   const digitalCA = calculateDigitalCA(sales, month);
-  const collabsCA = calculateCollabsCA(collabs, month);
+  const collabsCA = calculateCollabsContractedCA(collabs, month);
   return launchCA + premiumCA + digitalCA + collabsCA;
 }
 
 /**
- * Calcule le profit net pour un mois donné
+ * Calcule le CA total encaissé/collecté pour un mois donné
+ */
+export function calculateTotalCollectedCA(
+  month: string,
+  launch: MonthlyLaunch | undefined,
+  prospects: Prospect[],
+  sales: DigitalSale[],
+  collabs: CommercialCollab[]
+): number {
+  const launchCA = calculateLaunchCA(launch);
+  const premiumCA = calculatePremiumCA(prospects, month);
+  const digitalCA = calculateDigitalCA(sales, month);
+  const collabsCA = calculateCollabsCollectedCA(collabs, month);
+  return launchCA + premiumCA + digitalCA + collabsCA;
+}
+
+/**
+ * Calcule le CA total pour un mois donné (Legacy: par défaut Encaissé)
+ */
+export function calculateTotalCA(
+  month: string,
+  launch: MonthlyLaunch | undefined,
+  prospects: Prospect[],
+  sales: DigitalSale[],
+  collabs: CommercialCollab[]
+): number {
+  return calculateTotalCollectedCA(month, launch, prospects, sales, collabs);
+}
+
+/**
+ * Calcule le profit net contracté pour un mois donné
+ */
+export function calculateNetProfitContracted(
+  month: string,
+  launch: MonthlyLaunch | undefined,
+  prospects: Prospect[],
+  sales: DigitalSale[],
+  collabs: CommercialCollab[],
+  expenses: Expense[]
+): number {
+  const totalCA = calculateTotalContractedCA(month, launch, prospects, sales, collabs);
+  const charges = calculateChargesForMonth(expenses, month);
+  const adsSpent = launch ? launch.adsSpent : 0;
+  return totalCA - charges - adsSpent;
+}
+
+/**
+ * Calcule le profit net encaissé/collecté pour un mois donné
+ */
+export function calculateNetProfitCollected(
+  month: string,
+  launch: MonthlyLaunch | undefined,
+  prospects: Prospect[],
+  sales: DigitalSale[],
+  collabs: CommercialCollab[],
+  expenses: Expense[]
+): number {
+  const totalCA = calculateTotalCollectedCA(month, launch, prospects, sales, collabs);
+  const charges = calculateChargesForMonth(expenses, month);
+  const adsSpent = launch ? launch.adsSpent : 0;
+  return totalCA - charges - adsSpent;
+}
+
+/**
+ * Calcule le profit net pour un mois donné (Legacy: par défaut Encaissé)
  */
 export function calculateNetProfit(
   month: string,
@@ -89,10 +172,7 @@ export function calculateNetProfit(
   collabs: CommercialCollab[],
   expenses: Expense[]
 ): number {
-  const totalCA = calculateTotalCA(month, launch, prospects, sales, collabs);
-  const charges = calculateChargesForMonth(expenses, month);
-  const adsSpent = launch ? launch.adsSpent : 0;
-  return totalCA - charges - adsSpent;
+  return calculateNetProfitCollected(month, launch, prospects, sales, collabs, expenses);
 }
 
 /**

@@ -4,9 +4,11 @@ import {
   calculateLaunchCA, 
   calculatePremiumCA, 
   calculateDigitalCA, 
-  calculateCollabsCA, 
+  calculateCollabsContractedCA,
+  calculateCollabsCollectedCA,
   calculateChargesForMonth,
-  calculateTotalCA,
+  calculateTotalContractedCA,
+  calculateTotalCollectedCA,
   calculateMonthlyProspectStats,
   calculateDailyProspectingActivity,
   getYearMonth
@@ -70,6 +72,7 @@ export const DashboardScreen: React.FC = () => {
 
   const [isEditingObjective, setIsEditingObjective] = useState(false);
   const [objectiveInput, setObjectiveInput] = useState('');
+  const [revenueBreakdownType, setRevenueBreakdownType] = useState<'collected' | 'contracted'>('collected');
 
   // Extract all unique years dynamically from the store
   const availableYears = Array.from(new Set([
@@ -82,11 +85,13 @@ export const DashboardScreen: React.FC = () => {
   ])).sort().reverse();
 
   // Basic financial trackers
-  let totalCA = 0;
+  let totalCollectedCA = 0;
+  let totalContractedCA = 0;
   let totalOutflow = 0;
-  let netProfit = 0;
+  let netProfitCollected = 0;
+  let netProfitContracted = 0;
   let monthlyObjective = 0;
-  let objectiveProgress = 0;
+  let objectiveProgressCollected = 0;
   let monthlyContentsCount = 0;
   let adsSpent = 0;
   let charges = 0;
@@ -94,13 +99,15 @@ export const DashboardScreen: React.FC = () => {
   let digitalProductsBreakdown: { name: string; count: number; total: number }[] = [];
   
   let barChartLabels: string[] = [];
-  let barChartRealData: number[] = [];
+  let barChartCollectedData: number[] = [];
+  let barChartContractedData: number[] = [];
   let barChartObjectiveData: number[] = [];
   
   let cumulativeLaunch = 0;
   let cumulativePremium = 0;
   let cumulativeDigital = 0;
-  let cumulativeCollabs = 0;
+  let cumulativeCollabsCollected = 0;
+  let cumulativeCollabsContracted = 0;
 
   let chartTitle = '';
   let breakdownTitle = '';
@@ -111,17 +118,20 @@ export const DashboardScreen: React.FC = () => {
     const launchCA = calculateLaunchCA(launch);
     const premiumCA = calculatePremiumCA(prospects, selectedMonth);
     const digitalCA = calculateDigitalCA(sales, selectedMonth);
-    const collabsCA = calculateCollabsCA(collabs, selectedMonth);
-    totalCA = launchCA + premiumCA + digitalCA + collabsCA;
+    const collabsCollectedCA = calculateCollabsCollectedCA(collabs, selectedMonth);
+    const collabsContractedCA = calculateCollabsContractedCA(collabs, selectedMonth);
+    totalCollectedCA = launchCA + premiumCA + digitalCA + collabsCollectedCA;
+    totalContractedCA = launchCA + premiumCA + digitalCA + collabsContractedCA;
     
     adsSpent = launch ? launch.adsSpent : 0;
     charges = calculateChargesForMonth(expenses, selectedMonth);
     totalOutflow = charges + adsSpent;
-    netProfit = totalCA - totalOutflow;
+    netProfitCollected = totalCollectedCA - totalOutflow;
+    netProfitContracted = totalContractedCA - totalOutflow;
     
     monthlyContentsCount = contents.filter(c => getYearMonth(c.date) === selectedMonth).length;
     monthlyObjective = objectives[selectedMonth] || 5000;
-    objectiveProgress = monthlyObjective > 0 ? (totalCA / monthlyObjective) * 100 : 0;
+    objectiveProgressCollected = monthlyObjective > 0 ? (totalCollectedCA / monthlyObjective) * 100 : 0;
     
     const digitalProductsMap: Record<string, { count: number; total: number }> = {};
     sales.filter(s => getYearMonth(s.date) === selectedMonth).forEach(s => {
@@ -146,9 +156,13 @@ export const DashboardScreen: React.FC = () => {
       ? ['Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
       : ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'];
       
-    barChartRealData = semesterMonths.map(m => {
+    barChartCollectedData = semesterMonths.map(m => {
       const key = `${year}-${m}`;
-      return calculateTotalCA(key, launches[key], prospects, sales, collabs);
+      return calculateTotalCollectedCA(key, launches[key], prospects, sales, collabs);
+    });
+    barChartContractedData = semesterMonths.map(m => {
+      const key = `${year}-${m}`;
+      return calculateTotalContractedCA(key, launches[key], prospects, sales, collabs);
     });
     barChartObjectiveData = semesterMonths.map(m => {
       const key = `${year}-${m}`;
@@ -158,7 +172,8 @@ export const DashboardScreen: React.FC = () => {
     cumulativeLaunch = launchCA;
     cumulativePremium = premiumCA;
     cumulativeDigital = digitalCA;
-    cumulativeCollabs = collabsCA;
+    cumulativeCollabsCollected = collabsCollectedCA;
+    cumulativeCollabsContracted = collabsContractedCA;
 
     chartTitle = `Performance Semestrielle (${isSecondSemester ? 'S2' : 'S1'} ${year})`;
     const monthLabelName = new Date(selectedMonth + '-02').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
@@ -172,8 +187,10 @@ export const DashboardScreen: React.FC = () => {
       const lCA = calculateLaunchCA(l);
       const pCA = calculatePremiumCA(prospects, m);
       const dCA = calculateDigitalCA(sales, m);
-      const cCA = calculateCollabsCA(collabs, m);
-      totalCA += lCA + pCA + dCA + cCA;
+      const cCollectedCA = calculateCollabsCollectedCA(collabs, m);
+      const cContractedCA = calculateCollabsContractedCA(collabs, m);
+      totalCollectedCA += lCA + pCA + dCA + cCollectedCA;
+      totalContractedCA += lCA + pCA + dCA + cContractedCA;
       
       const aSpent = l ? l.adsSpent : 0;
       const chg = calculateChargesForMonth(expenses, m);
@@ -187,11 +204,13 @@ export const DashboardScreen: React.FC = () => {
       cumulativeLaunch += lCA;
       cumulativePremium += pCA;
       cumulativeDigital += dCA;
-      cumulativeCollabs += cCA;
+      cumulativeCollabsCollected += cCollectedCA;
+      cumulativeCollabsContracted += cContractedCA;
     });
     
-    netProfit = totalCA - totalOutflow;
-    objectiveProgress = monthlyObjective > 0 ? (totalCA / monthlyObjective) * 100 : 0;
+    netProfitCollected = totalCollectedCA - totalOutflow;
+    netProfitContracted = totalContractedCA - totalOutflow;
+    objectiveProgressCollected = monthlyObjective > 0 ? (totalCollectedCA / monthlyObjective) * 100 : 0;
 
     const digitalProductsMap: Record<string, { count: number; total: number }> = {};
     sales.filter(s => s.date.startsWith(selectedYear)).forEach(s => {
@@ -207,7 +226,8 @@ export const DashboardScreen: React.FC = () => {
     }));
 
     barChartLabels = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
-    barChartRealData = yearMonths.map(m => calculateTotalCA(m, launches[m], prospects, sales, collabs));
+    barChartCollectedData = yearMonths.map(m => calculateTotalCollectedCA(m, launches[m], prospects, sales, collabs));
+    barChartContractedData = yearMonths.map(m => calculateTotalContractedCA(m, launches[m], prospects, sales, collabs));
     barChartObjectiveData = yearMonths.map(m => objectives[m] || 5000);
 
     chartTitle = `Performance Annuelle (${selectedYear})`;
@@ -221,8 +241,10 @@ export const DashboardScreen: React.FC = () => {
         const lCA = calculateLaunchCA(l);
         const pCA = calculatePremiumCA(prospects, m);
         const dCA = calculateDigitalCA(sales, m);
-        const cCA = calculateCollabsCA(collabs, m);
-        totalCA += lCA + pCA + dCA + cCA;
+        const cCollectedCA = calculateCollabsCollectedCA(collabs, m);
+        const cContractedCA = calculateCollabsContractedCA(collabs, m);
+        totalCollectedCA += lCA + pCA + dCA + cCollectedCA;
+        totalContractedCA += lCA + pCA + dCA + cContractedCA;
         
         const aSpent = l ? l.adsSpent : 0;
         const chg = calculateChargesForMonth(expenses, m);
@@ -236,12 +258,14 @@ export const DashboardScreen: React.FC = () => {
         cumulativeLaunch += lCA;
         cumulativePremium += pCA;
         cumulativeDigital += dCA;
-        cumulativeCollabs += cCA;
+        cumulativeCollabsCollected += cCollectedCA;
+        cumulativeCollabsContracted += cContractedCA;
       });
     });
     
-    netProfit = totalCA - totalOutflow;
-    objectiveProgress = monthlyObjective > 0 ? (totalCA / monthlyObjective) * 100 : 0;
+    netProfitCollected = totalCollectedCA - totalOutflow;
+    netProfitContracted = totalContractedCA - totalOutflow;
+    objectiveProgressCollected = monthlyObjective > 0 ? (totalCollectedCA / monthlyObjective) * 100 : 0;
 
     const digitalProductsMap: Record<string, { count: number; total: number }> = {};
     sales.forEach(s => {
@@ -257,11 +281,19 @@ export const DashboardScreen: React.FC = () => {
     }));
 
     barChartLabels = [...availableYears].reverse();
-    barChartRealData = barChartLabels.map(y => {
+    barChartCollectedData = barChartLabels.map(y => {
       let yrCA = 0;
       for (let i = 1; i <= 12; i++) {
         const key = `${y}-${String(i).padStart(2, '0')}`;
-        yrCA += calculateTotalCA(key, launches[key], prospects, sales, collabs);
+        yrCA += calculateTotalCollectedCA(key, launches[key], prospects, sales, collabs);
+      }
+      return yrCA;
+    });
+    barChartContractedData = barChartLabels.map(y => {
+      let yrCA = 0;
+      for (let i = 1; i <= 12; i++) {
+        const key = `${y}-${String(i).padStart(2, '0')}`;
+        yrCA += calculateTotalContractedCA(key, launches[key], prospects, sales, collabs);
       }
       return yrCA;
     });
@@ -278,6 +310,10 @@ export const DashboardScreen: React.FC = () => {
     breakdownTitle = "Sources de Revenu (Tout l'historique)";
   }
 
+  // Legacy mappings for backward compatibility
+  const totalCA = revenueBreakdownType === 'collected' ? totalCollectedCA : totalContractedCA;
+  const cumulativeCollabs = revenueBreakdownType === 'collected' ? cumulativeCollabsCollected : cumulativeCollabsContracted;
+
   // Monthly stats (retained for pipeline analytics)
   const prospectStats = calculateMonthlyProspectStats(prospects, selectedMonth);
   const dailyProspecting = calculateDailyProspectingActivity(prospects, selectedMonth, 10);
@@ -286,8 +322,16 @@ export const DashboardScreen: React.FC = () => {
     labels: barChartLabels,
     datasets: [
       {
-        label: 'CA Réel (€)',
-        data: barChartRealData,
+        label: 'CA Encaissé (€)',
+        data: barChartCollectedData,
+        backgroundColor: '#10B981',
+        borderColor: '#10B981',
+        borderWidth: 1,
+        borderRadius: 4,
+      },
+      {
+        label: 'CA Contracté (€)',
+        data: barChartContractedData,
         backgroundColor: '#635BFF',
         borderColor: '#635BFF',
         borderWidth: 1,
@@ -529,7 +573,7 @@ export const DashboardScreen: React.FC = () => {
           </div>
           <div className="stat-meta">
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span className="stat-label">Chiffre d'Affaires</span>
+              <span className="stat-label">CA Encaissé</span>
               {timeFrame === 'monthly' && (
                 <button 
                   className="edit-objective-btn" 
@@ -543,9 +587,10 @@ export const DashboardScreen: React.FC = () => {
                 </button>
               )}
             </div>
-            <span className="stat-val">{totalCA.toLocaleString('fr-FR')} €</span>
-            <span className="stat-subtext">
-              Obj: {monthlyObjective.toLocaleString('fr-FR')} € ({objectiveProgress.toFixed(0)}%)
+            <span className="stat-val" style={{ color: 'var(--status-success)' }}>{totalCollectedCA.toLocaleString('fr-FR')} €</span>
+            <span className="stat-subtext" style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '4px' }}>
+              <span>Obj: {monthlyObjective.toLocaleString('fr-FR')} € ({objectiveProgressCollected.toFixed(0)}%)</span>
+              <span style={{ opacity: 0.85, fontWeight: 500 }}>Contracté: {totalContractedCA.toLocaleString('fr-FR')} €</span>
             </span>
           </div>
         </div>
@@ -567,22 +612,22 @@ export const DashboardScreen: React.FC = () => {
         {/* Profit net Card */}
         <div className="card stat-card">
           <div className="stat-icon-wrapper" style={{ 
-            color: netProfit >= 0 ? 'var(--status-success)' : 'var(--status-error)', 
-            backgroundColor: netProfit >= 0 ? 'rgba(63, 191, 143, 0.1)' : 'rgba(224, 97, 107, 0.1)' 
+            color: netProfitCollected >= 0 ? 'var(--status-success)' : 'var(--status-error)', 
+            backgroundColor: netProfitCollected >= 0 ? 'rgba(63, 191, 143, 0.1)' : 'rgba(224, 97, 107, 0.1)' 
           }}>
             <Award className="stat-icon" />
           </div>
           <div className="stat-meta">
-            <span className="stat-label">Profit Net</span>
-            <span className={`stat-val ${netProfit >= 0 ? 'text-success' : 'text-red'}`}>
-              {netProfit.toLocaleString('fr-FR')} €
+            <span className="stat-label">Profit Net Encaissé</span>
+            <span className={`stat-val ${netProfitCollected >= 0 ? 'text-success' : 'text-red'}`}>
+              {netProfitCollected.toLocaleString('fr-FR')} €
             </span>
             <span className="stat-subtext" style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '4px' }}>
-              <span>Marge nette: {totalCA > 0 ? ((netProfit / totalCA) * 100).toFixed(0) : '0'} %</span>
-              <span style={{ fontWeight: 600, color: netProfit >= 0 ? 'var(--status-success)' : 'var(--status-warning)' }}>
-                {netProfit >= 0 
-                  ? `Seuil de rentabilité dépassé ! (+${netProfit.toLocaleString('fr-FR')} €)` 
-                  : `Point mort à ${Math.abs(netProfit).toLocaleString('fr-FR')} €`
+              <span>Marge nette: {totalCollectedCA > 0 ? ((netProfitCollected / totalCollectedCA) * 100).toFixed(0) : '0'} %</span>
+              <span style={{ fontWeight: 600, color: netProfitCollected >= 0 ? 'var(--status-success)' : 'var(--status-warning)' }}>
+                {netProfitCollected >= 0 
+                  ? `Seuil atteint ! (Contracté: ${netProfitContracted.toLocaleString('fr-FR')} €)` 
+                  : `Seuil à ${Math.abs(netProfitCollected).toLocaleString('fr-FR')} € (Contracté: ${netProfitContracted.toLocaleString('fr-FR')} €)`
                 }
               </span>
             </span>
@@ -827,8 +872,14 @@ export const DashboardScreen: React.FC = () => {
                           <td style={{ fontWeight: 600 }}>{collab.brand}</td>
                           <td>
                             <span className="badge" style={{ 
-                              backgroundColor: collab.status === 'Payé' ? 'rgba(63, 191, 143, 0.15)' : 'rgba(59, 130, 246, 0.15)',
-                              color: collab.status === 'Payé' ? 'var(--status-success)' : '#3B82F6'
+                              backgroundColor: collab.status === 'Payé' ? 'rgba(63, 191, 143, 0.15)' : 
+                                               collab.status === 'Publié' ? 'rgba(139, 92, 246, 0.15)' :
+                                               collab.status === 'Confirmé' ? 'rgba(59, 130, 246, 0.15)' : 
+                                               'rgba(249, 115, 22, 0.15)',
+                              color: collab.status === 'Payé' ? 'var(--status-success)' : 
+                                     collab.status === 'Publié' ? '#8B5CF6' :
+                                     collab.status === 'Confirmé' ? '#3B82F6' : 
+                                     '#F97316'
                             }}>
                               {collab.status}
                             </span>
@@ -961,9 +1012,27 @@ export const DashboardScreen: React.FC = () => {
 
       {/* Graphique circulaire Cumulé de toute la période */}
       <div className="card" style={{ marginTop: '32px' }}>
-        <h3 className="section-title" style={{ marginBottom: '24px' }}>
-          Répartition Cumulée du Chiffre d'Affaires par Source (Historique Complet)
-        </h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+          <h3 className="section-title" style={{ margin: 0 }}>
+            Répartition Cumulée du Chiffre d'Affaires par Source (Historique Complet)
+          </h3>
+          <div className="timeframe-tabs">
+            <button 
+              className={`timeframe-tab ${revenueBreakdownType === 'collected' ? 'active' : ''}`}
+              onClick={() => setRevenueBreakdownType('collected')}
+              style={{ fontSize: '11px', padding: '6px 12px' }}
+            >
+              Encaissé
+            </button>
+            <button 
+              className={`timeframe-tab ${revenueBreakdownType === 'contracted' ? 'active' : ''}`}
+              onClick={() => setRevenueBreakdownType('contracted')}
+              style={{ fontSize: '11px', padding: '6px 12px' }}
+            >
+              Contracté
+            </button>
+          </div>
+        </div>
         
         {totalCumulativeCA === 0 ? (
           <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '40px' }}>

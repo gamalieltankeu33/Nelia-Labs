@@ -20,7 +20,8 @@ import {
   calculateLaunchCA, 
   calculatePremiumCA, 
   calculateDigitalCA, 
-  calculateCollabsCA 
+  calculateCollabsContractedCA,
+  calculateCollabsCollectedCA
 } from '../utils/calculations';
 
 interface SidebarProps {
@@ -50,16 +51,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const currentMonthName = new Date().toLocaleDateString('fr-FR', { month: 'long' });
   const capitalizedMonth = currentMonthName.charAt(0).toUpperCase() + currentMonthName.slice(1);
   
-  // Calculate current month's CA
+  // Calculate current month's CA (Collected vs Contracted)
   const launch = launches[currentMonth];
   const launchCA = calculateLaunchCA(launch);
   const premiumCA = calculatePremiumCA(prospects, currentMonth);
   const digitalCA = calculateDigitalCA(sales, currentMonth);
-  const collabsCA = calculateCollabsCA(collabs, currentMonth);
-  const totalCA = launchCA + premiumCA + digitalCA + collabsCA;
+  const collabsCollectedCA = calculateCollabsCollectedCA(collabs, currentMonth);
+  const collabsContractedCA = calculateCollabsContractedCA(collabs, currentMonth);
+  
+  const totalCollectedCA = launchCA + premiumCA + digitalCA + collabsCollectedCA;
+  const totalContractedCA = launchCA + premiumCA + digitalCA + collabsContractedCA;
   
   const monthlyObjective = objectives[currentMonth] || 5000;
-  const progressPercent = monthlyObjective > 0 ? Math.min((totalCA / monthlyObjective) * 100, 100) : 0;
+  const progressPercent = monthlyObjective > 0 ? Math.min((totalCollectedCA / monthlyObjective) * 100, 100) : 0;
 
   const menuItems = [
     { id: 'home', name: 'Accueil', icon: Home },
@@ -156,8 +160,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="goal-widget-bar-track">
             <div className="goal-widget-bar-fill" style={{ width: `${progressPercent}%` }} />
           </div>
-          <div className="goal-widget-footer">
-            <span>{totalCA.toLocaleString('fr-FR')} € / {monthlyObjective.toLocaleString('fr-FR')} €</span>
+          <div className="goal-widget-footer" style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+              <span style={{ opacity: 0.8 }}>Encaissé :</span>
+              <span style={{ fontWeight: 700, color: '#FFFFFF' }}>{totalCollectedCA.toLocaleString('fr-FR')} € / {monthlyObjective.toLocaleString('fr-FR')} €</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', opacity: 0.7 }}>
+              <span>Contracté :</span>
+              <span>{totalContractedCA.toLocaleString('fr-FR')} €</span>
+            </div>
           </div>
         </div>
 
