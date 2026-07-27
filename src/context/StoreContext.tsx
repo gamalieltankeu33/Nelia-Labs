@@ -37,7 +37,7 @@ interface StoreContextType {
   markProspectLost: (id: string, lost: boolean) => void;
   deleteProspect: (id: string) => void;
   
-  saveLaunch: (launch: Omit<MonthlyLaunch, 'id' | 'reminders'>) => void;
+  saveLaunch: (launch: Omit<MonthlyLaunch, 'id' | 'reminders'> & { status?: 'En cours' | 'Terminé' }) => void;
   addReminderToLaunch: (month: string, reminder: Omit<Reminder, 'id'>) => void;
   deleteReminderFromLaunch: (month: string, reminderId: string) => void;
   
@@ -276,6 +276,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         const launchesMap: Record<string, MonthlyLaunch> = {};
         (resLaunches.data || []).forEach((l: any) => {
+          const rawReminders = l.reminders || [];
+          const isCompleted = rawReminders.some((r: any) => r.id === 'metadata_launch_completed');
+          const cleanReminders = rawReminders.filter((r: any) => r.id !== 'metadata_launch_completed');
           launchesMap[l.month] = {
             id: l.id,
             month: l.month,
@@ -288,7 +291,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             live: Number(l.live),
             daySalesCount: Number(l.day_sales_count),
             daySalesAmount: Number(l.day_sales_amount),
-            reminders: l.reminders || []
+            reminders: cleanReminders,
+            status: isCompleted ? 'Terminé' : 'En cours'
           };
         });
 
@@ -376,20 +380,26 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           // 4. Launches
           const launchesList = Object.values(store.launches);
           if (launchesList.length > 0) {
-            await supabase.from('launches').insert(launchesList.map((l: any) => ({
-              id: l.id,
-              month: l.month,
-              launch_type: l.launchType,
-              comm_start_date: l.commStartDate,
-              webinar_date: l.webinarDate,
-              ads_budget: l.adsBudget,
-              ads_spent: l.adsSpent,
-              registered: l.registered,
-              live: l.live,
-              day_sales_count: l.daySalesCount,
-              day_sales_amount: l.daySalesAmount,
-              reminders: l.reminders
-            })));
+            await supabase.from('launches').insert(launchesList.map((l: any) => {
+              const cleanReminders = (l.reminders || []).filter((r: any) => r.id !== 'metadata_launch_completed');
+              const remindersToSave = l.status === 'Terminé'
+                ? [...cleanReminders, { id: 'metadata_launch_completed', date: '', count: 0, amount: 0 }]
+                : cleanReminders;
+              return {
+                id: l.id,
+                month: l.month,
+                launch_type: l.launchType,
+                comm_start_date: l.commStartDate,
+                webinar_date: l.webinarDate,
+                ads_budget: l.adsBudget,
+                ads_spent: l.adsSpent,
+                registered: l.registered,
+                live: l.live,
+                day_sales_count: l.daySalesCount,
+                day_sales_amount: l.daySalesAmount,
+                reminders: remindersToSave
+              };
+            }));
           }
 
           // 5. Collabs
@@ -714,15 +724,23 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   // Actions Lancement
-  const saveLaunch = async (launchData: Omit<MonthlyLaunch, 'id' | 'reminders'>) => {
+  const saveLaunch = async (launchData: Omit<MonthlyLaunch, 'id' | 'reminders'> & { status?: 'En cours' | 'Terminé' }) => {
     const existing = store.launches[launchData.month];
     const id = existing ? existing.id : `l-${Date.now()}`;
-    const reminders = existing ? existing.reminders : [];
+    const cleanReminders = existing 
+      ? existing.reminders.filter(r => r.id !== 'metadata_launch_completed')
+      : [];
+      
+    const status = launchData.status || existing?.status || 'En cours';
+    const remindersToSave = status === 'Terminé'
+      ? [...cleanReminders, { id: 'metadata_launch_completed', date: '', count: 0, amount: 0 }]
+      : cleanReminders;
     
     const newLaunch: MonthlyLaunch = {
       ...launchData,
       id,
-      reminders
+      status,
+      reminders: cleanReminders
     };
 
     setStore(prev => ({
@@ -747,7 +765,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         live: launchData.live,
         day_sales_count: launchData.daySalesCount,
         day_sales_amount: launchData.daySalesAmount,
-        reminders
+        reminders: remindersToSave
       });
       if (error) {
         setSavingStatus('error');
@@ -768,7 +786,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       id: `r-${Date.now()}`
     };
 
-    const updatedReminders = [...launch.reminders, newReminder];
+    const cleanReminders = launch.reminders.filter(r => r.id !== 'metadata_launch_completed');
+    const updatedReminders = [...cleanReminders, newReminder];
+    const status = launch.status || 'En cours';
+    const remindersToSave = status === 'Terminé'
+      ? [...updatedReminders, { id: 'metadata_launch_completed', date: '', count: 0, amount: 0 }]
+      : updatedReminders;
     
     setStore(prev => ({
       ...prev,
@@ -784,7 +807,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (supabase) {
       setSavingStatus('saving');
       const { error } = await supabase.from('launches').update({
-        reminders: updatedReminders
+        reminders: remindersToSave
       }).eq('month', month);
       if (error) {
         setSavingStatus('error');
@@ -800,7 +823,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const launch = store.launches[month];
     if (!launch) return;
 
-    const updatedReminders = launch.reminders.filter(r => r.id !== reminderId);
+    const cleanReminders = launch.reminders.filter(r => r.id !== reminderId && r.id !== 'metadata_launch_completed');
+    const status = launch.status || 'En cours';
+    const remindersToSave = status === 'Terminé'
+      ? [...cleanReminders, { id: 'metadata_launch_completed', date: '', count: 0, amount: 0 }]
+      : cleanReminders;
 
     setStore(prev => ({
       ...prev,
@@ -808,7 +835,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         ...prev.launches,
         [month]: {
           ...launch,
-          reminders: updatedReminders
+          reminders: cleanReminders
         }
       }
     }));
@@ -816,7 +843,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (supabase) {
       setSavingStatus('saving');
       const { error } = await supabase.from('launches').update({
-        reminders: updatedReminders
+        reminders: remindersToSave
       }).eq('month', month);
       if (error) {
         setSavingStatus('error');

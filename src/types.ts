@@ -51,6 +51,7 @@ export interface MonthlyLaunch {
   daySalesCount: number;
   daySalesAmount: number;
   reminders: Reminder[];
+  status?: 'En cours' | 'Terminé';
 }
 
 export interface CommercialCollab {
