@@ -11,7 +11,8 @@ import {
   calculateTotalCollectedCA,
   calculateMonthlyProspectStats,
   calculateDailyProspectingActivity,
-  getYearMonth
+  getYearMonth,
+  EXCHANGE_RATES
 } from '../../utils/calculations';
 import { Pie, Bar, Line } from 'react-chartjs-2';
 import { 
@@ -120,12 +121,18 @@ export const DashboardScreen: React.FC = () => {
     const digitalCA = calculateDigitalCA(sales, selectedMonth);
     const collabsCollectedCA = calculateCollabsCollectedCA(collabs, selectedMonth);
     const collabsContractedCA = calculateCollabsContractedCA(collabs, selectedMonth);
-    totalCollectedCA = launchCA + premiumCA + digitalCA + collabsCollectedCA;
-    totalContractedCA = launchCA + premiumCA + digitalCA + collabsContractedCA;
     
-    adsSpent = launch ? launch.adsSpent : 0;
+    const launchCAEUR = launchCA * EXCHANGE_RATES.FCFA_TO_EUR;
+    const collabsCollectedCAEUR = collabsCollectedCA * EXCHANGE_RATES.USD_TO_EUR;
+    const collabsContractedCAEUR = collabsContractedCA * EXCHANGE_RATES.USD_TO_EUR;
+    
+    totalCollectedCA = launchCAEUR + premiumCA + digitalCA + collabsCollectedCAEUR;
+    totalContractedCA = launchCAEUR + premiumCA + digitalCA + collabsContractedCAEUR;
+    
+    adsSpent = launch ? launch.adsSpent : 0; // in FCFA
+    const adsSpentEUR = adsSpent * EXCHANGE_RATES.FCFA_TO_EUR;
     charges = calculateChargesForMonth(expenses, selectedMonth);
-    totalOutflow = charges + adsSpent;
+    totalOutflow = charges + adsSpentEUR;
     netProfitCollected = totalCollectedCA - totalOutflow;
     netProfitContracted = totalContractedCA - totalOutflow;
     
@@ -169,11 +176,11 @@ export const DashboardScreen: React.FC = () => {
       return objectives[key] || 5000;
     });
 
-    cumulativeLaunch = launchCA;
+    cumulativeLaunch = launchCA * EXCHANGE_RATES.FCFA_TO_EUR;
     cumulativePremium = premiumCA;
     cumulativeDigital = digitalCA;
-    cumulativeCollabsCollected = collabsCollectedCA;
-    cumulativeCollabsContracted = collabsContractedCA;
+    cumulativeCollabsCollected = collabsCollectedCA * EXCHANGE_RATES.USD_TO_EUR;
+    cumulativeCollabsContracted = collabsContractedCA * EXCHANGE_RATES.USD_TO_EUR;
 
     chartTitle = `Performance Semestrielle (${isSecondSemester ? 'S2' : 'S1'} ${year})`;
     const monthLabelName = new Date(selectedMonth + '-02').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
@@ -185,27 +192,32 @@ export const DashboardScreen: React.FC = () => {
     yearMonths.forEach(m => {
       const l = launches[m];
       const lCA = calculateLaunchCA(l);
+      const lCAEUR = lCA * EXCHANGE_RATES.FCFA_TO_EUR;
       const pCA = calculatePremiumCA(prospects, m);
       const dCA = calculateDigitalCA(sales, m);
       const cCollectedCA = calculateCollabsCollectedCA(collabs, m);
+      const cCollectedCAEUR = cCollectedCA * EXCHANGE_RATES.USD_TO_EUR;
       const cContractedCA = calculateCollabsContractedCA(collabs, m);
-      totalCollectedCA += lCA + pCA + dCA + cCollectedCA;
-      totalContractedCA += lCA + pCA + dCA + cContractedCA;
+      const cContractedCAEUR = cContractedCA * EXCHANGE_RATES.USD_TO_EUR;
       
-      const aSpent = l ? l.adsSpent : 0;
+      totalCollectedCA += lCAEUR + pCA + dCA + cCollectedCAEUR;
+      totalContractedCA += lCAEUR + pCA + dCA + cContractedCAEUR;
+      
+      const aSpent = l ? l.adsSpent : 0; // in FCFA
+      const aSpentEUR = aSpent * EXCHANGE_RATES.FCFA_TO_EUR;
       const chg = calculateChargesForMonth(expenses, m);
-      totalOutflow += chg + aSpent;
-      adsSpent += aSpent;
+      totalOutflow += chg + aSpentEUR;
+      adsSpent += aSpentEUR;
       charges += chg;
       
       monthlyObjective += objectives[m] || 5000;
       monthlyContentsCount += contents.filter(c => getYearMonth(c.date) === m).length;
       
-      cumulativeLaunch += lCA;
+      cumulativeLaunch += lCAEUR;
       cumulativePremium += pCA;
       cumulativeDigital += dCA;
-      cumulativeCollabsCollected += cCollectedCA;
-      cumulativeCollabsContracted += cContractedCA;
+      cumulativeCollabsCollected += cCollectedCAEUR;
+      cumulativeCollabsContracted += cContractedCAEUR;
     });
     
     netProfitCollected = totalCollectedCA - totalOutflow;
@@ -239,27 +251,32 @@ export const DashboardScreen: React.FC = () => {
       yearMonths.forEach(m => {
         const l = launches[m];
         const lCA = calculateLaunchCA(l);
+        const lCAEUR = lCA * EXCHANGE_RATES.FCFA_TO_EUR;
         const pCA = calculatePremiumCA(prospects, m);
         const dCA = calculateDigitalCA(sales, m);
         const cCollectedCA = calculateCollabsCollectedCA(collabs, m);
+        const cCollectedCAEUR = cCollectedCA * EXCHANGE_RATES.USD_TO_EUR;
         const cContractedCA = calculateCollabsContractedCA(collabs, m);
-        totalCollectedCA += lCA + pCA + dCA + cCollectedCA;
-        totalContractedCA += lCA + pCA + dCA + cContractedCA;
+        const cContractedCAEUR = cContractedCA * EXCHANGE_RATES.USD_TO_EUR;
         
-        const aSpent = l ? l.adsSpent : 0;
+        totalCollectedCA += lCAEUR + pCA + dCA + cCollectedCAEUR;
+        totalContractedCA += lCAEUR + pCA + dCA + cContractedCAEUR;
+        
+        const aSpent = l ? l.adsSpent : 0; // in FCFA
+        const aSpentEUR = aSpent * EXCHANGE_RATES.FCFA_TO_EUR;
         const chg = calculateChargesForMonth(expenses, m);
-        totalOutflow += chg + aSpent;
-        adsSpent += aSpent;
+        totalOutflow += chg + aSpentEUR;
+        adsSpent += aSpentEUR;
         charges += chg;
         
         monthlyObjective += objectives[m] || 5000;
         monthlyContentsCount += contents.filter(c => getYearMonth(c.date) === m).length;
         
-        cumulativeLaunch += lCA;
+        cumulativeLaunch += lCAEUR;
         cumulativePremium += pCA;
         cumulativeDigital += dCA;
-        cumulativeCollabsCollected += cCollectedCA;
-        cumulativeCollabsContracted += cContractedCA;
+        cumulativeCollabsCollected += cCollectedCAEUR;
+        cumulativeCollabsContracted += cContractedCAEUR;
       });
     });
     
@@ -885,7 +902,7 @@ export const DashboardScreen: React.FC = () => {
                             </span>
                           </td>
                           <td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--status-success)' }}>
-                            {collab.amount.toLocaleString('fr-FR')} €
+                            {collab.amount.toLocaleString('fr-FR')} $ ({(collab.amount * EXCHANGE_RATES.USD_TO_EUR).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €)
                           </td>
                         </tr>
                       ))}
@@ -957,12 +974,12 @@ export const DashboardScreen: React.FC = () => {
                       </div>
                       <div className="launch-detail-item">
                         <span>Ventes jour J (Webinaire) :</span>
-                        <span className="val-highlight">{launch.daySalesCount} unités ({launch.daySalesAmount.toLocaleString('fr-FR')} €)</span>
+                        <span className="val-highlight">{launch.daySalesCount} unités ({launch.daySalesAmount.toLocaleString('fr-FR')} FCFA / {(launch.daySalesAmount * EXCHANGE_RATES.FCFA_TO_EUR).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €)</span>
                       </div>
                       <div className="launch-detail-item">
                         <span>Ventes post-webinaire (Relances) :</span>
                         <span className="val-highlight">
-                          {launch.reminders.reduce((sum: number, r: any) => sum + r.count, 0)} unités ({launch.reminders.reduce((sum: number, r: any) => sum + r.amount, 0).toLocaleString('fr-FR')} €)
+                          {launch.reminders.reduce((sum: number, r: any) => sum + r.count, 0)} unités ({launch.reminders.reduce((sum: number, r: any) => sum + r.amount, 0).toLocaleString('fr-FR')} FCFA / {(launch.reminders.reduce((sum: number, r: any) => sum + r.amount, 0) * EXCHANGE_RATES.FCFA_TO_EUR).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €)
                         </span>
                       </div>
 
@@ -994,7 +1011,7 @@ export const DashboardScreen: React.FC = () => {
                                 <tr key={idx}>
                                   <td>{new Date(rem.date).toLocaleDateString('fr-FR')}</td>
                                   <td>{rem.count}</td>
-                                  <td>{rem.amount.toLocaleString('fr-FR')} €</td>
+                                  <td>{rem.amount.toLocaleString('fr-FR')} FCFA ({(rem.amount * EXCHANGE_RATES.FCFA_TO_EUR).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €)</td>
                                 </tr>
                               ))}
                             </tbody>

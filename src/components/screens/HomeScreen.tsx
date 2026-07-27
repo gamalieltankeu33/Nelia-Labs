@@ -1,14 +1,10 @@
 import React from 'react';
 import { useStore } from '../../context/StoreContext';
 import { 
-  calculateLaunchCA, 
-  calculatePremiumCA, 
-  calculateDigitalCA, 
-  calculateCollabsContractedCA,
-  calculateCollabsCollectedCA,
   calculateChargesForMonth,
   calculateTotalCollectedCA,
-  calculateTotalContractedCA
+  calculateTotalContractedCA,
+  EXCHANGE_RATES
 } from '../../utils/calculations';
 import { 
   TrendingUp, 
@@ -65,18 +61,14 @@ export const HomeScreen: React.FC<{ setActiveScreen: (screen: string) => void }>
 
   // Calculations for current month (Collected vs Contracted)
   const launch = launches[currentMonth];
-  const launchCA = calculateLaunchCA(launch);
-  const premiumCA = calculatePremiumCA(prospects, currentMonth);
-  const digitalCA = calculateDigitalCA(sales, currentMonth);
-  const collabsCollectedCA = calculateCollabsCollectedCA(collabs, currentMonth);
-  const collabsContractedCA = calculateCollabsContractedCA(collabs, currentMonth);
   
-  const totalCollectedCA = launchCA + premiumCA + digitalCA + collabsCollectedCA;
-  const totalContractedCA = launchCA + premiumCA + digitalCA + collabsContractedCA;
+  const totalCollectedCA = calculateTotalCollectedCA(currentMonth, launch, prospects, sales, collabs);
+  const totalContractedCA = calculateTotalContractedCA(currentMonth, launch, prospects, sales, collabs);
 
-  const adsSpent = launch ? launch.adsSpent : 0;
+  const adsSpent = launch ? launch.adsSpent : 0; // in FCFA
+  const adsSpentEUR = adsSpent * EXCHANGE_RATES.FCFA_TO_EUR;
   const charges = calculateChargesForMonth(expenses, currentMonth);
-  const totalOutflow = charges + adsSpent;
+  const totalOutflow = charges + adsSpentEUR;
   const netProfitCollected = totalCollectedCA - totalOutflow;
   const netProfitContracted = totalContractedCA - totalOutflow;
 
@@ -195,7 +187,7 @@ export const HomeScreen: React.FC<{ setActiveScreen: (screen: string) => void }>
   // Last 4 Sales/Collabs combined (Recent Emails style)
   const recentActivities = [
     ...sales.map(s => ({ id: s.id, type: 'Vente', desc: s.product, value: s.price, date: s.date, channel: s.channel })),
-    ...collabs.map(c => ({ id: c.id, type: 'Partenariat', desc: `Collab ${c.brand}`, value: c.amount, date: c.publishDate, channel: c.brand }))
+    ...collabs.map(c => ({ id: c.id, type: 'Partenariat', desc: `Collab ${c.brand}`, value: c.amount * EXCHANGE_RATES.USD_TO_EUR, date: c.publishDate, channel: c.brand }))
   ].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 4);
 
   return (

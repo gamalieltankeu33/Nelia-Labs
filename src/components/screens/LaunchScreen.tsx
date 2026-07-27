@@ -162,7 +162,7 @@ export const LaunchScreen: React.FC = () => {
               </div>
               <div className="stat-meta">
                 <span className="stat-label">Chiffre d'affaires Lancement</span>
-                <span className="stat-val">{launchCA.toLocaleString('fr-FR')} €</span>
+                <span className="stat-val">{launchCA.toLocaleString('fr-FR')} FCFA</span>
               </div>
             </div>
 
@@ -173,7 +173,7 @@ export const LaunchScreen: React.FC = () => {
               <div className="stat-meta">
                 <span className="stat-label">Coût par inscrit (CPL)</span>
                 <span className="stat-val">
-                  {isCurrentLaunchOrganic ? '0 € (Organique)' : costPerLead > 0 ? `${costPerLead.toFixed(2)} €` : '—'}
+                  {isCurrentLaunchOrganic ? '0 FCFA (Organique)' : costPerLead > 0 ? `${costPerLead.toFixed(0)} FCFA` : '—'}
                 </span>
               </div>
             </div>
@@ -185,7 +185,7 @@ export const LaunchScreen: React.FC = () => {
               <div className="stat-meta">
                 <span className="stat-label">Coût par vente (CPA)</span>
                 <span className="stat-val">
-                  {isCurrentLaunchOrganic ? 'Gratuit (Organique)' : costPerSale > 0 ? `${costPerSale.toFixed(2)} €` : '—'}
+                  {isCurrentLaunchOrganic ? 'Gratuit (Organique)' : costPerSale > 0 ? `${costPerSale.toFixed(0)} FCFA` : '—'}
                 </span>
               </div>
             </div>
@@ -274,7 +274,7 @@ export const LaunchScreen: React.FC = () => {
 
             <div className="grid-cols-2" style={{ gap: '16px' }}>
               <div className="form-group">
-                <label>Budget Publicitaire prévu (€)</label>
+                <label>Budget Publicitaire prévu (FCFA)</label>
                 <input 
                   type="number" 
                   value={form.launchType === 'Organique' ? '0' : form.adsBudget}
@@ -284,7 +284,7 @@ export const LaunchScreen: React.FC = () => {
                 />
               </div>
               <div className="form-group">
-                <label>Budget Publicitaire dépensé (€)</label>
+                <label>Budget Publicitaire dépensé (FCFA)</label>
                 <input 
                   type="number" 
                   value={form.launchType === 'Organique' ? '0' : form.adsSpent}
@@ -327,7 +327,7 @@ export const LaunchScreen: React.FC = () => {
                 />
               </div>
               <div className="form-group">
-                <label>CA réalisé jour J (€)</label>
+                <label>CA réalisé jour J (FCFA)</label>
                 <input 
                   type="number" 
                   value={form.daySalesAmount}
@@ -370,10 +370,10 @@ export const LaunchScreen: React.FC = () => {
                     />
                   </div>
                   <div className="form-group">
-                    <label>Montant (€)</label>
+                    <label>Montant (FCFA)</label>
                     <input 
                       type="number" 
-                      placeholder="Ex: 600"
+                      placeholder="Ex: 400000"
                       value={reminderForm.amount}
                       onChange={e => setReminderForm(r => ({ ...r, amount: e.target.value }))}
                       required
@@ -410,7 +410,7 @@ export const LaunchScreen: React.FC = () => {
                             <td>{new Date(rem.date).toLocaleDateString('fr-FR')}</td>
                             <td style={{ fontWeight: 600 }}>{rem.count}</td>
                             <td style={{ color: 'var(--status-success)', fontWeight: 600 }}>
-                              {rem.amount.toLocaleString('fr-FR')} €
+                              {rem.amount.toLocaleString('fr-FR')} FCFA
                             </td>
                             <td style={{ textAlign: 'right' }}>
                               <button 

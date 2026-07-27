@@ -1,5 +1,12 @@
 import type { PublishedContent, DigitalSale, Prospect, MonthlyLaunch, CommercialCollab, Expense } from '../types';
 
+export const EXCHANGE_RATES = {
+  EUR_TO_FCFA: 655.957,
+  FCFA_TO_EUR: 1 / 655.957,
+  EUR_TO_USD: 1.09,
+  USD_TO_EUR: 1 / 1.09
+};
+
 /**
  * Extrait le format YYYY-MM à partir d'une date YYYY-MM-DD
  */
@@ -90,11 +97,15 @@ export function calculateTotalContractedCA(
   sales: DigitalSale[],
   collabs: CommercialCollab[]
 ): number {
-  const launchCA = calculateLaunchCA(launch);
-  const premiumCA = calculatePremiumCA(prospects, month);
-  const digitalCA = calculateDigitalCA(sales, month);
-  const collabsCA = calculateCollabsContractedCA(collabs, month);
-  return launchCA + premiumCA + digitalCA + collabsCA;
+  const launchCA = calculateLaunchCA(launch); // in FCFA
+  const premiumCA = calculatePremiumCA(prospects, month); // in EUR
+  const digitalCA = calculateDigitalCA(sales, month); // in EUR
+  const collabsCA = calculateCollabsContractedCA(collabs, month); // in USD
+  
+  const launchCAEUR = launchCA * EXCHANGE_RATES.FCFA_TO_EUR;
+  const collabsCAEUR = collabsCA * EXCHANGE_RATES.USD_TO_EUR;
+  
+  return launchCAEUR + premiumCA + digitalCA + collabsCAEUR;
 }
 
 /**
@@ -107,11 +118,15 @@ export function calculateTotalCollectedCA(
   sales: DigitalSale[],
   collabs: CommercialCollab[]
 ): number {
-  const launchCA = calculateLaunchCA(launch);
-  const premiumCA = calculatePremiumCA(prospects, month);
-  const digitalCA = calculateDigitalCA(sales, month);
-  const collabsCA = calculateCollabsCollectedCA(collabs, month);
-  return launchCA + premiumCA + digitalCA + collabsCA;
+  const launchCA = calculateLaunchCA(launch); // in FCFA
+  const premiumCA = calculatePremiumCA(prospects, month); // in EUR
+  const digitalCA = calculateDigitalCA(sales, month); // in EUR
+  const collabsCA = calculateCollabsCollectedCA(collabs, month); // in USD
+  
+  const launchCAEUR = launchCA * EXCHANGE_RATES.FCFA_TO_EUR;
+  const collabsCAEUR = collabsCA * EXCHANGE_RATES.USD_TO_EUR;
+  
+  return launchCAEUR + premiumCA + digitalCA + collabsCAEUR;
 }
 
 /**
@@ -140,8 +155,9 @@ export function calculateNetProfitContracted(
 ): number {
   const totalCA = calculateTotalContractedCA(month, launch, prospects, sales, collabs);
   const charges = calculateChargesForMonth(expenses, month);
-  const adsSpent = launch ? launch.adsSpent : 0;
-  return totalCA - charges - adsSpent;
+  const adsSpent = launch ? launch.adsSpent : 0; // in FCFA
+  const adsSpentEUR = adsSpent * EXCHANGE_RATES.FCFA_TO_EUR;
+  return totalCA - charges - adsSpentEUR;
 }
 
 /**
@@ -157,8 +173,9 @@ export function calculateNetProfitCollected(
 ): number {
   const totalCA = calculateTotalCollectedCA(month, launch, prospects, sales, collabs);
   const charges = calculateChargesForMonth(expenses, month);
-  const adsSpent = launch ? launch.adsSpent : 0;
-  return totalCA - charges - adsSpent;
+  const adsSpent = launch ? launch.adsSpent : 0; // in FCFA
+  const adsSpentEUR = adsSpent * EXCHANGE_RATES.FCFA_TO_EUR;
+  return totalCA - charges - adsSpentEUR;
 }
 
 /**

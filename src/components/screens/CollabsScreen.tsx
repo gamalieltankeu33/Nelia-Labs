@@ -75,7 +75,7 @@ export const CollabsScreen: React.FC = () => {
             </div>
 
             <div className="form-group">
-              <label>Montant négocié / perçu (€)</label>
+              <label>Montant négocié / perçu ($)</label>
               <input 
                 type="number" 
                 placeholder="Ex: 1500"
@@ -144,7 +144,7 @@ export const CollabsScreen: React.FC = () => {
                       </td>
                       <td style={{ fontWeight: 600 }}>{c.brand}</td>
                       <td style={{ fontWeight: 600 }}>
-                        {c.amount.toLocaleString('fr-FR')} €
+                        {c.amount.toLocaleString('fr-FR')} $
                       </td>
                       <td>
                         <select

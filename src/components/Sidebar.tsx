@@ -21,7 +21,8 @@ import {
   calculatePremiumCA, 
   calculateDigitalCA, 
   calculateCollabsContractedCA,
-  calculateCollabsCollectedCA
+  calculateCollabsCollectedCA,
+  EXCHANGE_RATES
 } from '../utils/calculations';
 
 interface SidebarProps {
@@ -59,8 +60,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const collabsCollectedCA = calculateCollabsCollectedCA(collabs, currentMonth);
   const collabsContractedCA = calculateCollabsContractedCA(collabs, currentMonth);
   
-  const totalCollectedCA = launchCA + premiumCA + digitalCA + collabsCollectedCA;
-  const totalContractedCA = launchCA + premiumCA + digitalCA + collabsContractedCA;
+  const totalCollectedCA = (launchCA * EXCHANGE_RATES.FCFA_TO_EUR) + premiumCA + digitalCA + (collabsCollectedCA * EXCHANGE_RATES.USD_TO_EUR);
+  const totalContractedCA = (launchCA * EXCHANGE_RATES.FCFA_TO_EUR) + premiumCA + digitalCA + (collabsContractedCA * EXCHANGE_RATES.USD_TO_EUR);
   
   const monthlyObjective = objectives[currentMonth] || 5000;
   const progressPercent = monthlyObjective > 0 ? Math.min((totalCollectedCA / monthlyObjective) * 100, 100) : 0;
