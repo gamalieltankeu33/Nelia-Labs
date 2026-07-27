@@ -18,6 +18,21 @@ export const TodayScreen: React.FC = () => {
   // Métriques du jour
   const todayStats = calculateTodayIndicators(todayStr, contents, prospects, sales);
 
+  const getStagnationDays = (history: { date: string }[]) => {
+    if (history.length === 0) return 0;
+    const lastDate = new Date(history[history.length - 1].date);
+    const today = new Date();
+    lastDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    const diffTime = today.getTime() - lastDate.getTime();
+    return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  };
+
+  const stagnantProspects = prospects.filter(p => {
+    if (p.lost || p.currentStatus === 'Closé gagné') return false;
+    return getStagnationDays(p.history) >= 5;
+  });
+
   // States formulaires
   const [contentForm, setContentForm] = useState({
     platform: 'Instagram' as const,
@@ -291,6 +306,53 @@ export const TodayScreen: React.FC = () => {
           </form>
         </div>
       </div>
+
+      {/* Alertes et Relances Urgentes */}
+      {stagnantProspects.length > 0 && (
+        <div className="card" style={{ marginTop: '24px' }}>
+          <h3 className="section-title text-orange" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', color: '#F59E0B' }}>
+            ⚠️ Relances prioritaires : Prospects stagnants ({stagnantProspects.length})
+          </h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '16px' }}>
+            Ces prospects Premium n'ont pas eu d'activité depuis 5 jours ou plus. Contactez-les dès aujourd'hui pour les relancer.
+          </p>
+          <div className="stagnant-list" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {stagnantProspects.map(p => {
+              const days = getStagnationDays(p.history);
+              return (
+                <div key={p.id} style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center', 
+                  padding: '12px 16px', 
+                  background: 'var(--bg-card)', 
+                  border: '1px solid var(--border-color)', 
+                  borderRadius: 'var(--radius-md)'
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <span style={{ fontWeight: 600, fontSize: '14px' }}>{p.name}</span>
+                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      Statut actuel: <strong style={{ color: 'var(--accent-gold)' }}>{p.currentStatus}</strong>
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ 
+                      fontSize: '11px', 
+                      fontWeight: '700', 
+                      color: '#F59E0B', 
+                      background: 'rgba(245, 158, 11, 0.1)', 
+                      padding: '4px 8px', 
+                      borderRadius: '4px' 
+                    }}>
+                      Sans contact depuis {days} jours
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <style>{`
         .content-icon {

@@ -368,6 +368,117 @@ export const DashboardScreen: React.FC = () => {
     breakdownTitle = "Sources de Revenu (Tout l'historique)";
   }
 
+  const getPreviousMonth = (monthStr: string): string => {
+    const [year, month] = monthStr.split('-').map(Number);
+    const date = new Date(year, month - 2, 5);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+  };
+
+  const getPreviousPeriodMonths = (endMonthStr: string, monthsCount: number): string[] => {
+    const currentMonths = getMonthsInWindow(endMonthStr, monthsCount);
+    const prevEndMonth = getPreviousMonth(currentMonths[0]);
+    return getMonthsInWindow(prevEndMonth, monthsCount);
+  };
+
+  const aggregateCAForMonths = (monthsList: string[]) => {
+    let collected = 0;
+    let contracted = 0;
+    monthsList.forEach(m => {
+      const l = launches[m];
+      const lCA = calculateLaunchCA(l);
+      const pCA = calculatePremiumCA(prospects, m);
+      const dCA = calculateDigitalCA(sales, m);
+      const cCollected = calculateCollabsCollectedCA(collabs, m);
+      const cContracted = calculateCollabsContractedCA(collabs, m);
+      
+      collected += lCA * EXCHANGE_RATES.FCFA_TO_EUR + pCA + dCA + cCollected * EXCHANGE_RATES.USD_TO_EUR;
+      contracted += lCA * EXCHANGE_RATES.FCFA_TO_EUR + pCA + dCA + cContracted * EXCHANGE_RATES.USD_TO_EUR;
+    });
+    return { collected, contracted };
+  };
+
+  const aggregateOutflowForMonths = (monthsList: string[]) => {
+    let outflow = 0;
+    monthsList.forEach(m => {
+      const l = launches[m];
+      const ads = (l ? l.adsSpent : 0) * EXCHANGE_RATES.FCFA_TO_EUR;
+      const chg = calculateChargesForMonth(expenses, m);
+      outflow += ads + chg;
+    });
+    return outflow;
+  };
+
+  // MoM / Period-over-Period Growth Calculations
+  let prevCollectedCA = 0;
+  let prevContractedCA = 0;
+  let prevOutflow = 0;
+
+  if (timeFrame === 'monthly') {
+    const prevM = getPreviousMonth(selectedMonth);
+    const prevStats = aggregateCAForMonths([prevM]);
+    prevCollectedCA = prevStats.collected;
+    prevContractedCA = prevStats.contracted;
+    prevOutflow = aggregateOutflowForMonths([prevM]);
+  } else if (timeFrame === '3-months') {
+    const prevMs = getPreviousPeriodMonths(selectedMonth, 3);
+    const prevStats = aggregateCAForMonths(prevMs);
+    prevCollectedCA = prevStats.collected;
+    prevContractedCA = prevStats.contracted;
+    prevOutflow = aggregateOutflowForMonths(prevMs);
+  } else if (timeFrame === '6-months') {
+    const prevMs = getPreviousPeriodMonths(selectedMonth, 6);
+    const prevStats = aggregateCAForMonths(prevMs);
+    prevCollectedCA = prevStats.collected;
+    prevContractedCA = prevStats.contracted;
+    prevOutflow = aggregateOutflowForMonths(prevMs);
+  } else if (timeFrame === 'yearly') {
+    const prevYearStr = (parseInt(selectedYear, 10) - 1).toString();
+    const prevMonths = Array.from({ length: 12 }, (_, i) => `${prevYearStr}-${String(i + 1).padStart(2, '0')}`);
+    const prevStats = aggregateCAForMonths(prevMonths);
+    prevCollectedCA = prevStats.collected;
+    prevContractedCA = prevStats.contracted;
+    prevOutflow = aggregateOutflowForMonths(prevMonths);
+  }
+
+  const prevNetProfitCollected = prevCollectedCA - prevOutflow;
+  const prevNetProfitContracted = prevContractedCA - prevOutflow;
+
+  const getGrowthPercentage = (current: number, previous: number) => {
+    if (previous === 0) return null;
+    return ((current - previous) / previous) * 100;
+  };
+
+  const renderGrowthBadge = (current: number, previous: number, invertColors = false) => {
+    const pct = getGrowthPercentage(current, previous);
+    if (pct === null) return null;
+    const isPositive = pct >= 0;
+    const absPct = Math.abs(pct).toFixed(1);
+    
+    const isGood = invertColors ? !isPositive : isPositive;
+    const color = isGood ? '#10B981' : '#EF4444';
+    const bg = isGood ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)';
+    const text = isPositive ? `+${absPct}%` : `-${absPct}%`;
+    const icon = isPositive ? '📈' : '📉';
+    
+    return (
+      <span style={{ 
+        display: 'inline-flex', 
+        alignItems: 'center', 
+        gap: '4px', 
+        fontSize: '11px', 
+        fontWeight: '700', 
+        color, 
+        backgroundColor: bg, 
+        padding: '2px 6px', 
+        borderRadius: '4px',
+        marginLeft: '8px',
+        verticalAlign: 'middle'
+      }} title={`${text} par rapport à la période précédente`}>
+        {icon} {text}
+      </span>
+    );
+  };
+
   // Legacy mappings for backward compatibility
   const totalCA = revenueBreakdownType === 'collected' ? totalCollectedCA : totalContractedCA;
   const cumulativeCollabs = revenueBreakdownType === 'collected' ? cumulativeCollabsCollected : cumulativeCollabsContracted;
@@ -710,10 +821,13 @@ export const DashboardScreen: React.FC = () => {
                 </button>
               )}
             </div>
-            <span className="stat-val" style={{ color: 'var(--status-success)' }}>{totalCollectedCA.toLocaleString('fr-FR')} €</span>
+            <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap' }}>
+              <span className="stat-val" style={{ color: 'var(--status-success)' }}>{totalCollectedCA.toLocaleString('fr-FR')} €</span>
+              {renderGrowthBadge(totalCollectedCA, prevCollectedCA)}
+            </div>
             <span className="stat-subtext" style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '4px' }}>
               <span>Obj: {monthlyObjective.toLocaleString('fr-FR')} € ({objectiveProgressCollected.toFixed(0)}%)</span>
-              <span style={{ opacity: 0.85, fontWeight: 500 }}>Contracté: {totalContractedCA.toLocaleString('fr-FR')} €</span>
+              <span style={{ opacity: 0.85, fontWeight: 500 }}>Contracté: {totalContractedCA.toLocaleString('fr-FR')} € {renderGrowthBadge(totalContractedCA, prevContractedCA)}</span>
             </span>
           </div>
         </div>
@@ -725,7 +839,10 @@ export const DashboardScreen: React.FC = () => {
           </div>
           <div className="stat-meta">
             <span className="stat-label">Charges + Pub</span>
-            <span className="stat-val text-red">-{totalOutflow.toLocaleString('fr-FR')} €</span>
+            <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap' }}>
+              <span className="stat-val text-red">-{totalOutflow.toLocaleString('fr-FR')} €</span>
+              {renderGrowthBadge(totalOutflow, prevOutflow, true)}
+            </div>
             <span className="stat-subtext">
               Pub: {adsSpent.toLocaleString('fr-FR')} € | Fixes: {charges.toLocaleString('fr-FR')} €
             </span>
@@ -742,15 +859,18 @@ export const DashboardScreen: React.FC = () => {
           </div>
           <div className="stat-meta">
             <span className="stat-label">Profit Net Encaissé</span>
-            <span className={`stat-val ${netProfitCollected >= 0 ? 'text-success' : 'text-red'}`}>
-              {netProfitCollected.toLocaleString('fr-FR')} €
-            </span>
+            <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap' }}>
+              <span className={`stat-val ${netProfitCollected >= 0 ? 'text-success' : 'text-red'}`}>
+                {netProfitCollected.toLocaleString('fr-FR')} €
+              </span>
+              {renderGrowthBadge(netProfitCollected, prevNetProfitCollected)}
+            </div>
             <span className="stat-subtext" style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '4px' }}>
               <span>Marge nette: {totalCollectedCA > 0 ? ((netProfitCollected / totalCollectedCA) * 100).toFixed(0) : '0'} %</span>
               <span style={{ fontWeight: 600, color: netProfitCollected >= 0 ? 'var(--status-success)' : 'var(--status-warning)' }}>
                 {netProfitCollected >= 0 
-                  ? `Seuil atteint ! (Contracté: ${netProfitContracted.toLocaleString('fr-FR')} €)` 
-                  : `Seuil à ${Math.abs(netProfitCollected).toLocaleString('fr-FR')} € (Contracté: ${netProfitContracted.toLocaleString('fr-FR')} €)`
+                  ? `Seuil atteint ! (Contracté: ${netProfitContracted.toLocaleString('fr-FR')} € ${renderGrowthBadge(netProfitContracted, prevNetProfitContracted)})` 
+                  : `Seuil à ${Math.abs(netProfitCollected).toLocaleString('fr-FR')} € (Contracté: ${netProfitContracted.toLocaleString('fr-FR')} € ${renderGrowthBadge(netProfitContracted, prevNetProfitContracted)})`
                 }
               </span>
             </span>

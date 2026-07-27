@@ -44,6 +44,16 @@ export const ProspectsScreen: React.FC = () => {
     return `Il y a ${diffDays} jours`;
   };
 
+  const getStagnationDays = (history: { date: string }[]) => {
+    if (history.length === 0) return 0;
+    const lastDate = new Date(history[history.length - 1].date);
+    const today = new Date();
+    lastDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    const diffTime = today.getTime() - lastDate.getTime();
+    return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  };
+
   // Filtrer les prospects selon l'onglet
   const filteredProspects = prospects.filter(p => {
     if (filterType === 'active') {
@@ -186,7 +196,14 @@ export const ProspectsScreen: React.FC = () => {
                 return (
                   <div key={p.id} className="prospect-row" style={{ borderLeftColor: currentStatusColor }}>
                     <div className="prospect-info">
-                      <span className="prospect-name">{p.name}</span>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <span className="prospect-name">{p.name}</span>
+                        {!p.lost && p.currentStatus !== 'Closé gagné' && getStagnationDays(p.history) >= 5 && (
+                          <span className="stagnant-badge">
+                            ⚠️ Stagnant ({getStagnationDays(p.history)}j)
+                          </span>
+                        )}
+                      </div>
                       <div className="prospect-meta">
                         <span style={{ color: 'var(--accent-gold)', fontWeight: 600 }}>
                           Début : {p.history[0]?.date ? new Date(p.history[0].date).toLocaleDateString('fr-FR') : '—'}
@@ -373,6 +390,21 @@ export const ProspectsScreen: React.FC = () => {
       )}
 
       <style>{`
+        .stagnant-badge {
+          background-color: rgba(245, 158, 11, 0.12);
+          color: #F59E0B;
+          border: 1px solid rgba(245, 158, 11, 0.25);
+          padding: 2px 6px;
+          border-radius: 4px;
+          font-size: 11px;
+          font-weight: 700;
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          margin-left: 8px;
+          vertical-align: middle;
+        }
+
         .pipeline-filters {
           display: flex;
           flex-direction: column;

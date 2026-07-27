@@ -126,6 +126,45 @@ export const LaunchScreen: React.FC = () => {
     ? (totalSalesCount / currentLaunch.registered) * 100 
     : 0;
 
+  // Historical benchmarks
+  const allLaunches = Object.values(launches).filter(l => l.month !== selectedMonth);
+  const launchesForBenchmark = allLaunches.length > 0 ? allLaunches : Object.values(launches);
+
+  let avgShowUpRate = 0;
+  let avgLiveConvRate = 0;
+  let avgGlobalConvRate = 0;
+
+  if (launchesForBenchmark.length > 0) {
+    let totalReg = 0;
+    let totalLive = 0;
+    let totalDaySales = 0;
+    let totalRemindersSales = 0;
+
+    launchesForBenchmark.forEach(l => {
+      totalReg += l.registered;
+      totalLive += l.live;
+      totalDaySales += l.daySalesCount;
+      totalRemindersSales += (l.reminders || []).reduce((sum, r) => sum + r.count, 0);
+    });
+
+    avgShowUpRate = totalReg > 0 ? (totalLive / totalReg) * 100 : 0;
+    avgLiveConvRate = totalLive > 0 ? (totalDaySales / totalLive) * 100 : 0;
+    avgGlobalConvRate = totalReg > 0 ? ((totalDaySales + totalRemindersSales) / totalReg) * 100 : 0;
+  }
+
+  const renderBenchmarkText = (current: number, avg: number) => {
+    if (avg === 0) return null;
+    const diff = current - avg;
+    const isBetter = diff >= 0;
+    const color = isBetter ? '#10B981' : '#F59E0B';
+    const text = isBetter ? `+${diff.toFixed(1)}%` : `${diff.toFixed(1)}%`;
+    return (
+      <span style={{ fontSize: '11px', color, fontWeight: '700', marginLeft: '6px' }} title={`Moyenne historique: ${avg.toFixed(1)}%`}>
+        ({text} vs moy. {avg.toFixed(1)}%)
+      </span>
+    );
+  };
+
   return (
     <div className="fade-in">
       <div className="screen-header">
@@ -256,7 +295,10 @@ export const LaunchScreen: React.FC = () => {
               </div>
               <div className="stat-meta">
                 <span className="stat-label">Taux de présence (Live)</span>
-                <span className="stat-val">{showUpRate.toFixed(1)} %</span>
+                <span className="stat-val" style={{ display: 'flex', alignItems: 'baseline' }}>
+                  {showUpRate.toFixed(1)} %
+                  {renderBenchmarkText(showUpRate, avgShowUpRate)}
+                </span>
                 <span className="stat-subtext" style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
                   {currentLaunch.live} présents / {currentLaunch.registered} inscrits
                 </span>
@@ -269,7 +311,10 @@ export const LaunchScreen: React.FC = () => {
               </div>
               <div className="stat-meta">
                 <span className="stat-label">Taux conv. Direct (Live)</span>
-                <span className="stat-val">{liveConversionRate.toFixed(1)} %</span>
+                <span className="stat-val" style={{ display: 'flex', alignItems: 'baseline' }}>
+                  {liveConversionRate.toFixed(1)} %
+                  {renderBenchmarkText(liveConversionRate, avgLiveConvRate)}
+                </span>
                 <span className="stat-subtext" style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
                   {currentLaunch.daySalesCount} ventes / {currentLaunch.live} présents
                 </span>
@@ -282,7 +327,10 @@ export const LaunchScreen: React.FC = () => {
               </div>
               <div className="stat-meta">
                 <span className="stat-label">Taux conv. Global</span>
-                <span className="stat-val">{globalConversionRate.toFixed(1)} %</span>
+                <span className="stat-val" style={{ display: 'flex', alignItems: 'baseline' }}>
+                  {globalConversionRate.toFixed(1)} %
+                  {renderBenchmarkText(globalConversionRate, avgGlobalConvRate)}
+                </span>
                 <span className="stat-subtext" style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
                   {totalSalesCount} ventes / {currentLaunch.registered} inscrits
                 </span>
