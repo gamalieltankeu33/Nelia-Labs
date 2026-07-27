@@ -68,7 +68,7 @@ export const DashboardScreen: React.FC = () => {
     return new Date().toISOString().substring(0, 7); // YYYY-MM
   });
 
-  const [timeFrame, setTimeFrame] = useState<'monthly' | 'yearly' | 'all-time'>('monthly');
+  const [timeFrame, setTimeFrame] = useState<'monthly' | '3-months' | '6-months' | 'yearly' | 'all-time'>('monthly');
   const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear().toString());
 
   const [isEditingObjective, setIsEditingObjective] = useState(false);
@@ -113,35 +113,62 @@ export const DashboardScreen: React.FC = () => {
   let chartTitle = '';
   let breakdownTitle = '';
 
+  const getMonthsInWindow = (endMonthStr: string, monthsCount: number): string[] => {
+    const [year, month] = endMonthStr.split('-').map(Number);
+    const months: string[] = [];
+    for (let i = monthsCount - 1; i >= 0; i--) {
+      const date = new Date(year, month - 1 - i, 5);
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      months.push(`${y}-${m}`);
+    }
+    return months;
+  };
+
   const launch = launches[selectedMonth];
 
-  if (timeFrame === 'monthly') {
-    const launchCA = calculateLaunchCA(launch);
-    const premiumCA = calculatePremiumCA(prospects, selectedMonth);
-    const digitalCA = calculateDigitalCA(sales, selectedMonth);
-    const collabsCollectedCA = calculateCollabsCollectedCA(collabs, selectedMonth);
-    const collabsContractedCA = calculateCollabsContractedCA(collabs, selectedMonth);
+  if (timeFrame === 'monthly' || timeFrame === '3-months' || timeFrame === '6-months') {
+    const months = timeFrame === 'monthly' 
+      ? [selectedMonth] 
+      : timeFrame === '3-months'
+        ? getMonthsInWindow(selectedMonth, 3)
+        : getMonthsInWindow(selectedMonth, 6);
+        
+    let launchCAAll = 0;
+    let premiumCAAll = 0;
+    let digitalCAAll = 0;
+    let collabsCollectedCAAll = 0;
+    let collabsContractedCAAll = 0;
     
-    const launchCAEUR = launchCA * EXCHANGE_RATES.FCFA_TO_EUR;
-    const collabsCollectedCAEUR = collabsCollectedCA * EXCHANGE_RATES.USD_TO_EUR;
-    const collabsContractedCAEUR = collabsContractedCA * EXCHANGE_RATES.USD_TO_EUR;
+    months.forEach(m => {
+      const l = launches[m];
+      const lCA = calculateLaunchCA(l);
+      const pCA = calculatePremiumCA(prospects, m);
+      const dCA = calculateDigitalCA(sales, m);
+      const cCollected = calculateCollabsCollectedCA(collabs, m);
+      const cContracted = calculateCollabsContractedCA(collabs, m);
+      
+      launchCAAll += lCA * EXCHANGE_RATES.FCFA_TO_EUR;
+      premiumCAAll += pCA;
+      digitalCAAll += dCA;
+      collabsCollectedCAAll += cCollected * EXCHANGE_RATES.USD_TO_EUR;
+      collabsContractedCAAll += cContracted * EXCHANGE_RATES.USD_TO_EUR;
+      
+      adsSpent += (l ? l.adsSpent : 0) * EXCHANGE_RATES.FCFA_TO_EUR;
+      charges += calculateChargesForMonth(expenses, m);
+      monthlyObjective += objectives[m] || 5000;
+      monthlyContentsCount += contents.filter(c => getYearMonth(c.date) === m).length;
+    });
     
-    totalCollectedCA = launchCAEUR + premiumCA + digitalCA + collabsCollectedCAEUR;
-    totalContractedCA = launchCAEUR + premiumCA + digitalCA + collabsContractedCAEUR;
-    
-    adsSpent = launch ? launch.adsSpent : 0; // in FCFA
-    const adsSpentEUR = adsSpent * EXCHANGE_RATES.FCFA_TO_EUR;
-    charges = calculateChargesForMonth(expenses, selectedMonth);
-    totalOutflow = charges + adsSpentEUR;
+    totalCollectedCA = launchCAAll + premiumCAAll + digitalCAAll + collabsCollectedCAAll;
+    totalContractedCA = launchCAAll + premiumCAAll + digitalCAAll + collabsContractedCAAll;
+    totalOutflow = charges + adsSpent;
     netProfitCollected = totalCollectedCA - totalOutflow;
     netProfitContracted = totalContractedCA - totalOutflow;
-    
-    monthlyContentsCount = contents.filter(c => getYearMonth(c.date) === selectedMonth).length;
-    monthlyObjective = objectives[selectedMonth] || 5000;
     objectiveProgressCollected = monthlyObjective > 0 ? (totalCollectedCA / monthlyObjective) * 100 : 0;
     
     const digitalProductsMap: Record<string, { count: number; total: number }> = {};
-    sales.filter(s => getYearMonth(s.date) === selectedMonth).forEach(s => {
+    sales.filter(s => months.includes(getYearMonth(s.date))).forEach(s => {
       if (!digitalProductsMap[s.product]) {
         digitalProductsMap[s.product] = { count: 0, total: 0 };
       }
@@ -153,38 +180,52 @@ export const DashboardScreen: React.FC = () => {
       ...stats
     }));
 
-    const year = selectedMonth.split('-')[0];
-    const monthNum = parseInt(selectedMonth.split('-')[1], 10);
-    const isSecondSemester = monthNum >= 7;
-    const semesterMonths = isSecondSemester 
-      ? ['07', '08', '09', '10', '11', '12'] 
-      : ['01', '02', '03', '04', '05', '06'];
-    barChartLabels = isSecondSemester
-      ? ['Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
-      : ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'];
+    if (timeFrame === 'monthly') {
+      const year = selectedMonth.split('-')[0];
+      const monthNum = parseInt(selectedMonth.split('-')[1], 10);
+      const isSecondSemester = monthNum >= 7;
+      const semesterMonths = isSecondSemester 
+        ? ['07', '08', '09', '10', '11', '12'] 
+        : ['01', '02', '03', '04', '05', '06'];
+      barChartLabels = isSecondSemester
+        ? ['Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
+        : ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin'];
+        
+      barChartCollectedData = semesterMonths.map(m => {
+        const key = `${year}-${m}`;
+        return calculateTotalCollectedCA(key, launches[key], prospects, sales, collabs);
+      });
+      barChartContractedData = semesterMonths.map(m => {
+        const key = `${year}-${m}`;
+        return calculateTotalContractedCA(key, launches[key], prospects, sales, collabs);
+      });
+      barChartObjectiveData = semesterMonths.map(m => {
+        const key = `${year}-${m}`;
+        return objectives[key] || 5000;
+      });
+
+      chartTitle = `Performance Semestrielle (${isSecondSemester ? 'S2' : 'S1'} ${year})`;
+      const monthLabelName = new Date(selectedMonth + '-02').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+      breakdownTitle = `Sources de Revenu (${monthLabelName.charAt(0).toUpperCase() + monthLabelName.slice(1)})`;
+    } else {
+      barChartLabels = months.map(m => {
+        const dateObj = new Date(m + '-02');
+        const label = dateObj.toLocaleDateString('fr-FR', { month: 'short' });
+        return label.charAt(0).toUpperCase() + label.slice(1);
+      });
+      barChartCollectedData = months.map(m => calculateTotalCollectedCA(m, launches[m], prospects, sales, collabs));
+      barChartContractedData = months.map(m => calculateTotalContractedCA(m, launches[m], prospects, sales, collabs));
+      barChartObjectiveData = months.map(m => objectives[m] || 5000);
       
-    barChartCollectedData = semesterMonths.map(m => {
-      const key = `${year}-${m}`;
-      return calculateTotalCollectedCA(key, launches[key], prospects, sales, collabs);
-    });
-    barChartContractedData = semesterMonths.map(m => {
-      const key = `${year}-${m}`;
-      return calculateTotalContractedCA(key, launches[key], prospects, sales, collabs);
-    });
-    barChartObjectiveData = semesterMonths.map(m => {
-      const key = `${year}-${m}`;
-      return objectives[key] || 5000;
-    });
+      chartTitle = `Performance sur ${timeFrame === '3-months' ? '3 mois' : '6 mois'} (finissant en ${new Date(selectedMonth + '-02').toLocaleDateString('fr-FR', { month: 'long' })})`;
+      breakdownTitle = `Sources de Revenu (${timeFrame === '3-months' ? '3 derniers mois' : '6 derniers mois'})`;
+    }
 
-    cumulativeLaunch = launchCA * EXCHANGE_RATES.FCFA_TO_EUR;
-    cumulativePremium = premiumCA;
-    cumulativeDigital = digitalCA;
-    cumulativeCollabsCollected = collabsCollectedCA * EXCHANGE_RATES.USD_TO_EUR;
-    cumulativeCollabsContracted = collabsContractedCA * EXCHANGE_RATES.USD_TO_EUR;
-
-    chartTitle = `Performance Semestrielle (${isSecondSemester ? 'S2' : 'S1'} ${year})`;
-    const monthLabelName = new Date(selectedMonth + '-02').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-    breakdownTitle = `Sources de Revenu (${monthLabelName.charAt(0).toUpperCase() + monthLabelName.slice(1)})`;
+    cumulativeLaunch = launchCAAll;
+    cumulativePremium = premiumCAAll;
+    cumulativeDigital = digitalCAAll;
+    cumulativeCollabsCollected = collabsCollectedCAAll;
+    cumulativeCollabsContracted = collabsContractedCAAll;
 
   } else if (timeFrame === 'yearly') {
     const yearMonths = Array.from({ length: 12 }, (_, i) => `${selectedYear}-${String(i + 1).padStart(2, '0')}`);
@@ -331,8 +372,57 @@ export const DashboardScreen: React.FC = () => {
   const totalCA = revenueBreakdownType === 'collected' ? totalCollectedCA : totalContractedCA;
   const cumulativeCollabs = revenueBreakdownType === 'collected' ? cumulativeCollabsCollected : cumulativeCollabsContracted;
 
-  // Monthly stats (retained for pipeline analytics)
-  const prospectStats = calculateMonthlyProspectStats(prospects, selectedMonth);
+  // Get aggregated prospect stats for active timeframe
+  const getProspectStatsForPeriod = () => {
+    if (timeFrame === 'monthly') {
+      return calculateMonthlyProspectStats(prospects, selectedMonth);
+    }
+    
+    const months = timeFrame === '3-months'
+      ? getMonthsInWindow(selectedMonth, 3)
+      : timeFrame === '6-months'
+        ? getMonthsInWindow(selectedMonth, 6)
+        : timeFrame === 'yearly'
+          ? Array.from({ length: 12 }, (_, i) => `${selectedYear}-${String(i + 1).padStart(2, '0')}`)
+          : Array.from(new Set(prospects.map(p => p.history[0]?.date?.substring(0, 7)).filter(Boolean)));
+          
+    let newProspects = 0;
+    let callsBooked = 0;
+    let closedWon = 0;
+    let lost = 0;
+    
+    newProspects = prospects.filter(p => 
+      p.history[0] && months.includes(getYearMonth(p.history[0].date))
+    ).length;
+
+    callsBooked = prospects.filter(p => 
+      p.history.some(h => h.status === 'Appel booké' && months.includes(getYearMonth(h.date)))
+    ).length;
+
+    closedWon = prospects.filter(p => 
+      p.currentStatus === 'Closé gagné' && p.dealDate && months.includes(getYearMonth(p.dealDate))
+    ).length;
+
+    lost = prospects.filter(p => 
+      p.lost && p.history.some(h => h.status === 'Perdu' && months.includes(getYearMonth(h.date)))
+    ).length;
+    
+    const callRate = newProspects > 0 ? (callsBooked / newProspects) * 100 : 0;
+    const closeRate = callsBooked > 0 ? (closedWon / callsBooked) * 100 : 0;
+    const conversionRate = newProspects > 0 ? (closedWon / newProspects) * 100 : 0;
+    
+    return {
+      newProspects,
+      callsBooked,
+      closedWon,
+      lost,
+      callRate,
+      closeRate,
+      conversionRate
+    };
+  };
+
+  const prospectStats = getProspectStatsForPeriod();
   const dailyProspecting = calculateDailyProspectingActivity(prospects, selectedMonth, 10);
 
   const barChartData = {
@@ -510,20 +600,24 @@ export const DashboardScreen: React.FC = () => {
     }
   };
 
+  const isDateInTimeFrame = (dateStr: string | undefined): boolean => {
+    if (!dateStr) return false;
+    const m = dateStr.substring(0, 7);
+    if (timeFrame === 'monthly') return m === selectedMonth;
+    if (timeFrame === '3-months') return getMonthsInWindow(selectedMonth, 3).includes(m);
+    if (timeFrame === '6-months') return getMonthsInWindow(selectedMonth, 6).includes(m);
+    if (timeFrame === 'yearly') return m.startsWith(selectedYear);
+    return true; // all-time
+  };
+
   // Filtrer les clients premium closés
   const monthlyPremiumClients = prospects.filter(p => {
     if (p.currentStatus !== 'Closé gagné' || !p.dealDate) return false;
-    if (timeFrame === 'monthly') return getYearMonth(p.dealDate) === selectedMonth;
-    if (timeFrame === 'yearly') return p.dealDate.startsWith(selectedYear);
-    return true;
+    return isDateInTimeFrame(p.dealDate);
   });
 
   // Filtrer les collaborations
-  const monthlyCollabsList = collabs.filter(c => {
-    if (timeFrame === 'monthly') return getYearMonth(c.publishDate) === selectedMonth;
-    if (timeFrame === 'yearly') return c.publishDate.startsWith(selectedYear);
-    return true;
-  });
+  const monthlyCollabsList = collabs.filter(c => isDateInTimeFrame(c.publishDate));
 
   return (
     <div className="fade-in">
@@ -545,6 +639,18 @@ export const DashboardScreen: React.FC = () => {
               Mensuel
             </button>
             <button 
+              className={`timeframe-tab ${timeFrame === '3-months' ? 'active' : ''}`}
+              onClick={() => setTimeFrame('3-months')}
+            >
+              3 Mois
+            </button>
+            <button 
+              className={`timeframe-tab ${timeFrame === '6-months' ? 'active' : ''}`}
+              onClick={() => setTimeFrame('6-months')}
+            >
+              6 Mois
+            </button>
+            <button 
               className={`timeframe-tab ${timeFrame === 'yearly' ? 'active' : ''}`}
               onClick={() => setTimeFrame('yearly')}
             >
@@ -558,7 +664,7 @@ export const DashboardScreen: React.FC = () => {
             </button>
           </div>
 
-          {timeFrame === 'monthly' && (
+          {(timeFrame === 'monthly' || timeFrame === '3-months' || timeFrame === '6-months') && (
             <input 
               type="month" 
               value={selectedMonth}
@@ -953,71 +1059,179 @@ export const DashboardScreen: React.FC = () => {
               <h4 className="detail-subsection-title">
                 <TrendingUp className="size-4 text-gold" /> Lancement Mensuel Club IA
               </h4>
-              {timeFrame !== 'monthly' ? (
-                <p className="no-detail-text">Sélectionnez le mode mensuel pour voir les détails d'un lancement spécifique.</p>
-              ) : !launch ? (
-                <p className="no-detail-text">Aucun lancement enregistré pour ce mois.</p>
+              {timeFrame === 'monthly' ? (
+                !launch ? (
+                  <p className="no-detail-text">Aucun lancement enregistré pour ce mois.</p>
+                ) : (
+                  (() => {
+                    const totalLaunchSales = launch.daySalesCount + launch.reminders.reduce((sum: number, r: any) => sum + r.count, 0);
+                    const launchShowUpRate = launch.registered > 0 ? (launch.live / launch.registered) * 100 : 0;
+                    const launchLiveConvRate = launch.live > 0 ? (launch.daySalesCount / launch.live) * 100 : 0;
+                    const launchGlobalConvRate = launch.registered > 0 ? (totalLaunchSales / launch.registered) * 100 : 0;
+
+                    return (
+                      <div className="launch-detailed-breakdown">
+                        <div className="launch-detail-item">
+                          <span>Type de Lancement :</span>
+                          <span className="val-highlight" style={{ color: launch.launchType === 'Organique' ? 'var(--status-success)' : 'var(--accent-gold)' }}>
+                            {launch.launchType || 'Publicitaire'}
+                          </span>
+                        </div>
+                        <div className="launch-detail-item">
+                          <span>Ventes jour J (Webinaire) :</span>
+                          <span className="val-highlight">{launch.daySalesCount} unités ({launch.daySalesAmount.toLocaleString('fr-FR')} FCFA / {(launch.daySalesAmount * EXCHANGE_RATES.FCFA_TO_EUR).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €)</span>
+                        </div>
+                        <div className="launch-detail-item">
+                          <span>Ventes post-webinaire (Relances) :</span>
+                          <span className="val-highlight">
+                            {launch.reminders.reduce((sum: number, r: any) => sum + r.count, 0)} unités ({launch.reminders.reduce((sum: number, r: any) => sum + r.amount, 0).toLocaleString('fr-FR')} FCFA / {(launch.reminders.reduce((sum: number, r: any) => sum + r.amount, 0) * EXCHANGE_RATES.FCFA_TO_EUR).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €)
+                          </span>
+                        </div>
+
+                        <div className="launch-detail-item" style={{ borderTop: '1px dashed rgba(30,58,95,0.4)', paddingTop: '8px', marginTop: '8px' }}>
+                          <span>Taux de présence (Live) :</span>
+                          <span className="val-highlight text-blue">{launchShowUpRate.toFixed(1)} %</span>
+                        </div>
+                        <div className="launch-detail-item">
+                          <span>Taux conv. Direct (Live) :</span>
+                          <span className="val-highlight text-purple">{launchLiveConvRate.toFixed(1)} %</span>
+                        </div>
+                        <div className="launch-detail-item" style={{ paddingBottom: '8px', marginBottom: '8px' }}>
+                          <span>Taux conv. Global :</span>
+                          <span className="val-highlight text-green">{launchGlobalConvRate.toFixed(1)} %</span>
+                        </div>
+
+                        {launch.reminders.length > 0 && (
+                          <div className="launch-reminders-table-wrapper">
+                            <table>
+                              <thead>
+                                <tr>
+                                  <th>Date relance</th>
+                                  <th>Unités</th>
+                                  <th>Montant</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {launch.reminders.map((rem: any, idx: number) => (
+                                  <tr key={idx}>
+                                    <td>{new Date(rem.date).toLocaleDateString('fr-FR')}</td>
+                                    <td>{rem.count}</td>
+                                    <td>{rem.amount.toLocaleString('fr-FR')} FCFA ({(rem.amount * EXCHANGE_RATES.FCFA_TO_EUR).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €)</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()
+                )
               ) : (
                 (() => {
-                  const totalLaunchSales = launch.daySalesCount + launch.reminders.reduce((sum: number, r: any) => sum + r.count, 0);
-                  const launchShowUpRate = launch.registered > 0 ? (launch.live / launch.registered) * 100 : 0;
-                  const launchLiveConvRate = launch.live > 0 ? (launch.daySalesCount / launch.live) * 100 : 0;
-                  const launchGlobalConvRate = launch.registered > 0 ? (totalLaunchSales / launch.registered) * 100 : 0;
+                  const months = timeFrame === '3-months'
+                    ? getMonthsInWindow(selectedMonth, 3)
+                    : timeFrame === '6-months'
+                      ? getMonthsInWindow(selectedMonth, 6)
+                      : timeFrame === 'yearly'
+                        ? Array.from({ length: 12 }, (_, i) => `${selectedYear}-${String(i + 1).padStart(2, '0')}`)
+                        : Object.keys(launches);
+                        
+                  const periodLaunchesList = months.map(m => launches[m]).filter(Boolean);
+                  
+                  if (periodLaunchesList.length === 0) {
+                    return <p className="no-detail-text">Aucun lancement enregistré sur cette période.</p>;
+                  }
+                  
+                  const totalRegistered = periodLaunchesList.reduce((sum, l) => sum + l.registered, 0);
+                  const totalLive = periodLaunchesList.reduce((sum, l) => sum + l.live, 0);
+                  const totalAdsSpent = periodLaunchesList.reduce((sum, l) => sum + l.adsSpent, 0);
+                  
+                  const totalDaySalesCount = periodLaunchesList.reduce((sum, l) => sum + l.daySalesCount, 0);
+                  const totalDaySalesAmount = periodLaunchesList.reduce((sum, l) => sum + l.daySalesAmount, 0);
+                  
+                  const totalRemindersSalesCount = periodLaunchesList.reduce((sum, l) => 
+                    sum + (l.reminders || []).reduce((s, r) => s + r.count, 0), 0);
+                  const totalRemindersSalesAmount = periodLaunchesList.reduce((sum, l) => 
+                    sum + (l.reminders || []).reduce((s, r) => s + r.amount, 0), 0);
+                    
+                  const totalSalesUnits = totalDaySalesCount + totalRemindersSalesCount;
+                  const totalLaunchCA = totalDaySalesAmount + totalRemindersSalesAmount;
+                  
+                  const avgShowUp = totalRegistered > 0 ? (totalLive / totalRegistered) * 100 : 0;
+                  const avgLiveConv = totalLive > 0 ? (totalDaySalesCount / totalLive) * 100 : 0;
+                  const avgGlobalConv = totalRegistered > 0 ? (totalSalesUnits / totalRegistered) * 100 : 0;
+                  const roas = totalAdsSpent > 0 ? (totalLaunchCA / totalAdsSpent) : 0;
 
                   return (
                     <div className="launch-detailed-breakdown">
                       <div className="launch-detail-item">
-                        <span>Type de Lancement :</span>
-                        <span className="val-highlight" style={{ color: launch.launchType === 'Organique' ? 'var(--status-success)' : 'var(--accent-gold)' }}>
-                          {launch.launchType || 'Publicitaire'}
-                        </span>
+                        <span>Lancements dans la période :</span>
+                        <span className="val-highlight">{periodLaunchesList.length}</span>
                       </div>
                       <div className="launch-detail-item">
-                        <span>Ventes jour J (Webinaire) :</span>
-                        <span className="val-highlight">{launch.daySalesCount} unités ({launch.daySalesAmount.toLocaleString('fr-FR')} FCFA / {(launch.daySalesAmount * EXCHANGE_RATES.FCFA_TO_EUR).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €)</span>
+                        <span>Inscrits totaux :</span>
+                        <span className="val-highlight">{totalRegistered.toLocaleString('fr-FR')}</span>
                       </div>
                       <div className="launch-detail-item">
-                        <span>Ventes post-webinaire (Relances) :</span>
-                        <span className="val-highlight">
-                          {launch.reminders.reduce((sum: number, r: any) => sum + r.count, 0)} unités ({launch.reminders.reduce((sum: number, r: any) => sum + r.amount, 0).toLocaleString('fr-FR')} FCFA / {(launch.reminders.reduce((sum: number, r: any) => sum + r.amount, 0) * EXCHANGE_RATES.FCFA_TO_EUR).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €)
-                        </span>
+                        <span>Présents totaux (Webinaires) :</span>
+                        <span className="val-highlight">{totalLive.toLocaleString('fr-FR')}</span>
                       </div>
-
+                      <div className="launch-detail-item">
+                        <span>Taux de présence moyen :</span>
+                        <span className="val-highlight text-blue">{avgShowUp.toFixed(1)} %</span>
+                      </div>
+                      <div className="launch-detail-item">
+                        <span>Taux conv. Direct (Live) moyen :</span>
+                        <span className="val-highlight text-purple">{avgLiveConv.toFixed(1)} %</span>
+                      </div>
+                      <div className="launch-detail-item">
+                        <span>Taux conv. Global moyen :</span>
+                        <span className="val-highlight text-green">{avgGlobalConv.toFixed(1)} %</span>
+                      </div>
                       <div className="launch-detail-item" style={{ borderTop: '1px dashed rgba(30,58,95,0.4)', paddingTop: '8px', marginTop: '8px' }}>
-                        <span>Taux de présence (Live) :</span>
-                        <span className="val-highlight text-blue">{launchShowUpRate.toFixed(1)} %</span>
+                        <span>Budget Publicitaire total :</span>
+                        <span className="val-highlight text-red">{totalAdsSpent.toLocaleString('fr-FR')} FCFA ({(totalAdsSpent * EXCHANGE_RATES.FCFA_TO_EUR).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €)</span>
                       </div>
                       <div className="launch-detail-item">
-                        <span>Taux conv. Direct (Live) :</span>
-                        <span className="val-highlight text-purple">{launchLiveConvRate.toFixed(1)} %</span>
+                        <span>CA Lancement total :</span>
+                        <span className="val-highlight text-green">{totalLaunchCA.toLocaleString('fr-FR')} FCFA ({(totalLaunchCA * EXCHANGE_RATES.FCFA_TO_EUR).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €)</span>
                       </div>
                       <div className="launch-detail-item" style={{ paddingBottom: '8px', marginBottom: '8px' }}>
-                        <span>Taux conv. Global :</span>
-                        <span className="val-highlight text-green">{launchGlobalConvRate.toFixed(1)} %</span>
+                        <span>ROAS global :</span>
+                        <span className="val-highlight text-gold">{totalAdsSpent > 0 ? `${roas.toFixed(2)}x` : '—'}</span>
                       </div>
-
-                      {launch.reminders.length > 0 && (
-                        <div className="launch-reminders-table-wrapper">
-                          <table>
-                            <thead>
-                              <tr>
-                                <th>Date relance</th>
-                                <th>Unités</th>
-                                <th>Montant</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {launch.reminders.map((rem: any, idx: number) => (
-                                <tr key={idx}>
-                                  <td>{new Date(rem.date).toLocaleDateString('fr-FR')}</td>
-                                  <td>{rem.count}</td>
-                                  <td>{rem.amount.toLocaleString('fr-FR')} FCFA ({(rem.amount * EXCHANGE_RATES.FCFA_TO_EUR).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €)</td>
+                      
+                      <div className="launch-reminders-table-wrapper" style={{ marginTop: '12px' }}>
+                        <table style={{ width: '100%', fontSize: '11.5px' }}>
+                          <thead>
+                            <tr>
+                              <th>Mois</th>
+                              <th>Type</th>
+                              <th style={{ textAlign: 'right' }}>Inscrits</th>
+                              <th style={{ textAlign: 'right' }}>Présents</th>
+                              <th style={{ textAlign: 'right' }}>Ventes</th>
+                              <th style={{ textAlign: 'right' }}>CA (FCFA)</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {periodLaunchesList.map(pl => {
+                              const plSales = pl.daySalesCount + (pl.reminders || []).reduce((s, r) => s + r.count, 0);
+                              const plCA = pl.daySalesAmount + (pl.reminders || []).reduce((s, r) => s + r.amount, 0);
+                              return (
+                                <tr key={pl.id}>
+                                  <td style={{ fontWeight: 600 }}>{pl.month}</td>
+                                  <td>{pl.launchType}</td>
+                                  <td style={{ textAlign: 'right' }}>{pl.registered}</td>
+                                  <td style={{ textAlign: 'right' }}>{pl.live}</td>
+                                  <td style={{ textAlign: 'right' }}>{plSales}</td>
+                                  <td style={{ textAlign: 'right', fontWeight: 600 }}>{plCA.toLocaleString('fr-FR')}</td>
                                 </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   );
                 })()
