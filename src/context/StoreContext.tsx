@@ -36,6 +36,13 @@ interface StoreContextType {
   updateProspectStatus: (id: string, status: string, date?: string, amount?: number) => void;
   markProspectLost: (id: string, lost: boolean) => void;
   deleteProspect: (id: string) => void;
+  saveProspectCallInfo: (
+    id: string,
+    callDate: string,
+    callTime: string,
+    callNotes: string,
+    callOutcome: 'Réussi' | 'Pas concluant' | 'À relancer' | 'Pas de réponse'
+  ) => void;
   
   saveLaunch: (launch: Omit<MonthlyLaunch, 'id' | 'reminders'> & { status?: 'En cours' | 'Terminé' }) => void;
   addReminderToLaunch: (month: string, reminder: Omit<Reminder, 'id'>) => void;
@@ -301,16 +308,25 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           objectivesMap[o.month] = Number(o.amount);
         });
 
-        const prospectsList: Prospect[] = (resProspects.data || []).map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          currentStatus: p.current_status,
-          maxIndex: p.max_index,
-          lost: p.lost,
-          dealAmount: p.deal_amount ? Number(p.deal_amount) : undefined,
-          dealDate: p.deal_date || undefined,
-          history: p.history || []
-        }));
+        const prospectsList: Prospect[] = (resProspects.data || []).map((p: any) => {
+          const rawHistory = p.history || [];
+          const callMetadata = rawHistory.find((h: any) => h.status === 'metadata_call_info');
+          const cleanHistory = rawHistory.filter((h: any) => h.status !== 'metadata_call_info');
+          return {
+            id: p.id,
+            name: p.name,
+            currentStatus: p.current_status,
+            maxIndex: p.max_index,
+            lost: p.lost,
+            dealAmount: p.deal_amount ? Number(p.deal_amount) : undefined,
+            dealDate: p.deal_date || undefined,
+            history: cleanHistory,
+            callDate: callMetadata?.callDate,
+            callTime: callMetadata?.callTime,
+            callNotes: callMetadata?.callNotes,
+            callOutcome: callMetadata?.callOutcome
+          };
+        });
 
         const collabsList: CommercialCollab[] = (resCollabs.data || []).map((c: any) => ({
           id: c.id,
@@ -616,6 +632,24 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const getHistoryToSave = (p: Prospect): any[] => {
+    const cleanHistory = p.history.filter(h => h.status !== 'metadata_call_info');
+    if (p.callDate || p.callTime || p.callNotes || p.callOutcome) {
+      return [
+        ...cleanHistory,
+        {
+          status: 'metadata_call_info',
+          date: new Date().toISOString().split('T')[0],
+          callDate: p.callDate || '',
+          callTime: p.callTime || '',
+          callNotes: p.callNotes || '',
+          callOutcome: p.callOutcome || ''
+        }
+      ];
+    }
+    return cleanHistory;
+  };
+
   const updateProspectStatus = async (id: string, status: string, date?: string, amount?: number) => {
     const statusDate = date || new Date().toISOString().split('T')[0];
     const isClosing = status === 'Closé gagné';
@@ -655,7 +689,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         max_index: p.maxIndex,
         deal_amount: p.dealAmount,
         deal_date: p.dealDate,
-        history: p.history
+        history: getHistoryToSave(p)
       }).eq('id', id);
       if (error) {
         setSavingStatus('error');
@@ -692,8 +726,51 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setSavingStatus('saving');
       const { error } = await supabase.from('prospects').update({
         lost: p.lost,
-        history: p.history
+        history: getHistoryToSave(p)
       }).eq('id', id);
+      if (error) {
+        setSavingStatus('error');
+        setSavingError(error.message);
+      } else {
+        setSavingStatus('saved');
+        setTimeout(() => setSavingStatus('idle'), 1500);
+      }
+    }
+  };
+
+  const saveProspectCallInfo = async (
+    id: string, 
+    callDate: string, 
+    callTime: string, 
+    callNotes: string, 
+    callOutcome: 'Réussi' | 'Pas concluant' | 'À relancer' | 'Pas de réponse'
+  ) => {
+    let updatedProspect: Prospect | null = null;
+    
+    setStore(prev => {
+      const updated = prev.prospects.map(p => {
+        if (p.id === id) {
+          updatedProspect = {
+            ...p,
+            callDate,
+            callTime,
+            callNotes,
+            callOutcome
+          };
+          return updatedProspect!;
+        }
+        return p;
+      });
+      return { ...prev, prospects: updated };
+    });
+
+    if (supabase && updatedProspect) {
+      const p = updatedProspect as Prospect;
+      setSavingStatus('saving');
+      const { error } = await supabase.from('prospects').update({
+        history: getHistoryToSave(p)
+      }).eq('id', id);
+
       if (error) {
         setSavingStatus('error');
         setSavingError(error.message);
@@ -1078,6 +1155,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       updateProspectStatus,
       markProspectLost,
       deleteProspect,
+      saveProspectCallInfo,
       saveLaunch,
       addReminderToLaunch,
       deleteReminderFromLaunch,

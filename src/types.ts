@@ -29,6 +29,10 @@ export interface Prospect {
   dealAmount?: number;
   dealDate?: string; // YYYY-MM-DD
   history: ProspectHistory[];
+  callDate?: string;
+  callTime?: string;
+  callNotes?: string;
+  callOutcome?: 'Réussi' | 'Pas concluant' | 'À relancer' | 'Pas de réponse';
 }
 
 export interface Reminder {

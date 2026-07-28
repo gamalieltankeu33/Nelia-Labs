@@ -10,7 +10,8 @@ export const ProspectsScreen: React.FC = () => {
     addProspect, 
     updateProspectStatus, 
     markProspectLost,
-    deleteProspect
+    deleteProspect,
+    saveProspectCallInfo
   } = useStore();
 
   const [newName, setNewName] = useState('');
@@ -22,6 +23,15 @@ export const ProspectsScreen: React.FC = () => {
   const [closingForm, setClosingForm] = useState({
     amount: '1500',
     date: new Date().toISOString().split('T')[0]
+  });
+
+  // Pour gérer les détails du call
+  const [callDetailProspectId, setCallDetailProspectId] = useState<string | null>(null);
+  const [callForm, setCallForm] = useState({
+    callDate: '',
+    callTime: '',
+    callNotes: '',
+    callOutcome: 'À relancer' as 'Réussi' | 'Pas concluant' | 'À relancer' | 'Pas de réponse'
   });
 
   const handleQuickAdd = (e: React.FormEvent) => {
@@ -216,21 +226,69 @@ export const ProspectsScreen: React.FC = () => {
                           </span>
                         )}
                       </div>
+                      
+                      {p.callDate && (
+                        <div className="call-info-summary" style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: '6px', display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                          <span>📅 Call: <strong>{new Date(p.callDate).toLocaleDateString('fr-FR')} à {p.callTime || '12:00'}</strong></span>
+                          <span style={{ opacity: 0.3 }}>|</span>
+                          <span style={{ 
+                            padding: '1px 6px', 
+                            borderRadius: '4px', 
+                            fontSize: '10px', 
+                            fontWeight: '700', 
+                            backgroundColor: p.callOutcome === 'Réussi' ? 'rgba(16, 185, 129, 0.1)' : p.callOutcome === 'Pas concluant' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                            color: p.callOutcome === 'Réussi' ? '#10B981' : p.callOutcome === 'Pas concluant' ? '#EF4444' : '#F59E0B'
+                          }}>
+                            {p.callOutcome}
+                          </span>
+                          {p.callNotes && (
+                            <>
+                              <span style={{ opacity: 0.3 }}>|</span>
+                              <span style={{ fontStyle: 'italic', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={p.callNotes}>
+                                "{p.callNotes}"
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </div>
 
-                    <div className="prospect-actions">
+                    <div className="prospect-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       {/* Sélecteur de statut */}
                       {!p.lost && p.currentStatus !== 'Closé gagné' && (
-                        <select
-                          value={p.currentStatus}
-                          onChange={e => handleStatusChange(p.id, e.target.value)}
-                          className="status-selector"
-                          style={{ borderColor: currentStatusColor }}
-                        >
-                          {PROSPECT_STATUSES.map(status => (
-                            <option key={status} value={status}>{status}</option>
-                          ))}
-                        </select>
+                        <>
+                          <select
+                            value={p.currentStatus}
+                            onChange={e => handleStatusChange(p.id, e.target.value)}
+                            className="status-selector"
+                            style={{ borderColor: currentStatusColor }}
+                          >
+                            {PROSPECT_STATUSES.map(status => (
+                              <option key={status} value={status}>{status}</option>
+                            ))}
+                          </select>
+                          
+                          <button
+                            onClick={() => {
+                              const pCallDate = p.callDate || new Date().toISOString().split('T')[0];
+                              const pCallTime = p.callTime || '14:00';
+                              const pCallNotes = p.callNotes || '';
+                              const pCallOutcome = p.callOutcome || 'À relancer';
+                              setCallForm({
+                                callDate: pCallDate,
+                                callTime: pCallTime,
+                                callNotes: pCallNotes,
+                                callOutcome: pCallOutcome as any
+                              });
+                              setCallDetailProspectId(p.id);
+                            }}
+                            className="btn btn-secondary btn-sm"
+                            style={{ display: 'flex', alignItems: 'center', gap: '4px', height: '36px', padding: '0 10px' }}
+                            title="Détails du Call"
+                          >
+                            📞 Call
+                          </button>
+                        </>
                       )}
 
                       {/* Badge simple si closé gagné */}
@@ -382,6 +440,103 @@ export const ProspectsScreen: React.FC = () => {
                 </button>
                 <button type="submit" className="btn btn-primary">
                   Valider le closing
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Call Details */}
+      {callDetailProspectId && (
+        <div className="modal-backdrop">
+          <div className="card modal-content fade-in" style={{ maxWidth: '500px' }}>
+            <h3 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              📞 Détails du Call / Appel Premium
+            </h3>
+            <p className="screen-subtitle" style={{ margin: '8px 0 20px 0' }}>
+              Enregistrez les informations de planification et les conclusions de l'appel pour ce prospect.
+            </p>
+
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              saveProspectCallInfo(
+                callDetailProspectId,
+                callForm.callDate,
+                callForm.callTime,
+                callForm.callNotes,
+                callForm.callOutcome
+              );
+              setCallDetailProspectId(null);
+            }}>
+              <div className="grid-cols-2" style={{ gap: '16px', marginBottom: '16px' }}>
+                <div className="form-group">
+                  <label>Date du Call</label>
+                  <input 
+                    type="date" 
+                    value={callForm.callDate}
+                    onChange={e => setCallForm(f => ({ ...f, callDate: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Heure du Call</label>
+                  <input 
+                    type="time" 
+                    value={callForm.callTime}
+                    onChange={e => setCallForm(f => ({ ...f, callTime: e.target.value }))}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '16px' }}>
+                <label>Résultat de l'appel / Signature</label>
+                <select
+                  value={callForm.callOutcome}
+                  onChange={e => setCallForm(f => ({ ...f, callOutcome: e.target.value as any }))}
+                  required
+                >
+                  <option value="À relancer">À relancer / En cours de discussion</option>
+                  <option value="Réussi">Réussi / Intéressé (Prêt à signer)</option>
+                  <option value="Pas concluant">Pas concluant / Refusé</option>
+                  <option value="Pas de réponse">Pas de réponse / Ghosté</option>
+                </select>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '24px' }}>
+                <label>Notes & Commentaires du Call</label>
+                <textarea 
+                  value={callForm.callNotes}
+                  onChange={e => setCallForm(f => ({ ...f, callNotes: e.target.value }))}
+                  placeholder="Ex: A besoin de scaler ses processus. Budget ok, attend le contrat."
+                  style={{ 
+                    width: '100%', 
+                    height: '100px', 
+                    padding: '10px', 
+                    borderRadius: 'var(--radius-md)', 
+                    border: '1px solid var(--border-color)', 
+                    backgroundColor: 'var(--bg-input)',
+                    color: 'var(--text-primary)',
+                    fontFamily: 'inherit',
+                    fontSize: '13.5px',
+                    resize: 'none'
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setCallDetailProspectId(null);
+                  }}
+                >
+                  Annuler
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Enregistrer les informations
                 </button>
               </div>
             </form>
