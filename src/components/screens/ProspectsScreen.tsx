@@ -52,6 +52,7 @@ export const ProspectsScreen: React.FC = () => {
   });
 
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
+  const [dragOverPhase, setDragOverPhase] = useState<number | null>(null);
 
   // Helper to get prospects for a specific phase
   const getProspectsForPhase = (phase: 1 | 2 | 3 | 4) => {
@@ -105,13 +106,53 @@ export const ProspectsScreen: React.FC = () => {
     }
   };
 
+  const handleDrop = (id: string, targetPhase: number) => {
+    const p = prospects.find(x => x.id === id);
+    if (!p) return;
+    
+    let nextStatus = p.currentStatus;
+    
+    if (targetPhase === 1) {
+      nextStatus = "Conversation en cours";
+    } else if (targetPhase === 2) {
+      nextStatus = "Appel booké";
+    } else if (targetPhase === 3) {
+      nextStatus = "Appel réalisé";
+    } else if (targetPhase === 4) {
+      nextStatus = "Closé gagné";
+    }
+    
+    if (nextStatus === 'Closé gagné') {
+      setClosingProspectId(id);
+    } else if (nextStatus === 'Appel booké' || nextStatus === 'Appel réalisé') {
+      setCallForm({
+        callDate: p.callDate || new Date().toISOString().split('T')[0],
+        callTime: p.callTime || '14:00',
+        callNotes: p.callNotes || '',
+        callOutcome: p.callOutcome || 'À relancer'
+      });
+      setCallDetailProspectId(id);
+      updateProspectStatus(id, nextStatus);
+    } else {
+      updateProspectStatus(id, nextStatus);
+    }
+  };
+
   const renderKanbanCard = (p: Prospect) => {
     const currentStatusColor = PROSPECT_STATUS_COLORS[PROSPECT_STATUSES.indexOf(p.currentStatus as any)] || '#9FB0C3';
     const stagnationDays = getStagnationDays(p.history);
     const isStagnant = stagnationDays >= 5;
 
     return (
-      <div key={p.id} className="kanban-card" style={{ borderLeft: `4px solid ${currentStatusColor}` }}>
+      <div 
+        key={p.id} 
+        className="kanban-card" 
+        style={{ borderLeft: `4px solid ${currentStatusColor}` }}
+        draggable={true}
+        onDragStart={(e) => {
+          e.dataTransfer.setData('text/plain', p.id);
+        }}
+      >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
           <span className="kanban-card-name" title={p.name}>{p.name}</span>
           <div style={{ display: 'flex', gap: '4px' }}>
@@ -368,7 +409,20 @@ export const ProspectsScreen: React.FC = () => {
           <div className="kanban-board">
             
             {/* Phase 1 : Contact & Discussion */}
-            <div className="kanban-column">
+            <div 
+              className={`kanban-column ${dragOverPhase === 1 ? 'dragged-over' : ''}`}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragOverPhase(1);
+              }}
+              onDragLeave={() => setDragOverPhase(null)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragOverPhase(null);
+                const id = e.dataTransfer.getData('text/plain');
+                if (id) handleDrop(id, 1);
+              }}
+            >
               <div className="kanban-column-header">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span className="kanban-column-dot" style={{ backgroundColor: '#3B82F6' }} />
@@ -386,7 +440,20 @@ export const ProspectsScreen: React.FC = () => {
             </div>
 
             {/* Phase 2 : Appel & RDV */}
-            <div className="kanban-column">
+            <div 
+              className={`kanban-column ${dragOverPhase === 2 ? 'dragged-over' : ''}`}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragOverPhase(2);
+              }}
+              onDragLeave={() => setDragOverPhase(null)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragOverPhase(null);
+                const id = e.dataTransfer.getData('text/plain');
+                if (id) handleDrop(id, 2);
+              }}
+            >
               <div className="kanban-column-header">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span className="kanban-column-dot" style={{ backgroundColor: '#F59E0B' }} />
@@ -404,7 +471,20 @@ export const ProspectsScreen: React.FC = () => {
             </div>
 
             {/* Phase 3 : Négociation & Suivi */}
-            <div className="kanban-column">
+            <div 
+              className={`kanban-column ${dragOverPhase === 3 ? 'dragged-over' : ''}`}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragOverPhase(3);
+              }}
+              onDragLeave={() => setDragOverPhase(null)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragOverPhase(null);
+                const id = e.dataTransfer.getData('text/plain');
+                if (id) handleDrop(id, 3);
+              }}
+            >
               <div className="kanban-column-header">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span className="kanban-column-dot" style={{ backgroundColor: '#8B5CF6' }} />
@@ -422,7 +502,20 @@ export const ProspectsScreen: React.FC = () => {
             </div>
 
             {/* Phase 4 : Closés */}
-            <div className="kanban-column">
+            <div 
+              className={`kanban-column ${dragOverPhase === 4 ? 'dragged-over' : ''}`}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragOverPhase(4);
+              }}
+              onDragLeave={() => setDragOverPhase(null)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragOverPhase(null);
+                const id = e.dataTransfer.getData('text/plain');
+                if (id) handleDrop(id, 4);
+              }}
+            >
               <div className="kanban-column-header">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span className="kanban-column-dot" style={{ backgroundColor: '#10B981' }} />
@@ -904,6 +997,13 @@ export const ProspectsScreen: React.FC = () => {
           gap: 16px;
           max-height: 75vh;
           overflow-y: auto;
+          transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+        }
+
+        .kanban-column.dragged-over {
+          border-color: var(--accent-gold);
+          box-shadow: 0 0 12px rgba(201, 162, 39, 0.25);
+          background-color: rgba(201, 162, 39, 0.03);
         }
 
         .kanban-column-header {
@@ -949,6 +1049,11 @@ export const ProspectsScreen: React.FC = () => {
           padding: 12px;
           box-shadow: 0 1px 3px rgba(0,0,0,0.05);
           transition: var(--transition-fast);
+          cursor: grab;
+        }
+
+        .kanban-card:active {
+          cursor: grabbing;
         }
 
         .kanban-card:hover {
