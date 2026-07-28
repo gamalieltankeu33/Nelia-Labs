@@ -181,21 +181,19 @@ export const LaunchScreen: React.FC = () => {
               {isLocked ? (
                 <button
                   onClick={() => {
-                    if (window.confirm("Voulez-vous réouvrir ce lancement pour le modifier ?")) {
-                      saveLaunch({
-                        month: selectedMonth,
-                        launchType: currentLaunch.launchType,
-                        commStartDate: currentLaunch.commStartDate,
-                        webinarDate: currentLaunch.webinarDate,
-                        adsBudget: currentLaunch.adsBudget,
-                        adsSpent: currentLaunch.adsSpent,
-                        registered: currentLaunch.registered,
-                        live: currentLaunch.live,
-                        daySalesCount: currentLaunch.daySalesCount,
-                        daySalesAmount: currentLaunch.daySalesAmount,
-                        status: 'En cours'
-                      });
-                    }
+                    saveLaunch({
+                      month: selectedMonth,
+                      launchType: currentLaunch.launchType,
+                      commStartDate: currentLaunch.commStartDate,
+                      webinarDate: currentLaunch.webinarDate,
+                      adsBudget: currentLaunch.adsBudget,
+                      adsSpent: currentLaunch.adsSpent,
+                      registered: currentLaunch.registered,
+                      live: currentLaunch.live,
+                      daySalesCount: currentLaunch.daySalesCount,
+                      daySalesAmount: currentLaunch.daySalesAmount,
+                      status: 'En cours'
+                    });
                   }}
                   className="btn btn-secondary btn-sm"
                   style={{ display: 'flex', alignItems: 'center', gap: '6px', height: '38px', padding: '0 12px' }}
@@ -205,21 +203,19 @@ export const LaunchScreen: React.FC = () => {
               ) : (
                 <button
                   onClick={() => {
-                    if (window.confirm("Êtes-vous sûr de vouloir clôturer ce lancement ? Cela verrouillera les modifications.")) {
-                      saveLaunch({
-                        month: selectedMonth,
-                        launchType: currentLaunch.launchType,
-                        commStartDate: currentLaunch.commStartDate,
-                        webinarDate: currentLaunch.webinarDate,
-                        adsBudget: currentLaunch.adsBudget,
-                        adsSpent: currentLaunch.adsSpent,
-                        registered: currentLaunch.registered,
-                        live: currentLaunch.live,
-                        daySalesCount: currentLaunch.daySalesCount,
-                        daySalesAmount: currentLaunch.daySalesAmount,
-                        status: 'Terminé'
-                      });
-                    }
+                    saveLaunch({
+                      month: selectedMonth,
+                      launchType: currentLaunch.launchType,
+                      commStartDate: currentLaunch.commStartDate,
+                      webinarDate: currentLaunch.webinarDate,
+                      adsBudget: currentLaunch.adsBudget,
+                      adsSpent: currentLaunch.adsSpent,
+                      registered: currentLaunch.registered,
+                      live: currentLaunch.live,
+                      daySalesCount: currentLaunch.daySalesCount,
+                      daySalesAmount: currentLaunch.daySalesAmount,
+                      status: 'Terminé'
+                    });
                   }}
                   className="btn btn-primary btn-sm"
                   style={{ display: 'flex', alignItems: 'center', gap: '6px', height: '38px', padding: '0 12px', background: 'var(--status-success)', borderColor: 'var(--status-success)' }}
