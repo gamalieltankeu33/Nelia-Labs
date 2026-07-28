@@ -9,7 +9,6 @@ import {
   calculateChargesForMonth,
   calculateTotalContractedCA,
   calculateTotalCollectedCA,
-  calculateMonthlyProspectStats,
   calculateDailyProspectingActivity,
   getYearMonth,
   EXCHANGE_RATES
@@ -485,21 +484,20 @@ export const DashboardScreen: React.FC = () => {
 
   // Get aggregated prospect stats for active timeframe
   const getProspectStatsForPeriod = () => {
-    if (timeFrame === 'monthly') {
-      return calculateMonthlyProspectStats(prospects, selectedMonth);
-    }
-    
-    const months = timeFrame === '3-months'
-      ? getMonthsInWindow(selectedMonth, 3)
-      : timeFrame === '6-months'
-        ? getMonthsInWindow(selectedMonth, 6)
-        : timeFrame === 'yearly'
-          ? Array.from({ length: 12 }, (_, i) => `${selectedYear}-${String(i + 1).padStart(2, '0')}`)
-          : Array.from(new Set(prospects.map(p => p.history[0]?.date?.substring(0, 7)).filter(Boolean)));
-          
+    const months = timeFrame === 'monthly'
+      ? [selectedMonth]
+      : timeFrame === '3-months'
+        ? getMonthsInWindow(selectedMonth, 3)
+        : timeFrame === '6-months'
+          ? getMonthsInWindow(selectedMonth, 6)
+          : timeFrame === 'yearly'
+            ? Array.from({ length: 12 }, (_, i) => `${selectedYear}-${String(i + 1).padStart(2, '0')}`)
+            : Array.from(new Set(prospects.map(p => p.history[0]?.date?.substring(0, 7)).filter(Boolean)));
+            
     let newProspects = 0;
     let callsBooked = 0;
     let closedWon = 0;
+    let closedLost = 0;
     let lost = 0;
     
     newProspects = prospects.filter(p => 
@@ -514,6 +512,11 @@ export const DashboardScreen: React.FC = () => {
       p.currentStatus === 'Closé gagné' && p.dealDate && months.includes(getYearMonth(p.dealDate))
     ).length;
 
+    closedLost = prospects.filter(p => 
+      (p.callOutcome === 'Pas concluant' || p.callOutcome === 'Pas de réponse') && 
+      p.callDate && months.includes(getYearMonth(p.callDate))
+    ).length;
+
     lost = prospects.filter(p => 
       p.lost && p.history.some(h => h.status === 'Perdu' && months.includes(getYearMonth(h.date)))
     ).length;
@@ -526,6 +529,7 @@ export const DashboardScreen: React.FC = () => {
       newProspects,
       callsBooked,
       closedWon,
+      closedLost,
       lost,
       callRate,
       closeRate,
@@ -895,7 +899,13 @@ export const DashboardScreen: React.FC = () => {
       {/* SECTION: Statistiques de Prospection */}
       <div className="card" style={{ marginTop: '32px' }}>
         <h3 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-          <Users className="text-gold" /> Performances de Prospection (Activité Mensuelle)
+          <Users className="text-gold" /> {
+            timeFrame === 'monthly' ? 'Performances de Prospection (Activité Mensuelle)' :
+            timeFrame === '3-months' ? 'Performances de Prospection (Période Glissante 3 Mois)' :
+            timeFrame === '6-months' ? 'Performances de Prospection (Période Glissante 6 Mois)' :
+            timeFrame === 'yearly' ? 'Performances de Prospection (Performance Annuelle)' :
+            'Performances de Prospection (Historique Cumulé)'
+          }
         </h3>
 
         <div className="prospect-dashboard-grid">
@@ -904,22 +914,37 @@ export const DashboardScreen: React.FC = () => {
             <div className="prospect-kpi-item">
               <span className="prospect-kpi-label">Nouveaux DM</span>
               <span className="prospect-kpi-val">{prospectStats.newProspects}</span>
-              <span className="prospect-kpi-sub">Saisis ce mois</span>
+              <span className="prospect-kpi-sub">
+                {timeFrame === 'monthly' ? 'Saisis ce mois' : 'Saisis sur la période'}
+              </span>
             </div>
             <div className="prospect-kpi-item">
               <span className="prospect-kpi-label">Appels Bookés</span>
               <span className="prospect-kpi-val text-blue">{prospectStats.callsBooked}</span>
-              <span className="prospect-kpi-sub">Planifiés ce mois</span>
+              <span className="prospect-kpi-sub">
+                {timeFrame === 'monthly' ? 'Planifiés ce mois' : 'Planifiés sur la période'}
+              </span>
             </div>
             <div className="prospect-kpi-item">
-              <span className="prospect-kpi-label">Closés Gagnés</span>
+              <span className="prospect-kpi-label">Closings Gagnés</span>
               <span className="prospect-kpi-val text-green">{prospectStats.closedWon}</span>
-              <span className="prospect-kpi-sub">Clôtures Premium</span>
+              <span className="prospect-kpi-sub">
+                {timeFrame === 'monthly' ? 'Signés (Oui) ce mois' : 'Signés (Oui) sur la période'}
+              </span>
             </div>
             <div className="prospect-kpi-item">
-              <span className="prospect-kpi-label">Perdus / Inactifs</span>
+              <span className="prospect-kpi-label">Closings Perdus</span>
+              <span className="prospect-kpi-val text-red">{prospectStats.closedLost}</span>
+              <span className="prospect-kpi-sub">
+                {timeFrame === 'monthly' ? 'Refusés (Non) ce mois' : 'Refusés (Non) sur la période'}
+              </span>
+            </div>
+            <div className="prospect-kpi-item">
+              <span className="prospect-kpi-label">Abandons / Perdus</span>
               <span className="prospect-kpi-val text-orange">{prospectStats.lost}</span>
-              <span className="prospect-kpi-sub">Classés perdus</span>
+              <span className="prospect-kpi-sub">
+                {timeFrame === 'monthly' ? 'Classés perdus' : 'Perdus sur la période'}
+              </span>
             </div>
           </div>
 
@@ -1535,8 +1560,8 @@ export const DashboardScreen: React.FC = () => {
 
         .prospect-kpi-subgrid {
           display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 16px;
+          grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+          gap: 12px;
         }
 
         .prospect-kpi-item {
