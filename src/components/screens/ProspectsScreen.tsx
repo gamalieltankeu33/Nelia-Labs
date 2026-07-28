@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { calculateProspectFunnel } from '../../utils/calculations';
-import { PROSPECT_STATUSES, PROSPECT_STATUS_COLORS } from '../../types';
+import { PROSPECT_STATUSES, PROSPECT_STATUS_COLORS, type Prospect } from '../../types';
 import { Users, Plus, Award, AlertCircle, TrendingUp, CheckCircle, RefreshCw } from 'lucide-react';
 
 export const ProspectsScreen: React.FC = () => {
@@ -33,6 +33,155 @@ export const ProspectsScreen: React.FC = () => {
     callNotes: '',
     callOutcome: 'À relancer' as 'Réussi' | 'Pas concluant' | 'À relancer' | 'Pas de réponse'
   });
+
+  const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
+
+  // Helper to get prospects for a specific phase
+  const getProspectsForPhase = (phase: 1 | 2 | 3 | 4) => {
+    return prospects.filter(p => {
+      if (p.lost) return false;
+      const status = p.currentStatus;
+      if (phase === 1) {
+        return ["1er DM envoyé", "Relancé", "Conversation déclenchée", "Conversation en cours", "Conversation de qualité"].includes(status);
+      }
+      if (phase === 2) {
+        return ["Appel proposé", "Appel booké"].includes(status);
+      }
+      if (phase === 3) {
+        return ["Appel réalisé", "Relancé post-appel"].includes(status);
+      }
+      if (phase === 4) {
+        return ["Closé gagné"].includes(status);
+      }
+      return false;
+    });
+  };
+
+  const moveProspectStatus = (id: string, direction: 'forward' | 'backward') => {
+    const p = prospects.find(x => x.id === id);
+    if (!p) return;
+    
+    const currentIndex = PROSPECT_STATUSES.indexOf(p.currentStatus as any);
+    let nextIndex = currentIndex;
+    
+    if (direction === 'forward') {
+      nextIndex = Math.min(PROSPECT_STATUSES.length - 1, currentIndex + 1);
+    } else {
+      nextIndex = Math.max(0, currentIndex - 1);
+    }
+    
+    const nextStatus = PROSPECT_STATUSES[nextIndex];
+    
+    if (nextStatus === 'Closé gagné') {
+      setClosingProspectId(id);
+    } else if (nextStatus === 'Appel booké' || nextStatus === 'Appel réalisé') {
+      setCallForm({
+        callDate: p.callDate || new Date().toISOString().split('T')[0],
+        callTime: p.callTime || '14:00',
+        callNotes: p.callNotes || '',
+        callOutcome: p.callOutcome || 'À relancer'
+      });
+      setCallDetailProspectId(id);
+      updateProspectStatus(id, nextStatus);
+    } else {
+      updateProspectStatus(id, nextStatus);
+    }
+  };
+
+  const renderKanbanCard = (p: Prospect) => {
+    const currentStatusColor = PROSPECT_STATUS_COLORS[PROSPECT_STATUSES.indexOf(p.currentStatus as any)] || '#9FB0C3';
+    const stagnationDays = getStagnationDays(p.history);
+    const isStagnant = stagnationDays >= 5;
+
+    return (
+      <div key={p.id} className="kanban-card" style={{ borderLeft: `4px solid ${currentStatusColor}` }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+          <span className="kanban-card-name" title={p.name}>{p.name}</span>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            <button 
+              type="button"
+              onClick={() => moveProspectStatus(p.id, 'backward')} 
+              className="kanban-action-btn"
+              disabled={p.currentStatus === PROSPECT_STATUSES[0]}
+              title="Retourner à l'étape précédente"
+            >
+              ←
+            </button>
+            <button 
+              type="button"
+              onClick={() => moveProspectStatus(p.id, 'forward')} 
+              className="kanban-action-btn"
+              disabled={p.currentStatus === 'Closé gagné'}
+              title="Avancer à l'étape suivante"
+            >
+              →
+            </button>
+          </div>
+        </div>
+
+        <div className="kanban-card-status" style={{ color: currentStatusColor }}>
+          {p.currentStatus}
+        </div>
+
+        {p.callDate && (
+          <div className="kanban-card-call-info">
+            <span style={{ fontSize: '11px', display: 'block', margin: '4px 0 2px 0' }}>
+              📅 RDV: <strong>{new Date(p.callDate).toLocaleDateString('fr-FR')} {p.callTime || ''}</strong>
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px', flexWrap: 'wrap' }}>
+              <span className="kanban-outcome-badge" style={{
+                backgroundColor: p.callOutcome === 'Réussi' ? 'rgba(16, 185, 129, 0.08)' : p.callOutcome === 'Pas concluant' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(245, 158, 11, 0.08)',
+                color: p.callOutcome === 'Réussi' ? '#10B981' : p.callOutcome === 'Pas concluant' ? '#EF4444' : '#F59E0B'
+              }}>
+                {p.callOutcome}
+              </span>
+              {p.callNotes && (
+                <span className="kanban-notes-excerpt" title={p.callNotes}>
+                  "{p.callNotes}"
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
+          <div>
+            {isStagnant && (
+              <span className="stagnant-badge" style={{ margin: 0 }}>
+                ⚠️ Stagnant ({stagnationDays}j)
+              </span>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <button 
+              type="button"
+              onClick={() => {
+                setCallForm({
+                  callDate: p.callDate || new Date().toISOString().split('T')[0],
+                  callTime: p.callTime || '14:00',
+                  callNotes: p.callNotes || '',
+                  callOutcome: p.callOutcome || 'À relancer'
+                });
+                setCallDetailProspectId(p.id);
+              }}
+              className="kanban-card-btn"
+              title="Editer les détails du Call / Notes"
+            >
+              📞 Call
+            </button>
+            <button 
+              type="button"
+              onClick={() => markProspectLost(p.id, true)} 
+              className="kanban-card-btn btn-lost"
+              title="Marquer comme perdu"
+            >
+              Perdu
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const handleQuickAdd = (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,256 +245,366 @@ export const ProspectsScreen: React.FC = () => {
 
   return (
     <div className="fade-in">
-      <div className="screen-header">
+      <div className="screen-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
         <div>
           <h1 className="screen-title">
             <Users className="screen-title-icon" /> Prospection
           </h1>
-          <p className="screen-subtitle">Gérez vos opportunités Premium Business IA et visualisez l'entonnoir de conversion</p>
+          <p className="screen-subtitle">Gérez vos opportunités Premium Business IA et suivez votre pipeline de vente</p>
+        </div>
+
+        {/* View mode toggle with timeframe-tabs styling */}
+        <div className="timeframe-tabs" style={{ margin: 0 }}>
+          <button 
+            type="button"
+            className={`timeframe-tab ${viewMode === 'kanban' ? 'active' : ''}`}
+            onClick={() => setViewMode('kanban')}
+          >
+            Tableau Kanban
+          </button>
+          <button 
+            type="button"
+            className={`timeframe-tab ${viewMode === 'list' ? 'active' : ''}`}
+            onClick={() => setViewMode('list')}
+          >
+            Liste simple
+          </button>
         </div>
       </div>
 
-      <div className="grid-cols-3" style={{ marginTop: '24px' }}>
-        {/* Colonne de gauche : Saisie Rapide + Filtres */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {/* Saisie rapide */}
-          <div className="card">
-            <h3 className="section-title" style={{ marginBottom: '16px' }}>Ajouter un Prospect</h3>
-            <form onSubmit={handleQuickAdd} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div className="form-group">
-                <label>Date du premier contact</label>
-                <input 
-                  type="date"
-                  value={newProspectDate}
-                  onChange={e => setNewProspectDate(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>ID Instagram / Nom</label>
-                <input 
-                  type="text" 
-                  placeholder="Ex: @jean_ia" 
-                  value={newName}
-                  onChange={e => setNewName(e.target.value)}
-                  required
-                />
-              </div>
-              <button type="submit" className="btn btn-primary" style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                <Plus className="size-4" /> Ajouter le prospect
-              </button>
-            </form>
+      {/* Epured inline Quick Add Form at the top */}
+      <div className="card" style={{ display: 'flex', gap: '16px', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', marginTop: '16px', flexWrap: 'wrap' }}>
+        <h4 style={{ margin: 0, fontSize: '13.5px', fontWeight: 700 }}>🚀 Ajouter un nouveau prospect Premium</h4>
+        <form onSubmit={handleQuickAdd} style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="form-group" style={{ flexDirection: 'row', gap: '8px', alignItems: 'center', width: 'auto' }}>
+            <label style={{ margin: 0, fontSize: '13px', whiteSpace: 'nowrap', color: 'var(--text-secondary)' }}>Premier contact :</label>
+            <input 
+              type="date"
+              value={newProspectDate}
+              onChange={e => setNewProspectDate(e.target.value)}
+              style={{ width: '135px', padding: '6px 10px', height: '34px', fontSize: '13px' }}
+              required
+            />
           </div>
+          <div className="form-group" style={{ flexDirection: 'row', gap: '8px', alignItems: 'center', width: 'auto' }}>
+            <label style={{ margin: 0, fontSize: '13px', whiteSpace: 'nowrap', color: 'var(--text-secondary)' }}>Instagram / Nom :</label>
+            <input 
+              type="text" 
+              placeholder="Ex: @jean_ia" 
+              value={newName}
+              onChange={e => setNewName(e.target.value)}
+              style={{ width: '160px', padding: '6px 10px', height: '34px', fontSize: '13px' }}
+              required
+            />
+          </div>
+          <button type="submit" className="btn btn-primary btn-sm" style={{ height: '34px', padding: '0 16px', display: 'flex', gap: '6px', alignItems: 'center' }}>
+            <Plus className="size-3.5" /> Enregistrer
+          </button>
+        </form>
+      </div>
 
-          {/* Filtres de liste */}
-          <div className="card">
-            <h3 className="section-title" style={{ marginBottom: '16px' }}>Statut du Pipeline</h3>
-            <div className="pipeline-filters">
-              <button 
-                className={`filter-btn ${filterType === 'active' ? 'active' : ''}`}
-                onClick={() => setFilterType('active')}
-              >
-                <span>Pipeline Actif</span>
-                <span className="filter-count-badge bg-gold">
-                  {prospects.filter(p => !p.lost && p.currentStatus !== 'Closé gagné').length}
-                </span>
-              </button>
-              <button 
-                className={`filter-btn ${filterType === 'won' ? 'active' : ''}`}
-                onClick={() => setFilterType('won')}
-              >
-                <span>Closé Gagné</span>
-                <span className="filter-count-badge bg-green">
-                  {prospects.filter(p => p.currentStatus === 'Closé gagné').length}
-                </span>
-              </button>
-              <button 
-                className={`filter-btn ${filterType === 'lost' ? 'active' : ''}`}
-                onClick={() => setFilterType('lost')}
-              >
-                <span>Perdus</span>
-                <span className="filter-count-badge bg-red">
-                  {prospects.filter(p => p.lost).length}
-                </span>
-              </button>
-              <button 
-                className={`filter-btn ${filterType === 'all' ? 'active' : ''}`}
-                onClick={() => setFilterType('all')}
-              >
-                <span>Tous</span>
-                <span className="filter-count-badge bg-input">
-                  {prospects.length}
-                </span>
-              </button>
+      {viewMode === 'kanban' ? (
+        /* Tableau Kanban CRM Premium */
+        <div className="kanban-board-wrapper" style={{ marginTop: '24px' }}>
+          <div className="kanban-board">
+            
+            {/* Phase 1 : Contact & Discussion */}
+            <div className="kanban-column">
+              <div className="kanban-column-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="kanban-column-dot" style={{ backgroundColor: '#3B82F6' }} />
+                  <h4>Contact & Discussion</h4>
+                </div>
+                <span className="kanban-column-count">{getProspectsForPhase(1).length}</span>
+              </div>
+              <div className="kanban-cards-container">
+                {getProspectsForPhase(1).length === 0 ? (
+                  <div className="kanban-empty">Aucun prospect</div>
+                ) : (
+                  getProspectsForPhase(1).map(p => renderKanbanCard(p))
+                )}
+              </div>
             </div>
+
+            {/* Phase 2 : Appel & RDV */}
+            <div className="kanban-column">
+              <div className="kanban-column-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="kanban-column-dot" style={{ backgroundColor: '#F59E0B' }} />
+                  <h4>Appel & RDV</h4>
+                </div>
+                <span className="kanban-column-count">{getProspectsForPhase(2).length}</span>
+              </div>
+              <div className="kanban-cards-container">
+                {getProspectsForPhase(2).length === 0 ? (
+                  <div className="kanban-empty">Aucun RDV</div>
+                ) : (
+                  getProspectsForPhase(2).map(p => renderKanbanCard(p))
+                )}
+              </div>
+            </div>
+
+            {/* Phase 3 : Négociation & Suivi */}
+            <div className="kanban-column">
+              <div className="kanban-column-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="kanban-column-dot" style={{ backgroundColor: '#8B5CF6' }} />
+                  <h4>Suivi & Closing</h4>
+                </div>
+                <span className="kanban-column-count">{getProspectsForPhase(3).length}</span>
+              </div>
+              <div className="kanban-cards-container">
+                {getProspectsForPhase(3).length === 0 ? (
+                  <div className="kanban-empty">Aucun suivi</div>
+                ) : (
+                  getProspectsForPhase(3).map(p => renderKanbanCard(p))
+                )}
+              </div>
+            </div>
+
+            {/* Phase 4 : Closés */}
+            <div className="kanban-column">
+              <div className="kanban-column-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="kanban-column-dot" style={{ backgroundColor: '#10B981' }} />
+                  <h4>Closé Gagné</h4>
+                </div>
+                <span className="kanban-column-count">{getProspectsForPhase(4).length}</span>
+              </div>
+              <div className="kanban-cards-container">
+                {getProspectsForPhase(4).length === 0 ? (
+                  <div className="kanban-empty">Aucun closing</div>
+                ) : (
+                  getProspectsForPhase(4).map(p => renderKanbanCard(p))
+                )}
+              </div>
+            </div>
+
           </div>
         </div>
-
-        {/* Colonne de droite : Liste des prospects */}
-        <div className="card" style={{ gridColumn: 'span 2', minHeight: '320px' }}>
-          <h3 className="section-title" style={{ marginBottom: '20px' }}>
-            {filterType === 'active' && 'Prospects actifs dans l\'entonnoir'}
-            {filterType === 'won' && 'Ventes Premium conclues'}
-            {filterType === 'lost' && 'Prospects marqués perdus'}
-            {filterType === 'all' && 'Tous les prospects'}
-            {` (${filteredProspects.length})`}
-          </h3>
-
-          {filteredProspects.length === 0 ? (
-            <div className="empty-state">
-              <Users className="empty-icon" />
-              <p>Aucun prospect dans cette catégorie.</p>
+      ) : (
+        /* Vue en Liste traditionelle */
+        <div className="grid-cols-3" style={{ marginTop: '24px' }}>
+          {/* Colonne de gauche : Filtres */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div className="card">
+              <h3 className="section-title" style={{ marginBottom: '16px' }}>Statut du Pipeline</h3>
+              <div className="pipeline-filters">
+                <button 
+                  type="button"
+                  className={`filter-btn ${filterType === 'active' ? 'active' : ''}`}
+                  onClick={() => setFilterType('active')}
+                >
+                  <span>Pipeline Actif</span>
+                  <span className="filter-count-badge bg-gold">
+                    {prospects.filter(p => !p.lost && p.currentStatus !== 'Closé gagné').length}
+                  </span>
+                </button>
+                <button 
+                  type="button"
+                  className={`filter-btn ${filterType === 'won' ? 'active' : ''}`}
+                  onClick={() => setFilterType('won')}
+                >
+                  <span>Closé Gagné</span>
+                  <span className="filter-count-badge bg-green">
+                    {prospects.filter(p => p.currentStatus === 'Closé gagné').length}
+                  </span>
+                </button>
+                <button 
+                  type="button"
+                  className={`filter-btn ${filterType === 'lost' ? 'active' : ''}`}
+                  onClick={() => setFilterType('lost')}
+                >
+                  <span>Perdus</span>
+                  <span className="filter-count-badge bg-red">
+                    {prospects.filter(p => p.lost).length}
+                  </span>
+                </button>
+                <button 
+                  type="button"
+                  className={`filter-btn ${filterType === 'all' ? 'active' : ''}`}
+                  onClick={() => setFilterType('all')}
+                >
+                  <span>Tous</span>
+                  <span className="filter-count-badge bg-input">
+                    {prospects.length}
+                  </span>
+                </button>
+              </div>
             </div>
-          ) : (
-            <div className="prospects-list">
-              {filteredProspects.map(p => {
-                const currentStatusColor = p.lost 
-                  ? '#E0616B' 
-                  : (PROSPECT_STATUS_COLORS[PROSPECT_STATUSES.indexOf(p.currentStatus as any)] || '#9FB0C3');
-                
-                return (
-                  <div key={p.id} className="prospect-row" style={{ borderLeftColor: currentStatusColor }}>
-                    <div className="prospect-info">
-                      <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <span className="prospect-name">{p.name}</span>
-                        {!p.lost && p.currentStatus !== 'Closé gagné' && getStagnationDays(p.history) >= 5 && (
-                          <span className="stagnant-badge">
-                            ⚠️ Stagnant ({getStagnationDays(p.history)}j)
-                          </span>
-                        )}
-                      </div>
-                      <div className="prospect-meta">
-                        <span style={{ color: 'var(--accent-gold)', fontWeight: 600 }}>
-                          Début : {p.history[0]?.date ? new Date(p.history[0].date).toLocaleDateString('fr-FR') : '—'}
-                        </span>
-                        <span style={{ opacity: 0.3 }}>|</span>
-                        <span>Ancienneté: {getAnciennete(p.history)}</span>
-                        {p.currentStatus === 'Closé gagné' && p.dealAmount && (
-                          <span className="deal-pill">
-                            {p.dealAmount.toLocaleString('fr-FR')} € ({p.dealDate ? new Date(p.dealDate).toLocaleDateString('fr-FR') : '—'})
-                          </span>
-                        )}
-                      </div>
-                      
-                      {p.callDate && (
-                        <div className="call-info-summary" style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: '6px', display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                          <span>📅 Call: <strong>{new Date(p.callDate).toLocaleDateString('fr-FR')} à {p.callTime || '12:00'}</strong></span>
-                          <span style={{ opacity: 0.3 }}>|</span>
-                          <span style={{ 
-                            padding: '1px 6px', 
-                            borderRadius: '4px', 
-                            fontSize: '10px', 
-                            fontWeight: '700', 
-                            backgroundColor: p.callOutcome === 'Réussi' ? 'rgba(16, 185, 129, 0.1)' : p.callOutcome === 'Pas concluant' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-                            color: p.callOutcome === 'Réussi' ? '#10B981' : p.callOutcome === 'Pas concluant' ? '#EF4444' : '#F59E0B'
-                          }}>
-                            {p.callOutcome}
-                          </span>
-                          {p.callNotes && (
-                            <>
-                              <span style={{ opacity: 0.3 }}>|</span>
-                              <span style={{ fontStyle: 'italic', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={p.callNotes}>
-                                "{p.callNotes}"
-                              </span>
-                            </>
+          </div>
+
+          {/* Colonne de droite : Liste des prospects */}
+          <div className="card" style={{ gridColumn: 'span 2', minHeight: '320px' }}>
+            <h3 className="section-title" style={{ marginBottom: '20px' }}>
+              {filterType === 'active' && 'Prospects actifs dans l\'entonnoir'}
+              {filterType === 'won' && 'Ventes Premium conclues'}
+              {filterType === 'lost' && 'Prospects marqués perdus'}
+              {filterType === 'all' && 'Tous les prospects'}
+              {` (${filteredProspects.length})`}
+            </h3>
+
+            {filteredProspects.length === 0 ? (
+              <div className="empty-state">
+                <Users className="empty-icon" />
+                <p>Aucun prospect dans cette catégorie.</p>
+              </div>
+            ) : (
+              <div className="prospects-list">
+                {filteredProspects.map(p => {
+                  const currentStatusColor = p.lost 
+                    ? '#E0616B' 
+                    : (PROSPECT_STATUS_COLORS[PROSPECT_STATUSES.indexOf(p.currentStatus as any)] || '#9FB0C3');
+                  
+                  return (
+                    <div key={p.id} className="prospect-row" style={{ borderLeftColor: currentStatusColor }}>
+                      <div className="prospect-info">
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                          <span className="prospect-name">{p.name}</span>
+                          {!p.lost && p.currentStatus !== 'Closé gagné' && getStagnationDays(p.history) >= 5 && (
+                            <span className="stagnant-badge">
+                              ⚠️ Stagnant ({getStagnationDays(p.history)}j)
+                            </span>
                           )}
                         </div>
-                      )}
-                    </div>
-
-                    <div className="prospect-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      {/* Sélecteur de statut */}
-                      {!p.lost && p.currentStatus !== 'Closé gagné' && (
-                        <>
-                          <select
-                            value={p.currentStatus}
-                            onChange={e => handleStatusChange(p.id, e.target.value)}
-                            className="status-selector"
-                            style={{ borderColor: currentStatusColor }}
-                          >
-                            {PROSPECT_STATUSES.map(status => (
-                              <option key={status} value={status}>{status}</option>
-                            ))}
-                          </select>
-                          
-                          <button
-                            onClick={() => {
-                              const pCallDate = p.callDate || new Date().toISOString().split('T')[0];
-                              const pCallTime = p.callTime || '14:00';
-                              const pCallNotes = p.callNotes || '';
-                              const pCallOutcome = p.callOutcome || 'À relancer';
-                              setCallForm({
-                                callDate: pCallDate,
-                                callTime: pCallTime,
-                                callNotes: pCallNotes,
-                                callOutcome: pCallOutcome as any
-                              });
-                              setCallDetailProspectId(p.id);
-                            }}
-                            className="btn btn-secondary btn-sm"
-                            style={{ display: 'flex', alignItems: 'center', gap: '4px', height: '36px', padding: '0 10px' }}
-                            title="Détails du Call"
-                          >
-                            📞 Call
-                          </button>
-                        </>
-                      )}
-
-                      {/* Badge simple si closé gagné */}
-                      {p.currentStatus === 'Closé gagné' && (
-                        <span className="badge-status won-badge">
-                          <CheckCircle className="size-4" /> Closé Gagné
-                        </span>
-                      )}
-
-                      {/* Badge Perdu ou bouton de réactivation */}
-                      {p.lost ? (
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <span className="badge-status lost-badge">
-                            <AlertCircle className="size-4" /> Perdu
+                        <div className="prospect-meta">
+                          <span style={{ color: 'var(--accent-gold)', fontWeight: 600 }}>
+                            Début : {p.history[0]?.date ? new Date(p.history[0].date).toLocaleDateString('fr-FR') : '—'}
                           </span>
-                          <button 
-                            className="btn btn-secondary btn-sm"
-                            onClick={() => markProspectLost(p.id, false)}
-                            title="Réactiver le prospect"
-                          >
-                            <RefreshCw className="size-3" /> Réactiver
-                          </button>
+                          <span style={{ opacity: 0.3 }}>|</span>
+                          <span>Ancienneté: {getAnciennete(p.history)}</span>
+                          {p.currentStatus === 'Closé gagné' && p.dealAmount && (
+                            <span className="deal-pill">
+                              {p.dealAmount.toLocaleString('fr-FR')} € ({p.dealDate ? new Date(p.dealDate).toLocaleDateString('fr-FR') : '—'})
+                            </span>
+                          )}
                         </div>
-                      ) : (
-                        p.currentStatus !== 'Closé gagné' && (
-                          <button 
-                            className="btn btn-danger btn-sm"
-                            onClick={() => markProspectLost(p.id, true)}
-                          >
-                            Marquer Perdu
-                          </button>
-                        )
-                      )}
+                        
+                        {p.callDate && (
+                          <div className="call-info-summary" style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: '6px', display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                            <span>📅 Call: <strong>{new Date(p.callDate).toLocaleDateString('fr-FR')} à {p.callTime || '12:00'}</strong></span>
+                            <span style={{ opacity: 0.3 }}>|</span>
+                            <span style={{ 
+                              padding: '1px 6px', 
+                              borderRadius: '4px', 
+                              fontSize: '10px', 
+                              fontWeight: '700', 
+                              backgroundColor: p.callOutcome === 'Réussi' ? 'rgba(16, 185, 129, 0.1)' : p.callOutcome === 'Pas concluant' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                              color: p.callOutcome === 'Réussi' ? '#10B981' : p.callOutcome === 'Pas concluant' ? '#EF4444' : '#F59E0B'
+                            }}>
+                              {p.callOutcome}
+                            </span>
+                            {p.callNotes && (
+                              <>
+                                <span style={{ opacity: 0.3 }}>|</span>
+                                <span style={{ fontStyle: 'italic', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={p.callNotes}>
+                                  "{p.callNotes}"
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
 
-                      {/* Bouton de suppression définitive */}
-                      <button
-                        className="btn-delete-prospect"
-                        onClick={() => {
-                          if (window.confirm("Supprimer définitivement ce prospect et son historique ?")) {
-                            deleteProspect(p.id);
-                          }
-                        }}
-                        title="Supprimer définitivement"
-                      >
-                        &times;
-                      </button>
+                      <div className="prospect-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {/* Sélecteur de statut */}
+                        {!p.lost && p.currentStatus !== 'Closé gagné' && (
+                          <>
+                            <select
+                              value={p.currentStatus}
+                              onChange={e => handleStatusChange(p.id, e.target.value)}
+                              className="status-selector"
+                              style={{ borderColor: currentStatusColor }}
+                            >
+                              {PROSPECT_STATUSES.map(status => (
+                                <option key={status} value={status}>{status}</option>
+                              ))}
+                            </select>
+                            
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const pCallDate = p.callDate || new Date().toISOString().split('T')[0];
+                                const pCallTime = p.callTime || '14:00';
+                                const pCallNotes = p.callNotes || '';
+                                const pCallOutcome = p.callOutcome || 'À relancer';
+                                setCallForm({
+                                  callDate: pCallDate,
+                                  callTime: pCallTime,
+                                  callNotes: pCallNotes,
+                                  callOutcome: pCallOutcome as any
+                                });
+                                setCallDetailProspectId(p.id);
+                              }}
+                              className="btn btn-secondary btn-sm"
+                              style={{ display: 'flex', alignItems: 'center', gap: '4px', height: '36px', padding: '0 10px' }}
+                              title="Détails du Call"
+                            >
+                              📞 Call
+                            </button>
+                          </>
+                        )}
+
+                        {/* Badge simple si closé gagné */}
+                        {p.currentStatus === 'Closé gagné' && (
+                          <span className="badge-status won-badge">
+                            <CheckCircle className="size-4" /> Closé Gagné
+                          </span>
+                        )}
+
+                        {/* Badge Perdu ou bouton de réactivation */}
+                        {p.lost ? (
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <span className="badge-status lost-badge">
+                              <AlertCircle className="size-4" /> Perdu
+                            </span>
+                            <button 
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => markProspectLost(p.id, false)}
+                              title="Réactiver le prospect"
+                            >
+                              <RefreshCw className="size-3" /> Réactiver
+                            </button>
+                          </div>
+                        ) : (
+                          p.currentStatus !== 'Closé gagné' && (
+                            <button 
+                              type="button"
+                              className="btn btn-danger btn-sm"
+                              onClick={() => markProspectLost(p.id, true)}
+                            >
+                              Marquer Perdu
+                            </button>
+                          )
+                        )}
+
+                        {/* Bouton de suppression définitive */}
+                        <button
+                          type="button"
+                          className="btn-delete-prospect"
+                          onClick={() => {
+                            if (window.confirm("Supprimer définitivement ce prospect et son historique ?")) {
+                              deleteProspect(p.id);
+                            }
+                          }}
+                          title="Supprimer définitivement"
+                        >
+                          &times;
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Entonnoir de prospection en bas */}
-      <div className="card" style={{ marginTop: '32px' }}>
+      {/* Entonnoir de prospection en bas (uniquement en vue liste) */}
+      {viewMode === 'list' && (
+        <div className="card" style={{ marginTop: '32px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
           <div>
             <h3 className="section-title">Visualisation de l'entonnoir (DM → Closing)</h3>
@@ -387,6 +646,7 @@ export const ProspectsScreen: React.FC = () => {
           </div>
         )}
       </div>
+      )}
 
       {/* Modal de closing pour entrer montant et date */}
       {closingProspectId && (
@@ -545,6 +805,176 @@ export const ProspectsScreen: React.FC = () => {
       )}
 
       <style>{`
+        /* Styles du Tableau Kanban CRM */
+        .kanban-board-wrapper {
+          overflow-x: auto;
+          padding-bottom: 16px;
+        }
+
+        .kanban-board {
+          display: grid;
+          grid-template-columns: repeat(4, 280px);
+          gap: 16px;
+          min-height: 520px;
+        }
+
+        .kanban-column {
+          background-color: var(--bg-card);
+          border: 1px solid var(--border-color);
+          border-radius: var(--radius-lg);
+          padding: 16px 12px;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          max-height: 75vh;
+          overflow-y: auto;
+        }
+
+        .kanban-column-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border-bottom: 2px solid var(--border-color);
+          padding-bottom: 10px;
+          margin-bottom: 4px;
+        }
+
+        .kanban-column-header h4 {
+          font-size: 13.5px;
+          font-weight: 700;
+          margin: 0;
+        }
+
+        .kanban-column-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+        }
+
+        .kanban-column-count {
+          font-size: 11px;
+          font-weight: 700;
+          background-color: var(--bg-input);
+          color: var(--text-secondary);
+          padding: 2px 8px;
+          border-radius: 9999px;
+        }
+
+        .kanban-cards-container {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .kanban-card {
+          background-color: var(--bg-input);
+          border: 1px solid var(--border-color);
+          border-radius: var(--radius-md);
+          padding: 12px;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+          transition: var(--transition-fast);
+        }
+
+        .kanban-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .kanban-card-name {
+          font-size: 13px;
+          font-weight: 700;
+          color: var(--text-primary);
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          max-width: 150px;
+        }
+
+        .kanban-card-status {
+          font-size: 10.5px;
+          font-weight: 600;
+          margin-top: 2px;
+        }
+
+        .kanban-action-btn {
+          border: none;
+          background: none;
+          color: var(--text-secondary);
+          font-weight: bold;
+          font-size: 13px;
+          cursor: pointer;
+          padding: 2px 6px;
+          border-radius: 4px;
+          transition: var(--transition-fast);
+        }
+
+        .kanban-action-btn:hover:not(:disabled) {
+          background-color: var(--border-color);
+          color: var(--text-primary);
+        }
+
+        .kanban-action-btn:disabled {
+          opacity: 0.25;
+          cursor: not-allowed;
+        }
+
+        .kanban-card-call-info {
+          border-top: 1px dashed var(--border-color);
+          padding-top: 8px;
+          margin-top: 8px;
+        }
+
+        .kanban-outcome-badge {
+          padding: 1px 6px;
+          border-radius: 4px;
+          font-size: 10px;
+          font-weight: 700;
+        }
+
+        .kanban-notes-excerpt {
+          font-size: 11px;
+          font-style: italic;
+          color: var(--text-secondary);
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          max-width: 120px;
+          display: inline-block;
+        }
+
+        .kanban-card-btn {
+          background-color: var(--bg-card);
+          border: 1px solid var(--border-color);
+          color: var(--text-secondary);
+          font-size: 10.5px;
+          font-weight: 600;
+          padding: 4px 8px;
+          border-radius: 4px;
+          cursor: pointer;
+          transition: var(--transition-fast);
+        }
+
+        .kanban-card-btn:hover {
+          color: var(--text-primary);
+          border-color: var(--text-secondary);
+        }
+
+        .kanban-card-btn.btn-lost:hover {
+          color: #EF4444;
+          border-color: rgba(239, 68, 68, 0.4);
+          background-color: rgba(239, 68, 68, 0.04);
+        }
+
+        .kanban-empty {
+          text-align: center;
+          color: var(--text-secondary);
+          font-size: 12px;
+          font-style: italic;
+          padding: 20px 0;
+          border: 1px dashed var(--border-color);
+          border-radius: var(--radius-md);
+        }
+
         .stagnant-badge {
           background-color: rgba(245, 158, 11, 0.12);
           color: #F59E0B;
