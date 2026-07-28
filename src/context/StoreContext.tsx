@@ -32,7 +32,7 @@ interface StoreContextType {
   addDigitalSale: (sale: Omit<DigitalSale, 'id'>) => void;
   deleteDigitalSale: (id: string) => void;
   
-  addProspect: (name: string, date?: string) => void;
+  addProspect: (name: string, date?: string, country?: string, phone?: string) => void;
   updateProspectStatus: (id: string, status: string, date?: string, amount?: number) => void;
   markProspectLost: (id: string, lost: boolean) => void;
   deleteProspect: (id: string) => void;
@@ -311,7 +311,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const prospectsList: Prospect[] = (resProspects.data || []).map((p: any) => {
           const rawHistory = p.history || [];
           const callMetadata = rawHistory.find((h: any) => h.status === 'metadata_call_info');
-          const cleanHistory = rawHistory.filter((h: any) => h.status !== 'metadata_call_info');
+          const infoMetadata = rawHistory.find((h: any) => h.status === 'metadata_prospect_info');
+          const cleanHistory = rawHistory.filter((h: any) => 
+            h.status !== 'metadata_call_info' && h.status !== 'metadata_prospect_info'
+          );
           return {
             id: p.id,
             name: p.name,
@@ -324,7 +327,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             callDate: callMetadata?.callDate,
             callTime: callMetadata?.callTime,
             callNotes: callMetadata?.callNotes,
-            callOutcome: callMetadata?.callOutcome
+            callOutcome: callMetadata?.callOutcome,
+            country: infoMetadata?.country || '',
+            phone: infoMetadata?.phone || ''
           };
         });
 
@@ -595,12 +600,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   // Actions Prospects
-  const addProspect = async (name: string, date?: string) => {
+  const addProspect = async (name: string, date?: string, country?: string, phone?: string) => {
     const contactDate = date || new Date().toISOString().split('T')[0];
     const id = `p-${Date.now()}`;
     const newProspect: Prospect = {
       id,
       name,
+      country: country || '',
+      phone: phone || '',
       currentStatus: '1er DM envoyé',
       maxIndex: 0,
       lost: false,
@@ -620,7 +627,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         current_status: '1er DM envoyé',
         max_index: 0,
         lost: false,
-        history: newProspect.history
+        history: getHistoryToSave(newProspect)
       });
       if (error) {
         setSavingStatus('error');
@@ -633,21 +640,32 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const getHistoryToSave = (p: Prospect): any[] => {
-    const cleanHistory = p.history.filter(h => h.status !== 'metadata_call_info');
+    const cleanHistory = p.history.filter(h => 
+      h.status !== 'metadata_call_info' && h.status !== 'metadata_prospect_info'
+    );
+    const historyList: any[] = [...cleanHistory];
+    
     if (p.callDate || p.callTime || p.callNotes || p.callOutcome) {
-      return [
-        ...cleanHistory,
-        {
-          status: 'metadata_call_info',
-          date: new Date().toISOString().split('T')[0],
-          callDate: p.callDate || '',
-          callTime: p.callTime || '',
-          callNotes: p.callNotes || '',
-          callOutcome: p.callOutcome || ''
-        }
-      ];
+      historyList.push({
+        status: 'metadata_call_info',
+        date: new Date().toISOString().split('T')[0],
+        callDate: p.callDate || '',
+        callTime: p.callTime || '',
+        callNotes: p.callNotes || '',
+        callOutcome: p.callOutcome || ''
+      });
     }
-    return cleanHistory;
+    
+    if (p.country || p.phone) {
+      historyList.push({
+        status: 'metadata_prospect_info',
+        date: new Date().toISOString().split('T')[0],
+        country: p.country || '',
+        phone: p.phone || ''
+      });
+    }
+    
+    return historyList;
   };
 
   const updateProspectStatus = async (id: string, status: string, date?: string, amount?: number) => {

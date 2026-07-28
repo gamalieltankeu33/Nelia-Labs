@@ -2,7 +2,22 @@ import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { calculateProspectFunnel } from '../../utils/calculations';
 import { PROSPECT_STATUSES, PROSPECT_STATUS_COLORS, type Prospect } from '../../types';
-import { Users, Plus, Award, AlertCircle, TrendingUp, CheckCircle, RefreshCw } from 'lucide-react';
+import { 
+  Users, 
+  Plus, 
+  Award, 
+  AlertCircle, 
+  TrendingUp, 
+  CheckCircle, 
+  RefreshCw, 
+  MapPin, 
+  Phone, 
+  Calendar, 
+  ChevronLeft, 
+  ChevronRight, 
+  Trash2, 
+  AlertTriangle 
+} from 'lucide-react';
 
 export const ProspectsScreen: React.FC = () => {
   const { 
@@ -16,6 +31,8 @@ export const ProspectsScreen: React.FC = () => {
 
   const [newName, setNewName] = useState('');
   const [newProspectDate, setNewProspectDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [newProspectCountry, setNewProspectCountry] = useState('');
+  const [newProspectPhone, setNewProspectPhone] = useState('');
   const [filterType, setFilterType] = useState<'active' | 'lost' | 'won' | 'all'>('active');
 
   // Pour gérer la boîte de dialogue de closing
@@ -104,8 +121,9 @@ export const ProspectsScreen: React.FC = () => {
               className="kanban-action-btn"
               disabled={p.currentStatus === PROSPECT_STATUSES[0]}
               title="Retourner à l'étape précédente"
+              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}
             >
-              ←
+              <ChevronLeft className="size-3.5" />
             </button>
             <button 
               type="button"
@@ -113,8 +131,9 @@ export const ProspectsScreen: React.FC = () => {
               className="kanban-action-btn"
               disabled={p.currentStatus === 'Closé gagné'}
               title="Avancer à l'étape suivante"
+              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}
             >
-              →
+              <ChevronRight className="size-3.5" />
             </button>
           </div>
         </div>
@@ -123,10 +142,25 @@ export const ProspectsScreen: React.FC = () => {
           {p.currentStatus}
         </div>
 
+        {(p.country || p.phone) && (
+          <div style={{ display: 'flex', gap: '8px', fontSize: '11px', color: 'var(--text-secondary)', marginTop: '6px', flexWrap: 'wrap' }}>
+            {p.country && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                <MapPin className="size-3 text-gold" /> {p.country}
+              </span>
+            )}
+            {p.phone && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                <Phone className="size-3 text-gold" /> {p.phone}
+              </span>
+            )}
+          </div>
+        )}
+
         {p.callDate && (
           <div className="kanban-card-call-info">
-            <span style={{ fontSize: '11px', display: 'block', margin: '4px 0 2px 0' }}>
-              📅 RDV: <strong>{new Date(p.callDate).toLocaleDateString('fr-FR')} {p.callTime || ''}</strong>
+            <span style={{ fontSize: '11.5px', display: 'inline-flex', alignItems: 'center', gap: '4px', margin: '4px 0 2px 0' }}>
+              <Calendar className="size-3 text-secondary" /> Call: <strong>{new Date(p.callDate).toLocaleDateString('fr-FR')} {p.callTime || ''}</strong>
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px', flexWrap: 'wrap' }}>
               <span className="kanban-outcome-badge" style={{
@@ -147,8 +181,8 @@ export const ProspectsScreen: React.FC = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
           <div>
             {isStagnant && (
-              <span className="stagnant-badge" style={{ margin: 0 }}>
-                ⚠️ Stagnant ({stagnationDays}j)
+              <span className="stagnant-badge" style={{ margin: 0, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                <AlertTriangle className="size-3" /> {stagnationDays}j
               </span>
             )}
           </div>
@@ -166,8 +200,9 @@ export const ProspectsScreen: React.FC = () => {
               }}
               className="kanban-card-btn"
               title="Editer les détails du Call / Notes"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}
             >
-              📞 Call
+              <Phone className="size-3" /> Call
             </button>
             <button 
               type="button"
@@ -186,8 +221,10 @@ export const ProspectsScreen: React.FC = () => {
   const handleQuickAdd = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName.trim()) return;
-    addProspect(newName.trim(), newProspectDate);
+    addProspect(newName.trim(), newProspectDate, newProspectCountry.trim(), newProspectPhone.trim());
     setNewName('');
+    setNewProspectCountry('');
+    setNewProspectPhone('');
   };
 
   // Calcul du temps écoulé (ancienneté)
@@ -274,10 +311,12 @@ export const ProspectsScreen: React.FC = () => {
 
       {/* Epured inline Quick Add Form at the top */}
       <div className="card" style={{ display: 'flex', gap: '16px', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', marginTop: '16px', flexWrap: 'wrap' }}>
-        <h4 style={{ margin: 0, fontSize: '13.5px', fontWeight: 700 }}>🚀 Ajouter un nouveau prospect Premium</h4>
+        <h4 style={{ margin: 0, fontSize: '13.5px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Users className="size-4 text-gold" /> Ajouter un prospect Premium
+        </h4>
         <form onSubmit={handleQuickAdd} style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
           <div className="form-group" style={{ flexDirection: 'row', gap: '8px', alignItems: 'center', width: 'auto' }}>
-            <label style={{ margin: 0, fontSize: '13px', whiteSpace: 'nowrap', color: 'var(--text-secondary)' }}>Premier contact :</label>
+            <label style={{ margin: 0, fontSize: '13px', whiteSpace: 'nowrap', color: 'var(--text-secondary)' }}>Contact :</label>
             <input 
               type="date"
               value={newProspectDate}
@@ -287,14 +326,34 @@ export const ProspectsScreen: React.FC = () => {
             />
           </div>
           <div className="form-group" style={{ flexDirection: 'row', gap: '8px', alignItems: 'center', width: 'auto' }}>
-            <label style={{ margin: 0, fontSize: '13px', whiteSpace: 'nowrap', color: 'var(--text-secondary)' }}>Instagram / Nom :</label>
+            <label style={{ margin: 0, fontSize: '13px', whiteSpace: 'nowrap', color: 'var(--text-secondary)' }}>Nom/ID :</label>
             <input 
               type="text" 
               placeholder="Ex: @jean_ia" 
               value={newName}
               onChange={e => setNewName(e.target.value)}
-              style={{ width: '160px', padding: '6px 10px', height: '34px', fontSize: '13px' }}
+              style={{ width: '130px', padding: '6px 10px', height: '34px', fontSize: '13px' }}
               required
+            />
+          </div>
+          <div className="form-group" style={{ flexDirection: 'row', gap: '8px', alignItems: 'center', width: 'auto' }}>
+            <label style={{ margin: 0, fontSize: '13px', whiteSpace: 'nowrap', color: 'var(--text-secondary)' }}>Pays :</label>
+            <input 
+              type="text" 
+              placeholder="Ex: France" 
+              value={newProspectCountry}
+              onChange={e => setNewProspectCountry(e.target.value)}
+              style={{ width: '110px', padding: '6px 10px', height: '34px', fontSize: '13px' }}
+            />
+          </div>
+          <div className="form-group" style={{ flexDirection: 'row', gap: '8px', alignItems: 'center', width: 'auto' }}>
+            <label style={{ margin: 0, fontSize: '13px', whiteSpace: 'nowrap', color: 'var(--text-secondary)' }}>Tél :</label>
+            <input 
+              type="tel" 
+              placeholder="Ex: +336..." 
+              value={newProspectPhone}
+              onChange={e => setNewProspectPhone(e.target.value)}
+              style={{ width: '120px', padding: '6px 10px', height: '34px', fontSize: '13px' }}
             />
           </div>
           <button type="submit" className="btn btn-primary btn-sm" style={{ height: '34px', padding: '0 16px', display: 'flex', gap: '6px', alignItems: 'center' }}>
@@ -462,8 +521,8 @@ export const ProspectsScreen: React.FC = () => {
                         <div style={{ display: 'flex', alignItems: 'center' }}>
                           <span className="prospect-name">{p.name}</span>
                           {!p.lost && p.currentStatus !== 'Closé gagné' && getStagnationDays(p.history) >= 5 && (
-                            <span className="stagnant-badge">
-                              ⚠️ Stagnant ({getStagnationDays(p.history)}j)
+                            <span className="stagnant-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                              <AlertTriangle className="size-3" /> Stagnant ({getStagnationDays(p.history)}j)
                             </span>
                           )}
                         </div>
@@ -473,6 +532,22 @@ export const ProspectsScreen: React.FC = () => {
                           </span>
                           <span style={{ opacity: 0.3 }}>|</span>
                           <span>Ancienneté: {getAnciennete(p.history)}</span>
+                          {p.country && (
+                            <>
+                              <span style={{ opacity: 0.3 }}>|</span>
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                <MapPin className="size-3 text-gold" /> {p.country}
+                              </span>
+                            </>
+                          )}
+                          {p.phone && (
+                            <>
+                              <span style={{ opacity: 0.3 }}>|</span>
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                <Phone className="size-3 text-gold" /> {p.phone}
+                              </span>
+                            </>
+                          )}
                           {p.currentStatus === 'Closé gagné' && p.dealAmount && (
                             <span className="deal-pill">
                               {p.dealAmount.toLocaleString('fr-FR')} € ({p.dealDate ? new Date(p.dealDate).toLocaleDateString('fr-FR') : '—'})
@@ -482,7 +557,7 @@ export const ProspectsScreen: React.FC = () => {
                         
                         {p.callDate && (
                           <div className="call-info-summary" style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: '6px', display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                            <span>📅 Call: <strong>{new Date(p.callDate).toLocaleDateString('fr-FR')} à {p.callTime || '12:00'}</strong></span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Calendar className="size-3 text-secondary" /> Call: <strong>{new Date(p.callDate).toLocaleDateString('fr-FR')} à {p.callTime || '12:00'}</strong></span>
                             <span style={{ opacity: 0.3 }}>|</span>
                             <span style={{ 
                               padding: '1px 6px', 
@@ -540,7 +615,7 @@ export const ProspectsScreen: React.FC = () => {
                               style={{ display: 'flex', alignItems: 'center', gap: '4px', height: '36px', padding: '0 10px' }}
                               title="Détails du Call"
                             >
-                              📞 Call
+                              <Phone className="size-3" /> Call
                             </button>
                           </>
                         )}
@@ -589,8 +664,9 @@ export const ProspectsScreen: React.FC = () => {
                             }
                           }}
                           title="Supprimer définitivement"
+                          style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}
                         >
-                          &times;
+                          <Trash2 className="size-3.5" style={{ color: 'var(--text-secondary)' }} />
                         </button>
                       </div>
                     </div>
@@ -712,7 +788,7 @@ export const ProspectsScreen: React.FC = () => {
         <div className="modal-backdrop">
           <div className="card modal-content fade-in" style={{ maxWidth: '500px' }}>
             <h3 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              📞 Détails du Call / Appel Premium
+              <Phone className="text-gold" /> Détails du Call / Appel Premium
             </h3>
             <p className="screen-subtitle" style={{ margin: '8px 0 20px 0' }}>
               Enregistrez les informations de planification et les conclusions de l'appel pour ce prospect.
@@ -751,16 +827,16 @@ export const ProspectsScreen: React.FC = () => {
               </div>
 
               <div className="form-group" style={{ marginBottom: '16px' }}>
-                <label>Résultat de l'appel / Signature</label>
+                <label>Résultat de l'appel / Closing</label>
                 <select
                   value={callForm.callOutcome}
                   onChange={e => setCallForm(f => ({ ...f, callOutcome: e.target.value as any }))}
                   required
                 >
-                  <option value="À relancer">À relancer / En cours de discussion</option>
-                  <option value="Réussi">Réussi / Intéressé (Prêt à signer)</option>
-                  <option value="Pas concluant">Pas concluant / Refusé</option>
-                  <option value="Pas de réponse">Pas de réponse / Ghosté</option>
+                  <option value="À relancer">En cours / À relancer</option>
+                  <option value="Réussi">Oui / Concluant (Signé)</option>
+                  <option value="Pas concluant">Non / Pas concluant (Refusé)</option>
+                  <option value="Pas de réponse">Ghosté / Sans réponse</option>
                 </select>
               </div>
 

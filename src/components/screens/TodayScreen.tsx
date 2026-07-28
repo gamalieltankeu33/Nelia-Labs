@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { calculateTodayIndicators } from '../../utils/calculations';
-import { FileText, Users, ShoppingBag, PlusCircle, Check } from 'lucide-react';
+import { FileText, Users, ShoppingBag, PlusCircle, Check, AlertTriangle } from 'lucide-react';
 
 export const TodayScreen: React.FC = () => {
   const { 
@@ -311,7 +311,7 @@ export const TodayScreen: React.FC = () => {
       {stagnantProspects.length > 0 && (
         <div className="card" style={{ marginTop: '24px' }}>
           <h3 className="section-title text-orange" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', color: '#F59E0B' }}>
-            ⚠️ Relances prioritaires : Prospects stagnants ({stagnantProspects.length})
+            <AlertTriangle className="size-5 animate-pulse" /> Relances prioritaires : Prospects stagnants ({stagnantProspects.length})
           </h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '16px' }}>
             Ces prospects Premium n'ont pas eu d'activité depuis 5 jours ou plus. Contactez-les dès aujourd'hui pour les relancer.

@@ -23,6 +23,8 @@ export interface ProspectHistory {
 export interface Prospect {
   id: string;
   name: string; // Nom ou identifiant Instagram
+  country?: string;
+  phone?: string;
   currentStatus: string; // Un des 10 statuts ou "Perdu"
   maxIndex: number; // Index le plus avancé (0 à 9)
   lost: boolean;
