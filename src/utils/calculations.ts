@@ -155,8 +155,7 @@ export function calculateNetProfitContracted(
 ): number {
   const totalCA = calculateTotalContractedCA(month, launch, prospects, sales, collabs);
   const charges = calculateChargesForMonth(expenses, month);
-  const adsSpent = launch ? launch.adsSpent : 0; // in FCFA
-  const adsSpentEUR = adsSpent * EXCHANGE_RATES.FCFA_TO_EUR;
+  const adsSpentEUR = launch ? launch.adsSpent : 0; // already in EUR
   return totalCA - charges - adsSpentEUR;
 }
 
@@ -173,8 +172,7 @@ export function calculateNetProfitCollected(
 ): number {
   const totalCA = calculateTotalCollectedCA(month, launch, prospects, sales, collabs);
   const charges = calculateChargesForMonth(expenses, month);
-  const adsSpent = launch ? launch.adsSpent : 0; // in FCFA
-  const adsSpentEUR = adsSpent * EXCHANGE_RATES.FCFA_TO_EUR;
+  const adsSpentEUR = launch ? launch.adsSpent : 0; // already in EUR
   return totalCA - charges - adsSpentEUR;
 }
 

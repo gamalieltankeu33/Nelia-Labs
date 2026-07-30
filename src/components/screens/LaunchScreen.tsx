@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { 
   calculateLaunchCA, 
-  calculateLaunchROAS, 
-  calculateImmediateProfit, 
   EXCHANGE_RATES 
 } from '../../utils/calculations';
 import { 
@@ -50,13 +48,13 @@ export const LaunchScreen: React.FC = () => {
         } else {
           const tempSales = currentLaunch ? currentLaunch.daySalesCount + currentLaunch.reminders.reduce((sum, r) => sum + r.count, 0) : 0;
           const tempCA = currentLaunch ? calculateLaunchCA(currentLaunch) : 0;
-          const tempAov = tempSales > 0 ? Math.round(tempCA / tempSales) : 15000;
+          const tempAov = tempSales > 0 ? Math.round((tempCA / tempSales) * EXCHANGE_RATES.FCFA_TO_EUR) : 25;
           
           setLtvConfig({
             billingModel: 'package',
             duration: 6,
             renewalRate: 50,
-            monthlyPrice: tempAov,
+            monthlyPrice: tempAov > 0 ? tempAov : 25,
             churnRate: 10
           });
         }
@@ -226,6 +224,7 @@ export const LaunchScreen: React.FC = () => {
   };
 
   const launchCA = calculateLaunchCA(currentLaunch);
+  const launchCAEUR = launchCA * EXCHANGE_RATES.FCFA_TO_EUR;
   const isLocked = currentLaunch?.status === 'Terminé';
   
   const totalSalesCount = currentLaunch 
@@ -233,6 +232,7 @@ export const LaunchScreen: React.FC = () => {
     : 0;
 
   const aov = totalSalesCount > 0 ? Math.round(launchCA / totalSalesCount) : 0;
+  const aovEUR = aov * EXCHANGE_RATES.FCFA_TO_EUR;
 
   const adsBudget = currentLaunch ? currentLaunch.adsBudget : 0;
   const adsSpent = currentLaunch ? currentLaunch.adsSpent : 0;
@@ -263,16 +263,16 @@ export const LaunchScreen: React.FC = () => {
     ? (totalSalesCount / currentLaunch.registered) * 100 
     : 0;
 
-  // CAC (Coût d'Acquisition Client)
+  // CAC (Coût d'Acquisition Client) in EUR
   const cac = costPerSale;
 
-  // ROAS
-  const roas = calculateLaunchROAS(launchCA, adsSpent);
+  // ROAS (both revenue and budget converted to EUR)
+  const roas = adsSpent > 0 ? launchCAEUR / adsSpent : 0;
 
-  // Profits
-  const immediateProfit = calculateImmediateProfit(launchCA, adsSpent);
+  // Profits in EUR
+  const immediateProfit = launchCAEUR - adsSpent;
 
-  // LTV & Projections
+  // LTV & Projections in EUR
   let ltv6 = 0;
   let ltv12 = 0;
   
@@ -282,30 +282,30 @@ export const LaunchScreen: React.FC = () => {
     for (let t = 0; t < 6; t++) {
       sum6 += Math.pow(r, t);
     }
-    ltv6 = Math.round(ltvConfig.monthlyPrice * sum6);
+    ltv6 = ltvConfig.monthlyPrice * sum6;
     
     let sum12 = 0;
     for (let t = 0; t < 12; t++) {
       sum12 += Math.pow(r, t);
     }
-    ltv12 = Math.round(ltvConfig.monthlyPrice * sum12);
+    ltv12 = ltvConfig.monthlyPrice * sum12;
   } else {
     // Package model
     const r = ltvConfig.renewalRate / 100;
-    const basePrice = aov > 0 ? aov : ltvConfig.monthlyPrice * ltvConfig.duration;
+    const basePrice = aovEUR > 0 ? aovEUR : ltvConfig.monthlyPrice * ltvConfig.duration;
     
     if (ltvConfig.duration === 3) {
-      ltv6 = Math.round(basePrice + basePrice * r);
-      ltv12 = Math.round(basePrice * (1 + r + Math.pow(r, 2) + Math.pow(r, 3)));
+      ltv6 = basePrice + basePrice * r;
+      ltv12 = basePrice * (1 + r + Math.pow(r, 2) + Math.pow(r, 3));
     } else if (ltvConfig.duration === 6) {
       ltv6 = basePrice;
-      ltv12 = Math.round(basePrice + basePrice * r);
+      ltv12 = basePrice + basePrice * r;
     } else if (ltvConfig.duration === 12) {
       ltv6 = basePrice;
       ltv12 = basePrice;
     } else {
       ltv6 = basePrice;
-      ltv12 = Math.round(basePrice + basePrice * r);
+      ltv12 = basePrice + basePrice * r;
     }
   }
 
@@ -314,10 +314,10 @@ export const LaunchScreen: React.FC = () => {
     ? (100 / ltvConfig.churnRate)
     : ltvConfig.duration * (1 / (1 - ltvConfig.renewalRate / 100));
 
-  // Valeur totale de Cohorte à 12 mois
+  // Valeur totale de Cohorte à 12 mois in EUR
   const cohortLtv12 = totalSalesCount * ltv12;
   
-  // Profit Projeté à 12 mois
+  // Profit Projeté à 12 mois in EUR
   const projectedProfit12 = cohortLtv12 - adsSpent;
 
   // Historical benchmarks
@@ -473,10 +473,10 @@ export const LaunchScreen: React.FC = () => {
                     <tr>
                       <td className="kpi-label"><Target className="size-4 text-violet" /> Budget pub (Dépensé)</td>
                       <td className="kpi-value">
-                        {adsSpent.toLocaleString('fr-FR')} FCFA
-                        <span className="sub-val">~ {Math.round(adsSpent * EXCHANGE_RATES.FCFA_TO_EUR).toLocaleString('fr-FR')} €</span>
+                        {adsSpent.toLocaleString('fr-FR')} €
+                        <span className="sub-val">~ {Math.round(adsSpent * EXCHANGE_RATES.EUR_TO_FCFA).toLocaleString('fr-FR')} FCFA</span>
                         <span className="sub-val" style={{ display: 'block', fontSize: '10px', marginTop: '2px' }}>
-                          (Prévu: {adsBudget.toLocaleString('fr-FR')} FCFA)
+                          (Prévu: {adsBudget.toLocaleString('fr-FR')} €)
                         </span>
                       </td>
                     </tr>
@@ -487,9 +487,9 @@ export const LaunchScreen: React.FC = () => {
                     <tr>
                       <td className="kpi-label"><Eye className="size-4 text-violet" /> Coût par inscrit (CPL)</td>
                       <td className="kpi-value text-red">
-                        {costPerLead > 0 ? `${Math.round(costPerLead).toLocaleString('fr-FR')} FCFA` : '—'}
+                        {costPerLead > 0 ? `${costPerLead.toFixed(2)} €` : '—'}
                         {costPerLead > 0 && (
-                          <span className="sub-val">~ {(costPerLead * EXCHANGE_RATES.FCFA_TO_EUR).toFixed(2)} €</span>
+                          <span className="sub-val">~ {Math.round(costPerLead * EXCHANGE_RATES.EUR_TO_FCFA).toLocaleString('fr-FR')} FCFA</span>
                         )}
                       </td>
                     </tr>
@@ -523,9 +523,9 @@ export const LaunchScreen: React.FC = () => {
                     <tr>
                       <td className="kpi-label"><Coins className="size-4 text-violet" /> CAC (Coût par acheteur)</td>
                       <td className="kpi-value text-red">
-                        {cac > 0 ? `${Math.round(cac).toLocaleString('fr-FR')} FCFA` : 'Gratuit'}
+                        {cac > 0 ? `${cac.toFixed(2)} €` : 'Gratuit'}
                         {cac > 0 && (
-                          <span className="sub-val">~ {(cac * EXCHANGE_RATES.FCFA_TO_EUR).toFixed(2)} €</span>
+                          <span className="sub-val">~ {Math.round(cac * EXCHANGE_RATES.EUR_TO_FCFA).toLocaleString('fr-FR')} FCFA</span>
                         )}
                       </td>
                     </tr>
@@ -540,20 +540,20 @@ export const LaunchScreen: React.FC = () => {
                     <tr>
                       <td className="kpi-label"><Award className="size-4 text-violet" /> LTV Projetée (12 mois)</td>
                       <td className="kpi-value text-green">
-                        {ltv12.toLocaleString('fr-FR')} FCFA
-                        <span className="sub-val">~ {Math.round(ltv12 * EXCHANGE_RATES.FCFA_TO_EUR).toLocaleString('fr-FR')} €</span>
+                        {ltv12.toFixed(1)} €
+                        <span className="sub-val">~ {Math.round(ltv12 * EXCHANGE_RATES.EUR_TO_FCFA).toLocaleString('fr-FR')} FCFA</span>
                         <span className="sub-val" style={{ display: 'block', fontSize: '10px', marginTop: '2px' }}>
-                          (LTV 6m: {ltv6.toLocaleString('fr-FR')} FCFA)
+                          (LTV 6m: {ltv6.toFixed(1)} €)
                         </span>
                       </td>
                     </tr>
                     <tr>
                       <td className="kpi-label"><CheckCircle className="size-4 text-violet" /> Profit immédiat / projeté</td>
                       <td className="kpi-value text-green">
-                        {immediateProfit.toLocaleString('fr-FR')} FCFA
-                        <span className="sub-val">~ {Math.round(immediateProfit * EXCHANGE_RATES.FCFA_TO_EUR).toLocaleString('fr-FR')} €</span>
+                        {immediateProfit.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} €
+                        <span className="sub-val">~ {Math.round(immediateProfit * EXCHANGE_RATES.EUR_TO_FCFA).toLocaleString('fr-FR')} FCFA</span>
                         <span className="sub-val" style={{ display: 'block', fontSize: '10px', marginTop: '2px', color: 'var(--accent-gold)', fontWeight: 600 }}>
-                          Projeté LTV 12m: {projectedProfit12.toLocaleString('fr-FR')} FCFA (~ {Math.round(projectedProfit12 * EXCHANGE_RATES.FCFA_TO_EUR).toLocaleString('fr-FR')} €)
+                          Projeté LTV 12m: {projectedProfit12.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} € (~ {Math.round(projectedProfit12 * EXCHANGE_RATES.EUR_TO_FCFA).toLocaleString('fr-FR')} FCFA)
                         </span>
                       </td>
                     </tr>
@@ -636,14 +636,14 @@ export const LaunchScreen: React.FC = () => {
                       <div className="form-group">
                         <label style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}>
                           <span>Prix mensuel moyen :</span>
-                          <span className="text-violet">{ltvConfig.monthlyPrice.toLocaleString('fr-FR')} FCFA</span>
+                          <span className="text-violet">{ltvConfig.monthlyPrice.toLocaleString('fr-FR')} €</span>
                         </label>
                         <input 
                           type="number" 
                           min="0"
                           value={ltvConfig.monthlyPrice}
                           onChange={e => handleUpdateLtvConfig({ monthlyPrice: parseInt(e.target.value, 10) || 0 })}
-                          placeholder="Ex: 15000"
+                          placeholder="Ex: 25"
                         />
                       </div>
 
@@ -682,7 +682,12 @@ export const LaunchScreen: React.FC = () => {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                       <div className="card" style={{ padding: '12px', background: 'var(--bg-primary)' }}>
                         <div style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Panier Moyen Initial</div>
-                        <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)' }}>{aov.toLocaleString('fr-FR')} FCFA</div>
+                        <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                          {aov.toLocaleString('fr-FR')} FCFA
+                          <div style={{ fontSize: '10px', fontWeight: 400, color: 'var(--text-secondary)' }}>
+                            ~ {aovEUR.toFixed(1)} €
+                          </div>
+                        </div>
                       </div>
                       <div className="card" style={{ padding: '12px', background: 'var(--bg-primary)' }}>
                         <div style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Durée de vie moyenne</div>
@@ -690,11 +695,21 @@ export const LaunchScreen: React.FC = () => {
                       </div>
                       <div className="card" style={{ padding: '12px', background: 'var(--bg-primary)' }}>
                         <div style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>LTV à 12 mois</div>
-                        <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--status-success)' }}>{ltv12.toLocaleString('fr-FR')} FCFA</div>
+                        <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--status-success)' }}>
+                          {ltv12.toFixed(1)} €
+                          <div style={{ fontSize: '10px', fontWeight: 400, color: 'var(--text-secondary)' }}>
+                            ~ {Math.round(ltv12 * EXCHANGE_RATES.EUR_TO_FCFA).toLocaleString('fr-FR')} FCFA
+                          </div>
+                        </div>
                       </div>
                       <div className="card" style={{ padding: '12px', background: 'var(--bg-primary)' }}>
                         <div style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>CA Cohorte LTV 12m</div>
-                        <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--status-warning)' }}>{cohortLtv12.toLocaleString('fr-FR')} FCFA</div>
+                        <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--status-warning)' }}>
+                          {cohortLtv12.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} €
+                          <div style={{ fontSize: '10px', fontWeight: 400, color: 'var(--text-secondary)' }}>
+                            ~ {Math.round(cohortLtv12 * EXCHANGE_RATES.EUR_TO_FCFA).toLocaleString('fr-FR')} FCFA
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -833,7 +848,7 @@ export const LaunchScreen: React.FC = () => {
 
             <div className="grid-cols-2" style={{ gap: '16px' }}>
               <div className="form-group">
-                <label>Budget Publicitaire prévu (FCFA)</label>
+                <label>Budget Publicitaire prévu (EUR)</label>
                 <input 
                   type="number" 
                   value={form.launchType === 'Organique' ? '0' : form.adsBudget}
@@ -843,7 +858,7 @@ export const LaunchScreen: React.FC = () => {
                 />
               </div>
               <div className="form-group">
-                <label>Budget Publicitaire dépensé (FCFA)</label>
+                <label>Budget Publicitaire dépensé (EUR)</label>
                 <input 
                   type="number" 
                   value={form.launchType === 'Organique' ? '0' : form.adsSpent}

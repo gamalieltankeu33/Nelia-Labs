@@ -153,7 +153,7 @@ export const DashboardScreen: React.FC = () => {
       collabsCollectedCAAll += cCollected * EXCHANGE_RATES.USD_TO_EUR;
       collabsContractedCAAll += cContracted * EXCHANGE_RATES.USD_TO_EUR;
       
-      adsSpent += (l ? l.adsSpent : 0) * EXCHANGE_RATES.FCFA_TO_EUR;
+      adsSpent += l ? l.adsSpent : 0;
       charges += calculateChargesForMonth(expenses, m);
       monthlyObjective += objectives[m] || 5000;
       monthlyContentsCount += contents.filter(c => getYearMonth(c.date) === m).length;
@@ -243,8 +243,7 @@ export const DashboardScreen: React.FC = () => {
       totalCollectedCA += lCAEUR + pCA + dCA + cCollectedCAEUR;
       totalContractedCA += lCAEUR + pCA + dCA + cContractedCAEUR;
       
-      const aSpent = l ? l.adsSpent : 0; // in FCFA
-      const aSpentEUR = aSpent * EXCHANGE_RATES.FCFA_TO_EUR;
+      const aSpentEUR = l ? l.adsSpent : 0; // already in EUR
       const chg = calculateChargesForMonth(expenses, m);
       totalOutflow += chg + aSpentEUR;
       adsSpent += aSpentEUR;
@@ -302,8 +301,7 @@ export const DashboardScreen: React.FC = () => {
         totalCollectedCA += lCAEUR + pCA + dCA + cCollectedCAEUR;
         totalContractedCA += lCAEUR + pCA + dCA + cContractedCAEUR;
         
-        const aSpent = l ? l.adsSpent : 0; // in FCFA
-        const aSpentEUR = aSpent * EXCHANGE_RATES.FCFA_TO_EUR;
+        const aSpentEUR = l ? l.adsSpent : 0; // already in EUR
         const chg = calculateChargesForMonth(expenses, m);
         totalOutflow += chg + aSpentEUR;
         adsSpent += aSpentEUR;
@@ -400,7 +398,7 @@ export const DashboardScreen: React.FC = () => {
     let outflow = 0;
     monthsList.forEach(m => {
       const l = launches[m];
-      const ads = (l ? l.adsSpent : 0) * EXCHANGE_RATES.FCFA_TO_EUR;
+      const ads = l ? l.adsSpent : 0; // already in EUR
       const chg = calculateChargesForMonth(expenses, m);
       outflow += ads + chg;
     });
@@ -1306,7 +1304,7 @@ export const DashboardScreen: React.FC = () => {
                   const avgShowUp = totalRegistered > 0 ? (totalLive / totalRegistered) * 100 : 0;
                   const avgLiveConv = totalLive > 0 ? (totalDaySalesCount / totalLive) * 100 : 0;
                   const avgGlobalConv = totalRegistered > 0 ? (totalSalesUnits / totalRegistered) * 100 : 0;
-                  const roas = totalAdsSpent > 0 ? (totalLaunchCA / totalAdsSpent) : 0;
+                  const roas = totalAdsSpent > 0 ? (totalLaunchCA * EXCHANGE_RATES.FCFA_TO_EUR / totalAdsSpent) : 0;
 
                   // Calcul de la LTV moyenne sur la période
                   let totalLtv12 = 0;
@@ -1315,17 +1313,18 @@ export const DashboardScreen: React.FC = () => {
                   periodLaunchesList.forEach(pl => {
                     try {
                       const saved = localStorage.getItem(`ltv_config_${pl.month}`);
-                      const config = saved ? JSON.parse(saved) : {
+                      const config = pl.ltvConfig || (saved ? JSON.parse(saved) : {
                         billingModel: 'package',
                         duration: 6,
                         renewalRate: 50,
-                        monthlyPrice: 15000,
+                        monthlyPrice: 25,
                         churnRate: 10
-                      };
+                      });
                       
                       const plSales = pl.daySalesCount + (pl.reminders || []).reduce((s, r) => s + r.count, 0);
                       const plCA = pl.daySalesAmount + (pl.reminders || []).reduce((s, r) => s + r.amount, 0);
                       const plAov = plSales > 0 ? plCA / plSales : 0;
+                      const plAovEUR = plAov * EXCHANGE_RATES.FCFA_TO_EUR;
                       
                       let plLtv12 = 0;
                       if (config.billingModel === 'monthly') {
@@ -1334,10 +1333,10 @@ export const DashboardScreen: React.FC = () => {
                         for (let t = 0; t < 12; t++) {
                           sum12 += Math.pow(r, t);
                         }
-                        plLtv12 = config.monthlyPrice * sum12;
+                        plLtv12 = config.monthlyPrice * sum12; // in EUR
                       } else {
                         const r = config.renewalRate / 100;
-                        const basePrice = plAov > 0 ? plAov : config.monthlyPrice * config.duration;
+                        const basePrice = plAovEUR > 0 ? plAovEUR : config.monthlyPrice * config.duration;
                         if (config.duration === 3) {
                           plLtv12 = basePrice * (1 + r + Math.pow(r, 2) + Math.pow(r, 3));
                         } else if (config.duration === 6) {
@@ -1385,7 +1384,7 @@ export const DashboardScreen: React.FC = () => {
                       </div>
                       <div className="launch-detail-item" style={{ borderTop: '1px dashed rgba(30,58,95,0.4)', paddingTop: '8px', marginTop: '8px' }}>
                         <span>Budget Publicitaire total :</span>
-                        <span className="val-highlight text-red">{totalAdsSpent.toLocaleString('fr-FR')} FCFA ({(totalAdsSpent * EXCHANGE_RATES.FCFA_TO_EUR).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €)</span>
+                        <span className="val-highlight text-red">{totalAdsSpent.toLocaleString('fr-FR')} € (~ {Math.round(totalAdsSpent * EXCHANGE_RATES.EUR_TO_FCFA).toLocaleString('fr-FR')} FCFA)</span>
                       </div>
                       <div className="launch-detail-item">
                         <span>CA Lancement total :</span>
@@ -1399,7 +1398,7 @@ export const DashboardScreen: React.FC = () => {
                         <span>CAC moyen (Coût par acheteur) :</span>
                         <span className="val-highlight text-red">
                           {totalAdsSpent > 0 && totalSalesUnits > 0 
-                            ? `${Math.round(totalAdsSpent / totalSalesUnits).toLocaleString('fr-FR')} FCFA (~ ${Math.round((totalAdsSpent / totalSalesUnits) * EXCHANGE_RATES.FCFA_TO_EUR)} €)`
+                            ? `${(totalAdsSpent / totalSalesUnits).toFixed(2)} € (~ ${Math.round((totalAdsSpent / totalSalesUnits) * EXCHANGE_RATES.EUR_TO_FCFA).toLocaleString('fr-FR')} FCFA)`
                             : '— (Organique)'}
                         </span>
                       </div>
@@ -1407,7 +1406,7 @@ export const DashboardScreen: React.FC = () => {
                         <span>LTV moyenne estimée (12 mois) :</span>
                         <span className="val-highlight text-green">
                           {avgLtv12 > 0 
-                            ? `${Math.round(avgLtv12).toLocaleString('fr-FR')} FCFA (~ ${Math.round(avgLtv12 * EXCHANGE_RATES.FCFA_TO_EUR)} €)`
+                            ? `${avgLtv12.toFixed(1)} € (~ ${Math.round(avgLtv12 * EXCHANGE_RATES.EUR_TO_FCFA).toLocaleString('fr-FR')} FCFA)`
                             : '—'}
                         </span>
                       </div>
