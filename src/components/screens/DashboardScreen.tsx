@@ -63,6 +63,22 @@ export const DashboardScreen: React.FC = () => {
     updateObjective
   } = useStore();
 
+  const getAvailableMonths = () => {
+    const monthsList = [];
+    const startYear = 2024;
+    const endYear = 2027;
+    for (let year = startYear; year <= endYear; year++) {
+      for (let month = 1; month <= 12; month++) {
+        const monthStr = `${year}-${String(month).padStart(2, '0')}`;
+        const date = new Date(year, month - 1, 15);
+        const label = date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+        const capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1);
+        monthsList.push({ value: monthStr, label: capitalizedLabel });
+      }
+    }
+    return monthsList.reverse();
+  };
+
   const [selectedMonth, setSelectedMonth] = useState(() => {
     return new Date().toISOString().substring(0, 7); // YYYY-MM
   });
@@ -778,12 +794,15 @@ export const DashboardScreen: React.FC = () => {
           </div>
 
           {(timeFrame === 'monthly' || timeFrame === '3-months' || timeFrame === '6-months') && (
-            <input 
-              type="month" 
+            <select 
               value={selectedMonth}
               onChange={e => setSelectedMonth(e.target.value)}
-              style={{ width: '160px', padding: '8px 12px' }}
-            />
+              style={{ width: '180px', padding: '8px 12px', background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}
+            >
+              {getAvailableMonths().map(m => (
+                <option key={m.value} value={m.value}>{m.label}</option>
+              ))}
+            </select>
           )}
 
           {timeFrame === 'yearly' && (

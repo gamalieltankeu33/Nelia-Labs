@@ -13,6 +13,22 @@ import {
 export const LaunchScreen: React.FC = () => {
   const { launches, saveLaunch, addReminderToLaunch, deleteReminderFromLaunch } = useStore();
 
+  const getAvailableMonths = () => {
+    const monthsList = [];
+    const startYear = 2024;
+    const endYear = 2027;
+    for (let year = startYear; year <= endYear; year++) {
+      for (let month = 1; month <= 12; month++) {
+        const monthStr = `${year}-${String(month).padStart(2, '0')}`;
+        const date = new Date(year, month - 1, 15);
+        const label = date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+        const capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1);
+        monthsList.push({ value: monthStr, label: capitalizedLabel });
+      }
+    }
+    return monthsList.reverse();
+  };
+
   const [selectedMonth, setSelectedMonth] = useState(() => {
     return new Date().toISOString().substring(0, 7); // YYYY-MM
   });
@@ -118,23 +134,26 @@ export const LaunchScreen: React.FC = () => {
       console.error(e);
     }
     
-    setSelectedMonth(nextMonthStr);
-    
     const nextLaunch = launches[nextMonthStr];
     if (!nextLaunch) {
       const firstDayOfNextMonth = `${nextMonthStr}-01`;
-      setForm({
+      saveLaunch({
+        month: nextMonthStr,
         launchType: currentLaunch?.launchType || 'Publicitaire',
         commStartDate: firstDayOfNextMonth,
         webinarDate: firstDayOfNextMonth,
-        adsBudget: '0',
-        adsSpent: '0',
-        registered: '0',
-        live: '0',
-        daySalesCount: '0',
-        daySalesAmount: '0'
+        adsBudget: 0,
+        adsSpent: 0,
+        registered: 0,
+        live: 0,
+        daySalesCount: 0,
+        daySalesAmount: 0,
+        status: 'En cours',
+        ltvConfig: ltvConfig
       });
     }
+    
+    setSelectedMonth(nextMonthStr);
   };
 
   const [form, setForm] = useState({
@@ -423,12 +442,15 @@ export const LaunchScreen: React.FC = () => {
             </>
           )}
           <label style={{ margin: 0, whiteSpace: 'nowrap' }}>Sélectionner le mois :</label>
-          <input 
-            type="month" 
+          <select 
             value={selectedMonth}
             onChange={e => setSelectedMonth(e.target.value)}
-            style={{ width: '160px', padding: '8px 12px' }}
-          />
+            style={{ width: '180px', padding: '8px 12px', background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}
+          >
+            {getAvailableMonths().map(m => (
+              <option key={m.value} value={m.value}>{m.label}</option>
+            ))}
+          </select>
         </div>
       </div>
 
