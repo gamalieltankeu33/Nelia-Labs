@@ -64,19 +64,45 @@ export const DashboardScreen: React.FC = () => {
   } = useStore();
 
   const getAvailableMonths = () => {
-    const monthsList = [];
-    const startYear = 2024;
-    const endYear = 2027;
-    for (let year = startYear; year <= endYear; year++) {
-      for (let month = 1; month <= 12; month++) {
-        const monthStr = `${year}-${String(month).padStart(2, '0')}`;
-        const date = new Date(year, month - 1, 15);
-        const label = date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-        const capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1);
-        monthsList.push({ value: monthStr, label: capitalizedLabel });
+    const monthsSet = new Set<string>();
+    
+    // 1. Add all months that have launch records in database
+    Object.keys(launches).forEach(m => monthsSet.add(m));
+    
+    // 2. Add current month
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonthNum = currentDate.getMonth() + 1;
+    const currentMonthStr = `${currentYear}-${String(currentMonthNum).padStart(2, '0')}`;
+    monthsSet.add(currentMonthStr);
+    
+    // 3. Add future months (up to 12 months in the future)
+    let tempYear = currentYear;
+    let tempMonth = currentMonthNum;
+    for (let i = 0; i < 12; i++) {
+      tempMonth++;
+      if (tempMonth > 12) {
+        tempMonth = 1;
+        tempYear++;
       }
+      monthsSet.add(`${tempYear}-${String(tempMonth).padStart(2, '0')}`);
     }
-    return monthsList.reverse();
+
+    // 4. Ensure current selection is also present
+    if (selectedMonth) {
+      monthsSet.add(selectedMonth);
+    }
+
+    // Sort descending (latest months first)
+    const sortedMonths = Array.from(monthsSet).sort().reverse();
+    
+    return sortedMonths.map(monthStr => {
+      const [year, month] = monthStr.split('-').map(Number);
+      const date = new Date(year, month - 1, 15);
+      const label = date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+      const capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1);
+      return { value: monthStr, label: capitalizedLabel };
+    });
   };
 
   const [selectedMonth, setSelectedMonth] = useState(() => {
