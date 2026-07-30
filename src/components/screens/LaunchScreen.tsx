@@ -97,9 +97,13 @@ export const LaunchScreen: React.FC = () => {
   };
 
   const getNextMonth = (monthStr: string): string => {
-    const [year, month] = monthStr.split('-').map(Number);
-    const date = new Date(year, month, 1);
-    return date.toISOString().substring(0, 7);
+    let [year, month] = monthStr.split('-').map(Number);
+    month++; // Passer au mois suivant (1-indexed)
+    if (month > 12) {
+      month = 1;
+      year++;
+    }
+    return `${year}-${String(month).padStart(2, '0')}`;
   };
 
   const getNextMonthName = (): string => {
