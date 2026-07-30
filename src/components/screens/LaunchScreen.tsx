@@ -96,6 +96,45 @@ export const LaunchScreen: React.FC = () => {
     }
   };
 
+  const getNextMonth = (monthStr: string): string => {
+    const [year, month] = monthStr.split('-').map(Number);
+    const date = new Date(year, month, 1);
+    return date.toISOString().substring(0, 7);
+  };
+
+  const getNextMonthName = (): string => {
+    const nextMonthStr = getNextMonth(selectedMonth);
+    return new Date(nextMonthStr + '-02').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+  };
+
+  const handlePrepareNextLaunch = () => {
+    const nextMonthStr = getNextMonth(selectedMonth);
+    
+    try {
+      localStorage.setItem(`ltv_config_${nextMonthStr}`, JSON.stringify(ltvConfig));
+    } catch (e) {
+      console.error(e);
+    }
+    
+    setSelectedMonth(nextMonthStr);
+    
+    const nextLaunch = launches[nextMonthStr];
+    if (!nextLaunch) {
+      const firstDayOfNextMonth = `${nextMonthStr}-01`;
+      setForm({
+        launchType: currentLaunch?.launchType || 'Publicitaire',
+        commStartDate: firstDayOfNextMonth,
+        webinarDate: firstDayOfNextMonth,
+        adsBudget: '0',
+        adsSpent: '0',
+        registered: '0',
+        live: '0',
+        daySalesCount: '0',
+        daySalesAmount: '0'
+      });
+    }
+  };
+
   const [form, setForm] = useState({
     launchType: 'Publicitaire' as 'Publicitaire' | 'Organique',
     commStartDate: '',
@@ -388,6 +427,26 @@ export const LaunchScreen: React.FC = () => {
           />
         </div>
       </div>
+
+      {currentLaunch && isLocked && (
+        <div className="success-banner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '16px', borderRadius: 'var(--radius-md)', marginTop: '24px' }}>
+          <div>
+            <h4 style={{ margin: 0, color: 'var(--status-success)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <CheckCircle className="size-5" /> Ce lancement est clôturé !
+            </h4>
+            <p style={{ margin: '4px 0 0 0', fontSize: '13.5px', color: 'var(--text-secondary)' }}>
+              Les données et métriques de performance ont été figées. Prêt à planifier la suite ?
+            </p>
+          </div>
+          <button 
+            className="btn btn-primary"
+            onClick={handlePrepareNextLaunch}
+            style={{ background: 'var(--status-success)', borderColor: 'var(--status-success)', display: 'flex', alignItems: 'center', gap: '8px', height: '40px' }}
+          >
+            <Plus className="size-4" /> Préparer le lancement de {getNextMonthName()}
+          </button>
+        </div>
+      )}
 
       {!currentLaunch && (
         <div className="info-alert" style={{ marginTop: '24px' }}>
