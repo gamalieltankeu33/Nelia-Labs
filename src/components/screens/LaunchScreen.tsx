@@ -38,26 +38,29 @@ export const LaunchScreen: React.FC = () => {
       monthsSet.add(`${tempYear}-${String(tempMonth).padStart(2, '0')}`);
     }
 
-    // 4. Ensure current selection is also present
-    if (selectedMonth) {
+    // 4. Ensure current selection is also present (if not 'all')
+    if (selectedMonth && selectedMonth !== 'all') {
       monthsSet.add(selectedMonth);
     }
 
     // Sort descending (latest months first)
     const sortedMonths = Array.from(monthsSet).sort().reverse();
     
-    return sortedMonths.map(monthStr => {
+    const mapped = sortedMonths.map(monthStr => {
       const [year, month] = monthStr.split('-').map(Number);
       const date = new Date(year, month - 1, 15);
       const label = date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
       const capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1);
       return { value: monthStr, label: capitalizedLabel };
     });
+
+    return [
+      { value: 'all', label: '📊 Vue Générale (Tous les lancements)' },
+      ...mapped
+    ];
   };
 
-  const [selectedMonth, setSelectedMonth] = useState(() => {
-    return new Date().toISOString().substring(0, 7); // YYYY-MM
-  });
+  const [selectedMonth, setSelectedMonth] = useState('all');
 
   const currentLaunch = launches[selectedMonth];
 
@@ -195,6 +198,8 @@ export const LaunchScreen: React.FC = () => {
   });
 
   useEffect(() => {
+    if (selectedMonth === 'all') return;
+    
     if (currentLaunch) {
       setForm({
         launchType: currentLaunch.launchType || 'Publicitaire',
@@ -404,6 +409,224 @@ export const LaunchScreen: React.FC = () => {
     );
   };
 
+  const renderGlobalDashboard = () => {
+    const launchList = Object.values(launches).sort((a, b) => b.month.localeCompare(a.month));
+    
+    let totalCAFCFA = 0;
+    let totalAdsSpentEUR = 0;
+    let totalRegisteredCount = 0;
+    let totalLiveCount = 0;
+    let totalSales = 0;
+    let totalSalesPayantes = 0;
+    
+    launchList.forEach(l => {
+      totalCAFCFA += calculateLaunchCA(l);
+      totalAdsSpentEUR += l.adsSpent || 0;
+      totalRegisteredCount += l.registered || 0;
+      totalLiveCount += l.live || 0;
+      const lSales = l.daySalesCount + (l.reminders || []).reduce((sum, r) => sum + r.count, 0);
+      totalSales += lSales;
+      if (l.launchType === 'Publicitaire') {
+        totalSalesPayantes += lSales;
+      }
+    });
+
+    const totalCAEUR = totalCAFCFA * EXCHANGE_RATES.FCFA_TO_EUR;
+    const netProfitEUR = totalCAEUR - totalAdsSpentEUR;
+    const globalROAS = totalAdsSpentEUR > 0 ? totalCAEUR / totalAdsSpentEUR : 0;
+    
+    const avgShowUpRate = totalRegisteredCount > 0 ? (totalLiveCount / totalRegisteredCount) * 100 : 0;
+    const avgConvRate = totalRegisteredCount > 0 ? (totalSales / totalRegisteredCount) * 100 : 0;
+    const avgCAC = totalSalesPayantes > 0 ? totalAdsSpentEUR / totalSalesPayantes : 0;
+
+    return (
+      <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '28px' }}>
+        
+        {/* Grille des 4 indicateurs financiers consolidés */}
+        <div className="grid-cols-4" style={{ gap: '20px' }}>
+          <div className="card stat-card" style={{ borderLeft: '4px solid var(--status-success)', padding: '16px' }}>
+            <div className="stat-icon-wrapper sale-icon">
+              <DollarSign className="stat-icon text-success" />
+            </div>
+            <div className="stat-meta">
+              <span className="stat-label">CA Cumulé Lancements</span>
+              <span className="stat-val" style={{ fontSize: '18px' }}>{totalCAFCFA.toLocaleString('fr-FR')} FCFA</span>
+              <span className="stat-subtext" style={{ color: 'var(--text-secondary)' }}>
+                ~ {Math.round(totalCAEUR).toLocaleString('fr-FR')} €
+              </span>
+            </div>
+          </div>
+
+          <div className="card stat-card" style={{ borderLeft: '4px solid var(--status-error)', padding: '16px' }}>
+            <div className="stat-icon-wrapper expense-icon">
+              <Target className="stat-icon text-danger" />
+            </div>
+            <div className="stat-meta">
+              <span className="stat-label">Budget Pub Dépensé</span>
+              <span className="stat-val" style={{ fontSize: '18px' }}>{totalAdsSpentEUR.toLocaleString('fr-FR')} €</span>
+              <span className="stat-subtext" style={{ color: 'var(--text-secondary)' }}>
+                ~ {Math.round(totalAdsSpentEUR * EXCHANGE_RATES.EUR_TO_FCFA).toLocaleString('fr-FR')} FCFA
+              </span>
+            </div>
+          </div>
+
+          <div className="card stat-card" style={{ borderLeft: '4px solid var(--accent-violet)', padding: '16px' }}>
+            <div className="stat-icon-wrapper" style={{ color: 'var(--accent-violet)', backgroundColor: 'rgba(99, 91, 255, 0.1)' }}>
+              <CheckCircle className="stat-icon" />
+            </div>
+            <div className="stat-meta">
+              <span className="stat-label">Profit Net Cumulé</span>
+              <span className="stat-val" style={{ color: netProfitEUR >= 0 ? 'var(--status-success)' : 'var(--status-error)', fontSize: '18px' }}>
+                {Math.round(netProfitEUR).toLocaleString('fr-FR')} €
+              </span>
+              <span className="stat-subtext" style={{ color: 'var(--text-secondary)' }}>
+                ~ {Math.round(netProfitEUR * EXCHANGE_RATES.EUR_TO_FCFA).toLocaleString('fr-FR')} FCFA
+              </span>
+            </div>
+          </div>
+
+          <div className="card stat-card" style={{ borderLeft: '4px solid var(--accent-gold)', padding: '16px' }}>
+            <div className="stat-icon-wrapper" style={{ color: 'var(--accent-gold)', backgroundColor: 'rgba(201, 162, 39, 0.1)' }}>
+              <TrendingUp className="stat-icon" />
+            </div>
+            <div className="stat-meta">
+              <span className="stat-label">ROAS Moyen Global</span>
+              <span className="stat-val" style={{ color: 'var(--accent-gold)', fontSize: '18px' }}>
+                {globalROAS > 0 ? `${globalROAS.toFixed(2)}x` : '—'}
+              </span>
+              <span className="stat-subtext" style={{ color: 'var(--text-secondary)' }}>
+                Sur l'ensemble des campagnes
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Grille d'engagement et conversion */}
+        <div className="grid-cols-3" style={{ gap: '20px' }}>
+          <div className="card stat-card" style={{ padding: '16px' }}>
+            <div className="stat-icon-wrapper" style={{ color: '#3B82F6', backgroundColor: 'rgba(59, 130, 246, 0.1)' }}>
+              <Users className="stat-icon" />
+            </div>
+            <div className="stat-meta">
+              <span className="stat-label">Taux de Présence Moyen</span>
+              <span className="stat-val" style={{ fontSize: '18px' }}>{avgShowUpRate.toFixed(1)} %</span>
+              <span className="stat-subtext" style={{ color: 'var(--text-secondary)' }}>
+                {totalLiveCount.toLocaleString('fr-FR')} présents / {totalRegisteredCount.toLocaleString('fr-FR')} inscrits
+              </span>
+            </div>
+          </div>
+
+          <div className="card stat-card" style={{ padding: '16px' }}>
+            <div className="stat-icon-wrapper" style={{ color: 'var(--status-success)', backgroundColor: 'rgba(16, 185, 129, 0.1)' }}>
+              <ShoppingBag className="stat-icon" />
+            </div>
+            <div className="stat-meta">
+              <span className="stat-label">Conversion Globale</span>
+              <span className="stat-val" style={{ fontSize: '18px' }}>{avgConvRate.toFixed(2)} %</span>
+              <span className="stat-subtext" style={{ color: 'var(--text-secondary)' }}>
+                {totalSales} ventes totales cumulées
+              </span>
+            </div>
+          </div>
+
+          <div className="card stat-card" style={{ padding: '16px' }}>
+            <div className="stat-icon-wrapper" style={{ color: '#F59E0B', backgroundColor: 'rgba(245, 158, 11, 0.1)' }}>
+              <Coins className="stat-icon" />
+            </div>
+            <div className="stat-meta">
+              <span className="stat-label">Coût d'Acquisition (CAC Moyen)</span>
+              <span className="stat-val" style={{ fontSize: '18px' }}>{avgCAC > 0 ? `${avgCAC.toFixed(2)} €` : '—'}</span>
+              <span className="stat-subtext" style={{ color: 'var(--text-secondary)' }}>
+                {avgCAC > 0 ? `~ ${Math.round(avgCAC * EXCHANGE_RATES.EUR_TO_FCFA).toLocaleString('fr-FR')} FCFA` : '—'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Historique des Lancements */}
+        <div className="card" style={{ padding: '24px' }}>
+          <h3 className="section-title" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Calendar className="text-violet size-5" /> Historique des Lancements enregistrés
+          </h3>
+          {launchList.length === 0 ? (
+            <p style={{ color: 'var(--text-secondary)', fontSize: '13px', margin: 0, padding: '12px 0' }}>
+              Aucun lancement n'a encore été créé. Utilisez le sélecteur de mois ci-dessus pour planifier votre premier lancement.
+            </p>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }} className="kpi-table">
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
+                    <th style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>Mois</th>
+                    <th style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>Type</th>
+                    <th style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>Budget Pub</th>
+                    <th style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>Inscrits</th>
+                    <th style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>Présents</th>
+                    <th style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>Taux Prés.</th>
+                    <th style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>Ventes</th>
+                    <th style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>CA Réalisé</th>
+                    <th style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>ROAS</th>
+                    <th style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>Statut</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'right', color: 'var(--text-secondary)' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {launchList.map(l => {
+                    const lCA = calculateLaunchCA(l);
+                    const lCAEUR = lCA * EXCHANGE_RATES.FCFA_TO_EUR;
+                    const lSales = l.daySalesCount + (l.reminders || []).reduce((sum, r) => sum + r.count, 0);
+                    const lShowUp = l.registered > 0 ? (l.live / l.registered) * 100 : 0;
+                    const lROAS = l.adsSpent > 0 ? lCAEUR / l.adsSpent : 0;
+
+                    return (
+                      <tr key={l.month} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                        <td style={{ padding: '12px 8px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                          {new Date(l.month + '-02').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+                        </td>
+                        <td style={{ padding: '12px 8px' }}>
+                          <span className={`status-badge-premium ${l.launchType === 'Organique' ? 'badge-open' : 'badge-locked'}`} style={{ fontSize: '11px', padding: '2px 6px' }}>
+                            {l.launchType}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px 8px', color: 'var(--text-primary)' }}>
+                          {l.launchType === 'Organique' ? '—' : `${l.adsSpent.toLocaleString('fr-FR')} €`}
+                        </td>
+                        <td style={{ padding: '12px 8px', color: 'var(--text-primary)' }}>{l.registered.toLocaleString('fr-FR')}</td>
+                        <td style={{ padding: '12px 8px', color: 'var(--text-primary)' }}>{l.live.toLocaleString('fr-FR')}</td>
+                        <td style={{ padding: '12px 8px', color: 'var(--text-primary)' }}>{lShowUp.toFixed(1)} %</td>
+                        <td style={{ padding: '12px 8px', color: 'var(--text-primary)' }}>{lSales} u.</td>
+                        <td style={{ padding: '12px 8px', color: 'var(--status-success)', fontWeight: 600 }}>
+                          {lCA.toLocaleString('fr-FR')} FCFA
+                        </td>
+                        <td style={{ padding: '12px 8px', color: 'var(--accent-gold)', fontWeight: 600 }}>
+                          {l.launchType === 'Organique' ? '—' : lROAS > 0 ? `${lROAS.toFixed(2)}x` : '0.00x'}
+                        </td>
+                        <td style={{ padding: '12px 8px' }}>
+                          <span style={{ fontSize: '11px', display: 'inline-block', padding: '3px 8px', borderRadius: '12px', fontWeight: 600, background: l.status === 'Terminé' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(59, 130, 246, 0.1)', color: l.status === 'Terminé' ? 'var(--status-success)' : 'var(--text-blue)' }}>
+                            {l.status}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px 8px', textAlign: 'right' }}>
+                          <button
+                            onClick={() => setSelectedMonth(l.month)}
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '4px 10px', fontSize: '11.5px', height: 'auto' }}
+                          >
+                            Voir les détails
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="fade-in">
       <div className="screen-header">
@@ -480,7 +703,11 @@ export const LaunchScreen: React.FC = () => {
         </div>
       </div>
 
-      {currentLaunch && isLocked && (
+      {selectedMonth === 'all' ? (
+        renderGlobalDashboard()
+      ) : (
+        <>
+          {currentLaunch && isLocked && (
         <div className="success-banner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '16px', borderRadius: 'var(--radius-md)', marginTop: '24px' }}>
           <div>
             <h4 style={{ margin: 0, color: 'var(--status-success)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -1076,6 +1303,8 @@ export const LaunchScreen: React.FC = () => {
           )}
         </div>
       </div>
+        </>
+      )}
 
       <style>{`
         .status-badge-premium {
