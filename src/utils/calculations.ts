@@ -376,4 +376,34 @@ export function calculateDailyProspectingActivity(
   };
 }
 
+/**
+ * Calcule le ROAS (Return on Ad Spend) d'un lancement
+ */
+export function calculateLaunchROAS(launchCA: number, adsSpent: number): number {
+  if (adsSpent <= 0) return 0;
+  return launchCA / adsSpent;
+}
+
+/**
+ * Calcule la LTV d'un membre à partir de la durée d'abonnement et du prix mensuel
+ */
+export function calculateLTV(monthlyPrice: number, durationMonths: number): number {
+  return monthlyPrice * durationMonths;
+}
+
+/**
+ * Calcule le profit immédiat d'un lancement
+ */
+export function calculateImmediateProfit(launchCA: number, adsSpent: number): number {
+  return launchCA - adsSpent;
+}
+
+/**
+ * Calcule le profit projeté à long terme d'un lancement incluant la LTV
+ */
+export function calculateProjectedProfit(totalSales: number, ltv: number, adsSpent: number): number {
+  return (totalSales * ltv) - adsSpent;
+}
+
+
 

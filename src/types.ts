@@ -58,6 +58,13 @@ export interface MonthlyLaunch {
   daySalesAmount: number;
   reminders: Reminder[];
   status?: 'En cours' | 'Terminé';
+  ltvConfig?: {
+    billingModel: string;
+    duration: number;
+    renewalRate: number;
+    monthlyPrice: number;
+    churnRate: number;
+  };
 }
 
 export interface CommercialCollab {

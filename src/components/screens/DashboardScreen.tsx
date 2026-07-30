@@ -1308,6 +1308,55 @@ export const DashboardScreen: React.FC = () => {
                   const avgGlobalConv = totalRegistered > 0 ? (totalSalesUnits / totalRegistered) * 100 : 0;
                   const roas = totalAdsSpent > 0 ? (totalLaunchCA / totalAdsSpent) : 0;
 
+                  // Calcul de la LTV moyenne sur la période
+                  let totalLtv12 = 0;
+                  let countWithLtv = 0;
+                  
+                  periodLaunchesList.forEach(pl => {
+                    try {
+                      const saved = localStorage.getItem(`ltv_config_${pl.month}`);
+                      const config = saved ? JSON.parse(saved) : {
+                        billingModel: 'package',
+                        duration: 6,
+                        renewalRate: 50,
+                        monthlyPrice: 15000,
+                        churnRate: 10
+                      };
+                      
+                      const plSales = pl.daySalesCount + (pl.reminders || []).reduce((s, r) => s + r.count, 0);
+                      const plCA = pl.daySalesAmount + (pl.reminders || []).reduce((s, r) => s + r.amount, 0);
+                      const plAov = plSales > 0 ? plCA / plSales : 0;
+                      
+                      let plLtv12 = 0;
+                      if (config.billingModel === 'monthly') {
+                        const r = 1 - config.churnRate / 100;
+                        let sum12 = 0;
+                        for (let t = 0; t < 12; t++) {
+                          sum12 += Math.pow(r, t);
+                        }
+                        plLtv12 = config.monthlyPrice * sum12;
+                      } else {
+                        const r = config.renewalRate / 100;
+                        const basePrice = plAov > 0 ? plAov : config.monthlyPrice * config.duration;
+                        if (config.duration === 3) {
+                          plLtv12 = basePrice * (1 + r + Math.pow(r, 2) + Math.pow(r, 3));
+                        } else if (config.duration === 6) {
+                          plLtv12 = basePrice + basePrice * r;
+                        } else if (config.duration === 12) {
+                          plLtv12 = basePrice;
+                        } else {
+                          plLtv12 = basePrice + basePrice * r;
+                        }
+                      }
+                      totalLtv12 += plLtv12;
+                      countWithLtv++;
+                    } catch (e) {
+                      console.error(e);
+                    }
+                  });
+
+                  const avgLtv12 = countWithLtv > 0 ? totalLtv12 / countWithLtv : 0;
+
                   return (
                     <div className="launch-detailed-breakdown">
                       <div className="launch-detail-item">
@@ -1342,9 +1391,25 @@ export const DashboardScreen: React.FC = () => {
                         <span>CA Lancement total :</span>
                         <span className="val-highlight text-green">{totalLaunchCA.toLocaleString('fr-FR')} FCFA ({(totalLaunchCA * EXCHANGE_RATES.FCFA_TO_EUR).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €)</span>
                       </div>
-                      <div className="launch-detail-item" style={{ paddingBottom: '8px', marginBottom: '8px' }}>
+                      <div className="launch-detail-item">
                         <span>ROAS global :</span>
                         <span className="val-highlight text-gold">{totalAdsSpent > 0 ? `${roas.toFixed(2)}x` : '—'}</span>
+                      </div>
+                      <div className="launch-detail-item">
+                        <span>CAC moyen (Coût par acheteur) :</span>
+                        <span className="val-highlight text-red">
+                          {totalAdsSpent > 0 && totalSalesUnits > 0 
+                            ? `${Math.round(totalAdsSpent / totalSalesUnits).toLocaleString('fr-FR')} FCFA (~ ${Math.round((totalAdsSpent / totalSalesUnits) * EXCHANGE_RATES.FCFA_TO_EUR)} €)`
+                            : '— (Organique)'}
+                        </span>
+                      </div>
+                      <div className="launch-detail-item" style={{ paddingBottom: '8px', marginBottom: '8px' }}>
+                        <span>LTV moyenne estimée (12 mois) :</span>
+                        <span className="val-highlight text-green">
+                          {avgLtv12 > 0 
+                            ? `${Math.round(avgLtv12).toLocaleString('fr-FR')} FCFA (~ ${Math.round(avgLtv12 * EXCHANGE_RATES.FCFA_TO_EUR)} €)`
+                            : '—'}
+                        </span>
                       </div>
                       
                       <div className="launch-reminders-table-wrapper" style={{ marginTop: '12px' }}>

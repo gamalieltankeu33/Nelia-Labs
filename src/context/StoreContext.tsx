@@ -285,7 +285,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         (resLaunches.data || []).forEach((l: any) => {
           const rawReminders = l.reminders || [];
           const isCompleted = rawReminders.some((r: any) => r.id === 'metadata_launch_completed');
-          const cleanReminders = rawReminders.filter((r: any) => r.id !== 'metadata_launch_completed');
+          const ltvConfigObj = rawReminders.find((r: any) => r.id === 'metadata_ltv_config');
+          const cleanReminders = rawReminders.filter((r: any) => 
+            r.id !== 'metadata_launch_completed' && r.id !== 'metadata_ltv_config'
+          );
           launchesMap[l.month] = {
             id: l.id,
             month: l.month,
@@ -299,7 +302,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             daySalesCount: Number(l.day_sales_count),
             daySalesAmount: Number(l.day_sales_amount),
             reminders: cleanReminders,
-            status: isCompleted ? 'Terminé' : 'En cours'
+            status: isCompleted ? 'Terminé' : 'En cours',
+            ltvConfig: ltvConfigObj ? {
+              billingModel: ltvConfigObj.billingModel,
+              duration: Number(ltvConfigObj.duration),
+              renewalRate: Number(ltvConfigObj.renewalRate),
+              monthlyPrice: Number(ltvConfigObj.monthlyPrice),
+              churnRate: Number(ltvConfigObj.churnRate)
+            } : undefined
           };
         });
 
@@ -823,19 +833,26 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const existing = store.launches[launchData.month];
     const id = existing ? existing.id : `l-${Date.now()}`;
     const cleanReminders = existing 
-      ? existing.reminders.filter(r => r.id !== 'metadata_launch_completed')
+      ? existing.reminders.filter(r => r.id !== 'metadata_launch_completed' && r.id !== 'metadata_ltv_config')
       : [];
       
     const status = launchData.status || existing?.status || 'En cours';
-    const remindersToSave = status === 'Terminé'
-      ? [...cleanReminders, { id: 'metadata_launch_completed', date: '', count: 0, amount: 0 }]
-      : cleanReminders;
+    const ltvConfigToSave = launchData.ltvConfig || existing?.ltvConfig;
+
+    const remindersToSave = [...cleanReminders];
+    if (ltvConfigToSave) {
+      remindersToSave.push({ id: 'metadata_ltv_config', ...ltvConfigToSave } as any);
+    }
+    if (status === 'Terminé') {
+      remindersToSave.push({ id: 'metadata_launch_completed', date: '', count: 0, amount: 0 });
+    }
     
     const newLaunch: MonthlyLaunch = {
       ...launchData,
       id,
       status,
-      reminders: cleanReminders
+      reminders: cleanReminders,
+      ltvConfig: ltvConfigToSave
     };
 
     setStore(prev => ({
@@ -881,12 +898,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       id: `r-${Date.now()}`
     };
 
-    const cleanReminders = launch.reminders.filter(r => r.id !== 'metadata_launch_completed');
+    const cleanReminders = launch.reminders.filter(r => r.id !== 'metadata_launch_completed' && r.id !== 'metadata_ltv_config');
     const updatedReminders = [...cleanReminders, newReminder];
     const status = launch.status || 'En cours';
-    const remindersToSave = status === 'Terminé'
-      ? [...updatedReminders, { id: 'metadata_launch_completed', date: '', count: 0, amount: 0 }]
-      : updatedReminders;
+    
+    const remindersToSave = [...updatedReminders];
+    if (launch.ltvConfig) {
+      remindersToSave.push({ id: 'metadata_ltv_config', ...launch.ltvConfig } as any);
+    }
+    if (status === 'Terminé') {
+      remindersToSave.push({ id: 'metadata_launch_completed', date: '', count: 0, amount: 0 });
+    }
     
     setStore(prev => ({
       ...prev,
@@ -918,11 +940,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const launch = store.launches[month];
     if (!launch) return;
 
-    const cleanReminders = launch.reminders.filter(r => r.id !== reminderId && r.id !== 'metadata_launch_completed');
+    const cleanReminders = launch.reminders.filter(r => r.id !== reminderId && r.id !== 'metadata_launch_completed' && r.id !== 'metadata_ltv_config');
     const status = launch.status || 'En cours';
-    const remindersToSave = status === 'Terminé'
-      ? [...cleanReminders, { id: 'metadata_launch_completed', date: '', count: 0, amount: 0 }]
-      : cleanReminders;
+    
+    const remindersToSave = [...cleanReminders];
+    if (launch.ltvConfig) {
+      remindersToSave.push({ id: 'metadata_ltv_config', ...launch.ltvConfig } as any);
+    }
+    if (status === 'Terminé') {
+      remindersToSave.push({ id: 'metadata_launch_completed', date: '', count: 0, amount: 0 });
+    }
 
     setStore(prev => ({
       ...prev,
