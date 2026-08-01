@@ -26,11 +26,20 @@ export const ProspectsScreen: React.FC = () => {
     updateProspectStatus, 
     markProspectLost,
     deleteProspect,
-    saveProspectCallInfo
+    saveProspectCallInfo,
+    selectedMonth
   } = useStore();
 
+  const getDefaultDate = () => {
+    const today = new Date().toISOString().split('T')[0];
+    if (today.startsWith(selectedMonth)) {
+      return today;
+    }
+    return `${selectedMonth}-01`;
+  };
+
   const [newName, setNewName] = useState('');
-  const [newProspectDate, setNewProspectDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [newProspectDate, setNewProspectDate] = useState(getDefaultDate());
   const [newProspectCountry, setNewProspectCountry] = useState('');
   const [newProspectPhone, setNewProspectPhone] = useState('');
   const [filterType, setFilterType] = useState<'active' | 'lost' | 'won' | 'all'>('active');
@@ -39,8 +48,14 @@ export const ProspectsScreen: React.FC = () => {
   const [closingProspectId, setClosingProspectId] = useState<string | null>(null);
   const [closingForm, setClosingForm] = useState({
     amount: '1500',
-    date: new Date().toISOString().split('T')[0]
+    date: getDefaultDate()
   });
+
+  // Sync dates when selectedMonth changes
+  React.useEffect(() => {
+    setNewProspectDate(getDefaultDate());
+    setClosingForm(cf => ({ ...cf, date: getDefaultDate() }));
+  }, [selectedMonth]);
 
   // Pour gérer les détails du call
   const [callDetailProspectId, setCallDetailProspectId] = useState<string | null>(null);
@@ -54,9 +69,15 @@ export const ProspectsScreen: React.FC = () => {
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
   const [dragOverPhase, setDragOverPhase] = useState<number | null>(null);
 
+  const prospectsInSelectedMonth = prospects.filter(p => {
+    const isContactedInMonth = p.history && p.history[0] && p.history[0].date.startsWith(selectedMonth);
+    const isClosedInMonth = p.dealDate && p.dealDate.startsWith(selectedMonth);
+    return isContactedInMonth || isClosedInMonth;
+  });
+
   // Helper to get prospects for a specific phase
   const getProspectsForPhase = (phase: 1 | 2 | 3 | 4) => {
-    return prospects.filter(p => {
+    return prospectsInSelectedMonth.filter(p => {
       if (p.lost) return false;
       const status = p.currentStatus;
       if (phase === 1) {
@@ -292,7 +313,7 @@ export const ProspectsScreen: React.FC = () => {
   };
 
   // Filtrer les prospects selon l'onglet
-  const filteredProspects = prospects.filter(p => {
+  const filteredProspects = prospectsInSelectedMonth.filter(p => {
     if (filterType === 'active') {
       return !p.lost && p.currentStatus !== 'Closé gagné';
     }
@@ -307,7 +328,7 @@ export const ProspectsScreen: React.FC = () => {
 
   // Calcul de l'entonnoir (toujours sur la totalité des prospects pour l'exactitude des stats globale)
   const { steps: funnelSteps, conversionRate } = calculateProspectFunnel(
-    prospects,
+    prospectsInSelectedMonth,
     PROSPECT_STATUSES,
     PROSPECT_STATUS_COLORS as any
   );
@@ -549,7 +570,7 @@ export const ProspectsScreen: React.FC = () => {
                 >
                   <span>Pipeline Actif</span>
                   <span className="filter-count-badge bg-gold">
-                    {prospects.filter(p => !p.lost && p.currentStatus !== 'Closé gagné').length}
+                    {prospectsInSelectedMonth.filter(p => !p.lost && p.currentStatus !== 'Closé gagné').length}
                   </span>
                 </button>
                 <button 
@@ -559,7 +580,7 @@ export const ProspectsScreen: React.FC = () => {
                 >
                   <span>Closé Gagné</span>
                   <span className="filter-count-badge bg-green">
-                    {prospects.filter(p => p.currentStatus === 'Closé gagné').length}
+                    {prospectsInSelectedMonth.filter(p => p.currentStatus === 'Closé gagné').length}
                   </span>
                 </button>
                 <button 
@@ -569,7 +590,7 @@ export const ProspectsScreen: React.FC = () => {
                 >
                   <span>Perdus</span>
                   <span className="filter-count-badge bg-red">
-                    {prospects.filter(p => p.lost).length}
+                    {prospectsInSelectedMonth.filter(p => p.lost).length}
                   </span>
                 </button>
                 <button 
@@ -579,7 +600,7 @@ export const ProspectsScreen: React.FC = () => {
                 >
                   <span>Tous</span>
                   <span className="filter-count-badge bg-input">
-                    {prospects.length}
+                    {prospectsInSelectedMonth.length}
                   </span>
                 </button>
               </div>
@@ -788,7 +809,7 @@ export const ProspectsScreen: React.FC = () => {
           </div>
         </div>
 
-        {prospects.length === 0 ? (
+        {prospectsInSelectedMonth.length === 0 ? (
           <div className="empty-state" style={{ padding: '30px' }}>
             <p>Ajoutez des prospects pour visualiser l'entonnoir commercial.</p>
           </div>

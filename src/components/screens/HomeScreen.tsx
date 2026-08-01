@@ -53,13 +53,16 @@ export const HomeScreen: React.FC<{ setActiveScreen: (screen: string) => void }>
     launches, 
     collabs, 
     expenses, 
-    objectives 
+    objectives,
+    selectedMonth
   } = useStore();
 
-  const currentMonth = new Date().toISOString().substring(0, 7); // YYYY-MM
-  const currentMonthName = new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+  const currentMonth = selectedMonth; // Synchronized globally
+  const [selectedYear, selectedMonthNum] = selectedMonth.split('-');
+  const dateObj = new Date(Number(selectedYear), Number(selectedMonthNum) - 1, 15);
+  const currentMonthName = dateObj.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
 
-  // Calculations for current month (Collected vs Contracted)
+  // Calculations for selected month (Collected vs Contracted)
   const launch = launches[currentMonth];
   
   const totalCollectedCA = calculateTotalCollectedCA(currentMonth, launch, prospects, sales, collabs);
@@ -78,8 +81,12 @@ export const HomeScreen: React.FC<{ setActiveScreen: (screen: string) => void }>
   // Legacy mappings for safe local variables usage
   const objectiveProgress = objectiveProgressCollected;
 
-  // Active prospects count (not closed or lost)
-  const activeProspects = prospects.filter(p => p.currentStatus !== 'Closé gagné' && p.currentStatus !== 'Perdu').length;
+  // Active prospects count (not closed or lost, contacted in the selected month)
+  const activeProspects = prospects.filter(p => 
+    p.currentStatus !== 'Closé gagné' && 
+    p.currentStatus !== 'Perdu' &&
+    p.history && p.history[0] && p.history[0].date.startsWith(selectedMonth)
+  ).length;
 
   // Monthly contents
   const monthlyContents = contents.filter(c => c.date.startsWith(currentMonth)).length;

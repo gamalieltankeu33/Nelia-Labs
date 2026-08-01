@@ -11,7 +11,13 @@ import {
 } from 'lucide-react';
 
 export const LaunchScreen: React.FC = () => {
-  const { launches, saveLaunch, addReminderToLaunch, deleteReminderFromLaunch } = useStore();
+  const { 
+    launches, 
+    saveLaunch, 
+    addReminderToLaunch, 
+    deleteReminderFromLaunch,
+    selectedMonth: globalSelectedMonth
+  } = useStore();
 
   const getAvailableMonths = () => {
     const monthsSet = new Set<string>();
@@ -60,7 +66,12 @@ export const LaunchScreen: React.FC = () => {
     ];
   };
 
-  const [selectedMonth, setSelectedMonth] = useState('all');
+  const [selectedMonth, setSelectedMonth] = useState(globalSelectedMonth);
+
+  // Sync selectedMonth with globalSelectedMonth if global changes
+  useEffect(() => {
+    setSelectedMonth(globalSelectedMonth);
+  }, [globalSelectedMonth]);
 
   const currentLaunch = launches[selectedMonth];
 

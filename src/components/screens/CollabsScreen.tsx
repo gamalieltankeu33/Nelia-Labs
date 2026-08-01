@@ -4,14 +4,27 @@ import { Briefcase, Plus, Trash2 } from 'lucide-react';
 import type { CommercialCollab } from '../../types';
 
 export const CollabsScreen: React.FC = () => {
-  const { collabs, addCollab, updateCollabStatus, deleteCollab } = useStore();
+  const { collabs, addCollab, updateCollabStatus, deleteCollab, selectedMonth } = useStore();
+
+  const getDefaultDate = () => {
+    const today = new Date().toISOString().split('T')[0];
+    if (today.startsWith(selectedMonth)) {
+      return today;
+    }
+    return `${selectedMonth}-01`;
+  };
 
   const [form, setForm] = useState({
     brand: '',
     amount: '',
-    publishDate: new Date().toISOString().split('T')[0],
+    publishDate: getDefaultDate(),
     status: 'En discussion' as const
   });
+
+  // Sync date input if selectedMonth changes
+  React.useEffect(() => {
+    setForm(f => ({ ...f, publishDate: getDefaultDate() }));
+  }, [selectedMonth]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,10 +41,12 @@ export const CollabsScreen: React.FC = () => {
     setForm({
       brand: '',
       amount: '',
-      publishDate: new Date().toISOString().split('T')[0],
+      publishDate: getDefaultDate(),
       status: 'En discussion'
     });
   };
+
+  const filteredCollabs = collabs.filter(c => c.publishDate.startsWith(selectedMonth));
 
   const getStatusColorClass = (status: CommercialCollab['status']) => {
     switch (status) {
@@ -117,12 +132,12 @@ export const CollabsScreen: React.FC = () => {
 
         {/* Liste des collaborations */}
         <div className="card" style={{ gridColumn: 'span 2' }}>
-          <h3 className="section-title" style={{ marginBottom: '20px' }}>Toutes les collaborations ({collabs.length})</h3>
+          <h3 className="section-title" style={{ marginBottom: '20px' }}>Collaborations du mois ({filteredCollabs.length})</h3>
           
-          {collabs.length === 0 ? (
+          {filteredCollabs.length === 0 ? (
             <div className="empty-state">
               <Briefcase className="empty-icon" />
-              <p>Aucune collaboration enregistrée pour le moment.</p>
+              <p>Aucune collaboration enregistrée pour ce mois.</p>
             </div>
           ) : (
             <div className="table-container">
@@ -137,7 +152,7 @@ export const CollabsScreen: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {collabs.map((c) => (
+                  {filteredCollabs.map((c) => (
                     <tr key={c.id}>
                       <td style={{ whiteSpace: 'nowrap' }}>
                         {new Date(c.publishDate).toLocaleDateString('fr-FR')}

@@ -22,6 +22,7 @@ import {
   calculateDigitalCA, 
   calculateCollabsContractedCA,
   calculateCollabsCollectedCA,
+  getAvailableMonths,
   EXCHANGE_RATES
 } from '../utils/calculations';
 
@@ -45,25 +46,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
     prospects,
     launches,
     collabs,
-    objectives 
+    expenses,
+    objectives,
+    selectedMonth,
+    setSelectedMonth
   } = useStore();
 
-  const currentMonth = new Date().toISOString().substring(0, 7);
-  const currentMonthName = new Date().toLocaleDateString('fr-FR', { month: 'long' });
-  const capitalizedMonth = currentMonthName.charAt(0).toUpperCase() + currentMonthName.slice(1);
+  const availableMonths = getAvailableMonths(launches, sales, collabs, expenses, prospects);
+
+  const [selectedYear, selectedMonthNum] = selectedMonth.split('-');
+  const dateObj = new Date(Number(selectedYear), Number(selectedMonthNum) - 1, 15);
+  const selectedMonthName = dateObj.toLocaleDateString('fr-FR', { month: 'long' });
+  const capitalizedMonth = selectedMonthName.charAt(0).toUpperCase() + selectedMonthName.slice(1);
   
   // Calculate current month's CA (Collected vs Contracted)
-  const launch = launches[currentMonth];
+  const launch = launches[selectedMonth];
   const launchCA = calculateLaunchCA(launch);
-  const premiumCA = calculatePremiumCA(prospects, currentMonth);
-  const digitalCA = calculateDigitalCA(sales, currentMonth);
-  const collabsCollectedCA = calculateCollabsCollectedCA(collabs, currentMonth);
-  const collabsContractedCA = calculateCollabsContractedCA(collabs, currentMonth);
+  const premiumCA = calculatePremiumCA(prospects, selectedMonth);
+  const digitalCA = calculateDigitalCA(sales, selectedMonth);
+  const collabsCollectedCA = calculateCollabsCollectedCA(collabs, selectedMonth);
+  const collabsContractedCA = calculateCollabsContractedCA(collabs, selectedMonth);
   
   const totalCollectedCA = (launchCA * EXCHANGE_RATES.FCFA_TO_EUR) + premiumCA + digitalCA + (collabsCollectedCA * EXCHANGE_RATES.USD_TO_EUR);
   const totalContractedCA = (launchCA * EXCHANGE_RATES.FCFA_TO_EUR) + premiumCA + digitalCA + (collabsContractedCA * EXCHANGE_RATES.USD_TO_EUR);
   
-  const monthlyObjective = objectives[currentMonth] || 5000;
+  const monthlyObjective = objectives[selectedMonth] || 5000;
   const progressPercent = monthlyObjective > 0 ? Math.min((totalCollectedCA / monthlyObjective) * 100, 100) : 0;
 
   const menuItems = [
@@ -130,6 +137,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <CloudLightning className="logo-icon-premium" />
           </div>
           <span className="logo-text-below">NEXT IA LABS</span>
+        </div>
+
+        {/* Global Month Selector */}
+        <div className="sidebar-month-selector">
+          <label className="month-selector-label">Période active</label>
+          <select 
+            value={selectedMonth} 
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className="month-select-dropdown"
+          >
+            {availableMonths.map((m) => (
+              <option key={m.value} value={m.value}>
+                {m.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         <nav className="sidebar-nav">
@@ -403,6 +426,58 @@ export const Sidebar: React.FC<SidebarProps> = ({
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
+        }
+
+        .sidebar-month-selector {
+          padding: 0 20px 20px 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .month-selector-label {
+          font-size: 10px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          color: rgba(255, 255, 255, 0.6);
+        }
+
+        .month-select-dropdown {
+          background-color: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          color: #FFFFFF;
+          font-size: 13px;
+          font-weight: 500;
+          border-radius: var(--radius-md);
+          padding: 8px 12px;
+          cursor: pointer;
+          transition: all var(--transition-fast);
+          background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23FFFFFF' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
+          background-position: right 12px center;
+          background-repeat: no-repeat;
+          background-size: 1.1rem;
+          padding-right: 32px !important;
+          box-shadow: none;
+          outline: none;
+          -webkit-appearance: none;
+          -moz-appearance: none;
+          appearance: none;
+        }
+
+        .month-select-dropdown:hover {
+          background-color: rgba(255, 255, 255, 0.15);
+          border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        .month-select-dropdown:focus {
+          border-color: rgba(255, 255, 255, 0.4);
+          box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+        }
+
+        .month-select-dropdown option {
+          background-color: #4F46E5;
+          color: #FFFFFF;
         }
 
         /* Mobile specific styles */

@@ -11,18 +11,32 @@ export const ExpensesScreen: React.FC = () => {
     importData, 
     exportData, 
     resetToDemoData, 
-    clearAllData 
+    clearAllData,
+    selectedMonth
   } = useStore();
+
+  const getDefaultDate = () => {
+    const today = new Date().toISOString().split('T')[0];
+    if (today.startsWith(selectedMonth)) {
+      return today;
+    }
+    return `${selectedMonth}-01`;
+  };
 
   const [form, setForm] = useState({
     name: '',
     amount: '',
     frequency: 'Mensuel' as const,
-    date: new Date().toISOString().split('T')[0]
+    date: getDefaultDate()
   });
 
   const [importJson, setImportJson] = useState('');
   const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  // Sync date input if selectedMonth changes
+  React.useEffect(() => {
+    setForm(f => ({ ...f, date: getDefaultDate() }));
+  }, [selectedMonth]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,10 +53,12 @@ export const ExpensesScreen: React.FC = () => {
     setForm({
       name: '',
       amount: '',
-      frequency: 'Mensuel',
-      date: new Date().toISOString().split('T')[0]
+      frequency: form.frequency,
+      date: getDefaultDate()
     });
   };
+
+  const filteredExpenses = expenses.filter(e => e.date.startsWith(selectedMonth));
 
   const handleExport = () => {
     const dataStr = exportData();
@@ -151,12 +167,12 @@ export const ExpensesScreen: React.FC = () => {
 
         {/* Liste des charges */}
         <div className="card" style={{ gridColumn: 'span 2' }}>
-          <h3 className="section-title" style={{ marginBottom: '20px' }}>Toutes les charges ({expenses.length})</h3>
+          <h3 className="section-title" style={{ marginBottom: '20px' }}>Charges du mois ({filteredExpenses.length})</h3>
           
-          {expenses.length === 0 ? (
+          {filteredExpenses.length === 0 ? (
             <div className="empty-state">
               <DollarSign className="empty-icon" />
-              <p>Aucune charge enregistrée.</p>
+              <p>Aucune charge enregistrée pour ce mois.</p>
             </div>
           ) : (
             <div className="table-container">
@@ -171,7 +187,7 @@ export const ExpensesScreen: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {expenses.map((exp) => (
+                  {filteredExpenses.map((exp) => (
                     <tr key={exp.id}>
                       <td style={{ whiteSpace: 'nowrap' }}>
                         {new Date(exp.date).toLocaleDateString('fr-FR')}

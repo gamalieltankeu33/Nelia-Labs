@@ -24,6 +24,8 @@ interface StoreContextType {
   objectives: Record<string, number>;
   savingStatus: SavingStatus;
   savingError: string | null;
+  selectedMonth: string;
+  setSelectedMonth: (month: string) => void;
   
   // Actions
   addContent: (content: Omit<PublishedContent, 'id'>) => void;
@@ -68,7 +70,7 @@ const StoreContext = createContext<StoreContextType | undefined>(undefined);
 // Objectifs par défaut S2 2026
 const DEFAULT_OBJECTIVES: Record<string, number> = {
   '2026-07': 5500,
-  '2026-08': 6500,
+  '2026-08': 15000,
   '2026-09': 8500,
   '2026-10': 9500,
   '2026-11': 10500,
@@ -218,6 +220,7 @@ const getDemoData = (): NextiaStore => {
 };
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [selectedMonth, setSelectedMonth] = useState(() => new Date().toISOString().substring(0, 7));
   const [store, setStore] = useState<NextiaStore>(() => {
     try {
       const saved = localStorage.getItem('nextia_business_data');
@@ -511,6 +514,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     }
   }, [store]);
+
+  // Synchronise August 2026 objective to 15000
+  useEffect(() => {
+    if (store.objectives['2026-08'] !== 15000) {
+      updateObjective('2026-08', 15000);
+    }
+  }, [store.objectives]);
 
   // Actions Contenu
   const addContent = async (content: Omit<PublishedContent, 'id'>) => {
@@ -1192,6 +1202,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ...store,
       savingStatus,
       savingError,
+      selectedMonth,
+      setSelectedMonth,
       addContent,
       deleteContent,
       addDigitalSale,

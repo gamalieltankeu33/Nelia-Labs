@@ -60,7 +60,9 @@ export const DashboardScreen: React.FC = () => {
     collabs, 
     expenses, 
     objectives,
-    updateObjective
+    updateObjective,
+    selectedMonth,
+    setSelectedMonth
   } = useStore();
 
   const getAvailableMonths = () => {
@@ -104,10 +106,6 @@ export const DashboardScreen: React.FC = () => {
       return { value: monthStr, label: capitalizedLabel };
     });
   };
-
-  const [selectedMonth, setSelectedMonth] = useState(() => {
-    return new Date().toISOString().substring(0, 7); // YYYY-MM
-  });
 
   const [timeFrame, setTimeFrame] = useState<'monthly' | '3-months' | '6-months' | 'yearly' | 'all-time'>('monthly');
   const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear().toString());

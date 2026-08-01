@@ -71,20 +71,71 @@ export function calculateCollabsCA(collabs: CommercialCollab[], month: string): 
 }
 
 /**
- * Calcule les charges applicables à un mois donné (règles de récurrence)
+ * Calcule les charges applicables à un mois donné (sans report automatique d'un mois sur l'autre)
  */
 export function calculateChargesForMonth(expenses: Expense[], month: string): number {
   return expenses
     .filter(e => {
       const expenseMonth = getYearMonth(e.date);
-      if (e.frequency === 'Mensuel') {
-        return expenseMonth <= month;
-      } else {
-        // Ponctuel ou Annuel
-        return expenseMonth === month;
-      }
+      // Un mois ne doit pas transporter les charges d'un autre mois
+      return expenseMonth === month;
     })
     .reduce((sum, e) => sum + e.amount, 0);
+}
+
+/**
+ * Génère la liste des mois disponibles pour la navigation
+ */
+export function getAvailableMonths(
+  launches: Record<string, MonthlyLaunch>,
+  sales: DigitalSale[],
+  collabs: CommercialCollab[],
+  expenses: Expense[],
+  prospects: Prospect[]
+): { value: string; label: string }[] {
+  const monthsSet = new Set<string>();
+  
+  // 1. Ajouter tous les mois ayant des lancements
+  Object.keys(launches).forEach(m => monthsSet.add(m));
+  
+  // 2. Ajouter tous les mois présents dans les autres types de données
+  sales.forEach(s => monthsSet.add(s.date.substring(0, 7)));
+  collabs.forEach(c => monthsSet.add(c.publishDate.substring(0, 7)));
+  expenses.forEach(e => monthsSet.add(e.date.substring(0, 7)));
+  prospects.forEach(p => {
+    if (p.dealDate) monthsSet.add(p.dealDate.substring(0, 7));
+    if (p.history && p.history[0]?.date) monthsSet.add(p.history[0].date.substring(0, 7));
+  });
+  
+  // 3. Ajouter le mois en cours
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const currentMonthNum = currentDate.getMonth() + 1;
+  const currentMonthStr = `${currentYear}-${String(currentMonthNum).padStart(2, '0')}`;
+  monthsSet.add(currentMonthStr);
+  
+  // 4. Ajouter les 12 prochains mois (le futur)
+  let tempYear = currentYear;
+  let tempMonth = currentMonthNum;
+  for (let i = 0; i < 12; i++) {
+    tempMonth++;
+    if (tempMonth > 12) {
+      tempMonth = 1;
+      tempYear++;
+    }
+    monthsSet.add(`${tempYear}-${String(tempMonth).padStart(2, '0')}`);
+  }
+
+  // Trier par ordre décroissant (plus récent d'abord)
+  const sortedMonths = Array.from(monthsSet).sort().reverse();
+  
+  return sortedMonths.map(monthStr => {
+    const [year, month] = monthStr.split('-').map(Number);
+    const date = new Date(year, month - 1, 15);
+    const label = date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+    const capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1);
+    return { value: monthStr, label: capitalizedLabel };
+  });
 }
 
 /**

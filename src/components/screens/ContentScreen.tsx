@@ -3,15 +3,28 @@ import { useStore } from '../../context/StoreContext';
 import { FileText, Plus, Trash2, ExternalLink } from 'lucide-react';
 
 export const ContentScreen: React.FC = () => {
-  const { contents, addContent, deleteContent } = useStore();
+  const { contents, addContent, deleteContent, selectedMonth } = useStore();
+
+  const getDefaultDate = () => {
+    const today = new Date().toISOString().split('T')[0];
+    if (today.startsWith(selectedMonth)) {
+      return today;
+    }
+    return `${selectedMonth}-01`;
+  };
 
   const [form, setForm] = useState({
-    date: new Date().toISOString().split('T')[0],
+    date: getDefaultDate(),
     platform: 'Instagram' as const,
     type: 'Vidéo courte' as const,
     title: '',
     link: ''
   });
+
+  // Sync date input if selectedMonth changes
+  React.useEffect(() => {
+    setForm(f => ({ ...f, date: getDefaultDate() }));
+  }, [selectedMonth]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,13 +39,15 @@ export const ContentScreen: React.FC = () => {
     });
 
     setForm({
-      date: new Date().toISOString().split('T')[0],
+      date: getDefaultDate(),
       platform: 'Instagram',
       type: 'Vidéo courte',
       title: '',
       link: ''
     });
   };
+
+  const filteredContents = contents.filter(c => c.date.startsWith(selectedMonth));
 
   return (
     <div className="fade-in">
@@ -116,12 +131,12 @@ export const ContentScreen: React.FC = () => {
 
         {/* Liste chronologique */}
         <div className="card" style={{ gridColumn: 'span 2' }}>
-          <h3 className="section-title" style={{ marginBottom: '20px' }}>Contenus publiés ({contents.length})</h3>
+          <h3 className="section-title" style={{ marginBottom: '20px' }}>Contenus publiés ({filteredContents.length})</h3>
           
-          {contents.length === 0 ? (
+          {filteredContents.length === 0 ? (
             <div className="empty-state">
               <FileText className="empty-icon" />
-              <p>Aucun contenu publié pour le moment. Utilisez le formulaire pour en ajouter un.</p>
+              <p>Aucun contenu publié pour ce mois. Utilisez le formulaire pour en ajouter un.</p>
             </div>
           ) : (
             <div className="table-container">
@@ -137,7 +152,7 @@ export const ContentScreen: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {contents.map((c) => (
+                  {filteredContents.map((c) => (
                     <tr key={c.id}>
                       <td style={{ whiteSpace: 'nowrap' }}>
                         {new Date(c.date).toLocaleDateString('fr-FR')}
