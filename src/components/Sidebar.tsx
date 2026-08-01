@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   Home,
   Calendar, 
   FileText, 
   Users, 
+  Send,
   Briefcase, 
   DollarSign, 
   PieChart, 
@@ -12,22 +13,7 @@ import {
   CheckCircle,
   AlertTriangle,
   Menu,
-  X,
-  Cpu,
-  Tv,
-  MessageSquare,
-  Award,
-  Play,
-  TrendingUp,
-  Heart,
-  GraduationCap,
-  FolderOpen,
-  Zap,
-  Layers,
-  FileCheck,
-  Settings,
-  ChevronDown,
-  ChevronRight
+  X
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { supabase } from '../supabaseClient';
@@ -88,72 +74,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const monthlyObjective = objectives[selectedMonth] || 5000;
   const progressPercent = monthlyObjective > 0 ? Math.min((totalCollectedCA / monthlyObjective) * 100, 100) : 0;
 
-  const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({
-    pilotage: false,
-    acquisition: false,
-    contenu: false,
-    operations: true, // Collapsed by default
-  });
-
-  const toggleCategory = (catId: string) => {
-    setCollapsedCategories(prev => ({
-      ...prev,
-      [catId]: !prev[catId]
-    }));
-  };
-
-  const categories = [
-    {
-      name: "📊 PILOTAGE",
-      id: "pilotage",
-      items: [
-        { id: 'home', name: 'Accueil', icon: Home },
-        { id: 'dashboard', name: 'Cockpit', icon: PieChart },
-        { id: 'growth', name: 'Croissance', icon: TrendingUp },
-        { id: 'kpis', name: 'KPI', icon: PieChart },
-        { id: 'finances', name: 'Finances', icon: DollarSign },
-        { id: 'expenses', name: 'Charges', icon: DollarSign },
-        { id: 'team', name: 'Équipe', icon: Users },
-      ]
-    },
-    {
-      name: "📥 ACQUISITION",
-      id: "acquisition",
-      items: [
-        { id: 'prospects', name: 'Prospection', icon: Users },
-        { id: 'conversations', name: 'Conversations', icon: MessageSquare },
-        { id: 'closing', name: 'Closing', icon: Award },
-        { id: 'appointments', name: 'Rendez-vous', icon: Calendar },
-        { id: 'webinars', name: 'Webinaires', icon: Play },
-        { id: 'ads', name: 'Publicités', icon: TrendingUp },
-        { id: 'collabs', name: 'Collaborations', icon: Briefcase },
-      ]
-    },
-    {
-      name: "📝 CONTENU & COMMUNAUTÉ",
-      id: "contenu",
-      items: [
-        { id: 'content', name: 'Création de contenu', icon: FileText },
-        { id: 'reels', name: 'Reels', icon: Tv },
-        { id: 'editorial', name: 'Calendrier éditorial', icon: Calendar },
-        { id: 'club-ia', name: 'Club IA', icon: Heart },
-        { id: 'formations', name: 'Formations', icon: GraduationCap },
-        { id: 'resources', name: 'Ressources', icon: FolderOpen },
-      ]
-    },
-    {
-      name: "⚙️ OPÉRATIONS",
-      id: "operations",
-      items: [
-        { id: 'ia', name: 'IA', icon: Cpu },
-        { id: 'agents', name: 'Agents IA', icon: Layers },
-        { id: 'automations', name: 'Automatisations', icon: Zap },
-        { id: 'projects', name: 'Projets', icon: FolderOpen },
-        { id: 'tasks', name: 'Tâches', icon: FileCheck },
-        { id: 'documents', name: 'Documents', icon: FileText },
-        { id: 'settings', name: 'Paramètres', icon: Settings },
-      ]
-    }
+  const menuItems = [
+    { id: 'home', name: 'Accueil', icon: Home },
+    { id: 'today', name: "Aujourd'hui", icon: Calendar },
+    { id: 'content', name: 'Contenu', icon: FileText },
+    { id: 'prospects', name: 'Prospection', icon: Users },
+    { id: 'launch', name: 'Lancement', icon: Send },
+    { id: 'collabs', name: 'Collabs', icon: Briefcase },
+    { id: 'expenses', name: 'Charges', icon: DollarSign },
+    { id: 'dashboard', name: 'Tableau de bord', icon: PieChart },
   ];
 
   const renderSavingStatus = () => {
@@ -267,64 +196,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </select>
         </div>
 
-        <nav className="sidebar-nav" style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', flex: 1, padding: '16px 12px' }}>
-          {categories.map((category) => {
-            const isCollapsed = collapsedCategories[category.id];
+        <nav className="sidebar-nav">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeScreen === item.id;
             return (
-              <div key={category.id} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <button
-                  type="button"
-                  onClick={() => toggleCategory(category.id)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '6px 8px',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    color: 'rgba(255, 255, 255, 0.45)',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    width: '100%',
-                    textAlign: 'left',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em'
-                  }}
-                >
-                  <span>{category.name}</span>
-                  {isCollapsed ? <ChevronRight className="size-3" /> : <ChevronDown className="size-3" />}
-                </button>
-
-                {!isCollapsed && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', paddingLeft: '4px' }}>
-                    {category.items.map((item) => {
-                      const Icon = item.icon;
-                      const isActive = activeScreen === item.id;
-                      return (
-                        <button
-                          key={item.id}
-                          onClick={() => {
-                            setActiveScreen(item.id);
-                            setIsOpen(false); // Fermer sur mobile
-                          }}
-                          className={`nav-item ${isActive ? 'nav-item-active' : ''}`}
-                          style={{
-                            padding: '8px 12px',
-                            fontSize: '13px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '10px'
-                          }}
-                        >
-                          <Icon className={`nav-icon ${isActive ? 'nav-icon-active' : ''}`} style={{ width: '16px', height: '16px' }} />
-                          <span className="nav-text">{item.name}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+              <button
+                key={item.id}
+                onClick={() => {
+                  setActiveScreen(item.id);
+                  setIsOpen(false); // Fermer sur mobile
+                }}
+                className={`nav-item ${isActive ? 'nav-item-active' : ''}`}
+              >
+                <Icon className={`nav-icon ${isActive ? 'nav-icon-active' : ''}`} />
+                <span className="nav-text">{item.name}</span>
+              </button>
             );
           })}
         </nav>
