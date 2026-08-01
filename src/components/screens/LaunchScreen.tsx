@@ -747,7 +747,8 @@ export const LaunchScreen: React.FC = () => {
       {currentLaunch && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginTop: '24px', marginBottom: '32px' }}>
           {currentLaunch.launchType === 'Publicitaire' ? (
-            <div className="grid-cols-2" style={{ gap: '24px' }}>
+            <>
+              <div className="grid-cols-2" style={{ gap: '24px' }}>
               {/* Dashboard des 14 KPIs */}
               <div className="card" style={{ borderLeft: '4px solid var(--accent-violet)' }}>
                 <h3 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
@@ -1002,7 +1003,231 @@ export const LaunchScreen: React.FC = () => {
                 </div>
               </div>
             </div>
-          ) : (
+
+            {/* Diagnostic LTV/CAC du Directeur Financier */}
+            {(() => {
+              const getDiagnostic = (ltv: number, clientAcqCost: number) => {
+                if (clientAcqCost === 0) {
+                  return {
+                    ratio: Infinity,
+                    state: "🟣 Exceptionnel",
+                    color: "#8B5CF6",
+                    bgColor: "rgba(139, 92, 246, 0.05)",
+                    borderColor: "rgba(139, 92, 246, 0.2)",
+                    message: "Tu disposes d'une machine d'acquisition d'élite. Continue à investir pour accélérer la croissance tout en contrôlant régulièrement le CAC et la qualité des clients.",
+                    explanation: "L'acquisition est gratuite ou purement organique pour ce lancement. Votre coût par client est nul, ce qui rend le système infiniment rentable à court terme.",
+                    risques: "Dépendance à 100% vis-à-vis des algorithmes organiques sans canal prédictible payant pour scaler volontairement.",
+                    actions: [
+                      "Mettre en place des tests d'acquisition payante (Meta/Google Ads) pour valider la scalabilité du tunnel.",
+                      "Documenter et automatiser les processus organiques actuels.",
+                      "Créer des offres d'upsell pour augmenter la LTV brute."
+                    ],
+                    note: 95
+                  };
+                }
+
+                const ratio = ltv / clientAcqCost;
+
+                if (ratio < 1) {
+                  return {
+                    ratio,
+                    state: "🔴 Critique",
+                    color: "#EF4444",
+                    bgColor: "rgba(239, 68, 68, 0.05)",
+                    borderColor: "rgba(239, 68, 68, 0.2)",
+                    message: "Chaque client te fait perdre de l'argent. Stoppe immédiatement l'acquisition payante et corrige ton offre ou ton tunnel.",
+                    explanation: "Votre Coût d'Acquisition Client (CAC) dépasse la valeur générée par ce client sur 12 mois (LTV). Investir plus de budget dans la publicité détruit de la valeur nette.",
+                    risques: "Asphyxie financière rapide par brûlage de cash publicitaire, baisse dramatique de la marge nette globale, épuisement du capital.",
+                    actions: [
+                      "Arrêter ou réduire fortement les budgets d'acquisition payante non rentables.",
+                      "Augmenter le prix de l'offre ou revoir le package de valeur.",
+                      "Auditer le taux de conversion à chaque étape du tunnel (clic, lead, appel, closing)."
+                    ],
+                    note: Math.round(Math.max(10, ratio * 35))
+                  };
+                } else if (ratio >= 1 && ratio < 2) {
+                  return {
+                    ratio,
+                    state: "🟠 Fragile",
+                    color: "#F97316",
+                    bgColor: "rgba(249, 115, 22, 0.05)",
+                    borderColor: "rgba(249, 115, 22, 0.2)",
+                    message: "Tu récupères difficilement ton investissement. Optimise ton tunnel avant d'augmenter les dépenses.",
+                    explanation: "Le ratio est supérieur au coût direct mais ne couvre probablement pas les frais de structure (outils, sous-traitants, taxes) et de délivrabilité.",
+                    risques: "Sensibilité extrême à la moindre hausse des coûts publicitaires ou à une baisse temporaire de conversion.",
+                    actions: [
+                      "Optimiser le taux de conversion de la page de vente ou du script d'appel.",
+                      "Mettre en place un système de relance automatisé (ManyChat, emails) pour les prospects chauds.",
+                      "Introduire un produit d'entrée de gamme (tripwire) pour amortir le CAC immédiatement."
+                    ],
+                    note: Math.round(35 + (ratio - 1) * 15)
+                  };
+                } else if (ratio >= 2 && ratio < 3) {
+                  return {
+                    ratio,
+                    state: "🟡 Acceptable",
+                    color: "#F59E0B",
+                    bgColor: "rgba(245, 158, 11, 0.05)",
+                    borderColor: "rgba(245, 158, 11, 0.2)",
+                    message: "Le système fonctionne mais reste peu rentable. Améliore les conversions, la valeur moyenne des ventes et la fidélisation.",
+                    explanation: "Votre modèle est viable à court terme mais ne dégage pas assez de trésorerie nette pour autofinancer une croissance sereine.",
+                    risques: "Marge d'erreur faible. Difficulté à recruter ou à déléguer à cause de marges trop serrées.",
+                    actions: [
+                      "Mettre en place un programme de parrainage ou d'affiliation.",
+                      "Optimiser la valeur moyenne des commandes (AOV) via des bumps et des upsells au moment de l'achat.",
+                      "Améliorer l'onboarding pour réduire le taux de résiliation (churn)."
+                    ],
+                    note: Math.round(50 + (ratio - 2) * 15)
+                  };
+                } else if (ratio >= 3 && ratio < 5) {
+                  return {
+                    ratio,
+                    state: "🟢 Healthy",
+                    color: "#10B981",
+                    bgColor: "rgba(16, 185, 129, 0.05)",
+                    borderColor: "rgba(16, 185, 129, 0.2)",
+                    message: "Ton acquisition est saine. Tu peux continuer à investir progressivement tout en surveillant tes indicateurs.",
+                    explanation: "Le ratio standard recommandé (3:1) est atteint. Le système génère au moins trois fois plus de valeur sur 12 mois que ce qu'il en coûte pour acquérir un client.",
+                    risques: "Saturation potentielle du canal d'acquisition actuel si le budget est augmenté trop brusquement.",
+                    actions: [
+                      "Augmenter progressivement le budget d'acquisition de 15% à 20% par semaine.",
+                      "Tester un deuxième canal d'acquisition pour diversifier les sources (ex: Youtube Ads ou collaborations en plus de Meta).",
+                      "Renforcer le taux de rétention pour stabiliser la LTV."
+                    ],
+                    note: Math.round(65 + ((ratio - 3) / 2) * 15)
+                  };
+                } else if (ratio >= 5 && ratio < 8) {
+                  return {
+                    ratio,
+                    state: "🔵 Scale agressif",
+                    color: "#635BFF",
+                    bgColor: "rgba(99, 91, 255, 0.05)",
+                    borderColor: "rgba(99, 91, 255, 0.2)",
+                    message: "Ton système est très rentable. Tu peux augmenter significativement tes investissements en acquisition (Reels, ManyChat, webinaires, publicités, partenariats...) tout en surveillant que le ratio reste supérieur à 5.",
+                    explanation: "Rentabilité excellente. Vous avez une marge très confortable pour augmenter la cadence et dominer votre marché.",
+                    risques: "Goulot d'étranglement opérationnel si la délivrabilité (onboarding, service client, coachs) ne suit pas le rythme des ventes.",
+                    actions: [
+                      "Doubler les budgets sur les campagnes publicitaires qui performent.",
+                      "Structurer l'équipe de livraison (fulfillment) pour absorber le flux massif de nouveaux clients.",
+                      "Optimiser les automatisations ManyChat/Instagram pour traiter le volume de prospects."
+                    ],
+                    note: Math.round(80 + ((ratio - 5) / 3) * 15)
+                  };
+                } else {
+                  return {
+                    ratio,
+                    state: "🟣 Exceptionnel",
+                    color: "#8B5CF6",
+                    bgColor: "rgba(139, 92, 246, 0.05)",
+                    borderColor: "rgba(139, 92, 246, 0.2)",
+                    message: "Tu disposes d'une machine d'acquisition d'élite. Continue à investir pour accélérer la croissance tout en contrôlant régulièrement le CAC et la qualité des clients.",
+                    explanation: "Performances hors normes. Votre offre est parfaitement alignée avec le marché et vos coûts d'acquisition sont dérisoires.",
+                    risques: "Risque de sous-investissement ! Vous perdez des parts de marché en n'investissant pas tout votre excédent pour capturer l'audience disponible.",
+                    actions: [
+                      "Augmenter massivement les dépenses en acquisition payante et organique.",
+                      "Mettre en place des partenariats stratégiques exclusifs.",
+                      "Recruter des closers / setters supplémentaires pour traiter tous les prospects entrants."
+                    ],
+                    note: Math.round(Math.min(100, 95 + (ratio - 8) * 0.5))
+                  };
+                }
+              };
+
+              const diag = getDiagnostic(ltv12, cac);
+
+              return (
+                <div className="card" style={{ marginTop: '24px', borderLeft: `5px solid ${diag.color}`, padding: '24px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px', marginBottom: '16px' }}>
+                    <div>
+                      <h3 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                        <TrendingUp style={{ color: diag.color }} className="size-5" /> Diagnostic Directeur Financier : Rentabilité d'Acquisition
+                      </h3>
+                      <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
+                        Analyse automatique de l'efficacité et de la viabilité économique de votre tunnel
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>Indice de Solidité</div>
+                        <div style={{ fontSize: '18px', fontWeight: 800, color: diag.color }}>{diag.note} / 100</div>
+                      </div>
+                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', border: `4px solid ${diag.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: diag.color, fontSize: '14px', background: diag.bgColor }}>
+                        {diag.note}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid-cols-4" style={{ gap: '16px', marginBottom: '20px' }}>
+                    <div className="card" style={{ padding: '16px', background: 'var(--bg-primary)', textAlign: 'center' }}>
+                      <div style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '4px' }}>Coût d'Acquisition (CAC)</div>
+                      <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--status-error)' }}>{cac > 0 ? `${cac.toFixed(2)} €` : '0.00 €'}</div>
+                      <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                        ~ {cac > 0 ? Math.round(cac * EXCHANGE_RATES.EUR_TO_FCFA).toLocaleString('fr-FR') : 0} FCFA
+                      </div>
+                    </div>
+                    <div className="card" style={{ padding: '16px', background: 'var(--bg-primary)', textAlign: 'center' }}>
+                      <div style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '4px' }}>Valeur Client (LTV 12m)</div>
+                      <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--status-success)' }}>{ltv12.toFixed(2)} €</div>
+                      <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                        ~ {Math.round(ltv12 * EXCHANGE_RATES.EUR_TO_FCFA).toLocaleString('fr-FR')} FCFA
+                      </div>
+                    </div>
+                    <div className="card" style={{ padding: '16px', background: 'var(--bg-primary)', textAlign: 'center' }}>
+                      <div style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '4px' }}>Ratio LTV / CAC</div>
+                      <div style={{ fontSize: '18px', fontWeight: 800, color: diag.color }}>
+                        {diag.ratio === Infinity ? '∞' : `${diag.ratio.toFixed(2)}x`}
+                      </div>
+                      <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Cible recommandée: &ge; 3.0x</div>
+                    </div>
+                    <div className="card" style={{ padding: '16px', background: diag.bgColor, border: `1px solid ${diag.borderColor}`, textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                      <div style={{ fontSize: '9px', color: diag.color, textTransform: 'uppercase', fontWeight: 700, marginBottom: '2px' }}>État du système</div>
+                      <div style={{ fontSize: '14px', fontWeight: 800, color: diag.color }}>{diag.state}</div>
+                    </div>
+                  </div>
+
+                  <div style={{ background: diag.bgColor, border: `1px solid ${diag.borderColor}`, borderRadius: 'var(--radius-md)', padding: '16px', marginBottom: '20px' }}>
+                    <div style={{ fontWeight: 700, color: diag.color, fontSize: '13px', marginBottom: '4px' }}>
+                      💡 Avis du Conseiller Stratégique
+                    </div>
+                    <p style={{ fontSize: '13px', lineHeight: '1.5', color: 'var(--text-primary)', margin: 0, fontWeight: 500 }}>
+                      "{diag.message}"
+                    </p>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }} className="grid-cols-2-mobile">
+                    <div>
+                      <h4 style={{ fontSize: '13px', fontWeight: 700, marginBottom: '8px', color: 'var(--text-primary)' }}>Explication Pédagogique :</h4>
+                      <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>
+                        {diag.explanation}
+                      </p>
+
+                      <h4 style={{ fontSize: '13px', fontWeight: 700, marginTop: '16px', marginBottom: '8px', color: 'var(--text-primary)' }}>Risques Éventuels :</h4>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-start', background: 'rgba(239, 68, 68, 0.03)', padding: '8px 12px', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid var(--status-error)' }}>
+                        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0 }}>
+                          {diag.risques}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 style={{ fontSize: '13px', fontWeight: 700, marginBottom: '8px', color: 'var(--text-primary)' }}>Actions Prioritaires Recommandées :</h4>
+                      <ul style={{ listStyleType: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {diag.actions.map((act, i) => (
+                          <li key={i} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '18px', height: '18px', borderRadius: '50%', background: diag.bgColor, color: diag.color, fontWeight: 'bold', fontSize: '10px', flexShrink: 0, marginTop: '1px' }}>
+                              {i + 1}
+                            </span>
+                            <span>{act}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </>
+        ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {/* Ligne 1 : KPIs Financiers Organiques */}
               <div className="grid-cols-3" style={{ gap: '20px' }}>
