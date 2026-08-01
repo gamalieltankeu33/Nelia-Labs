@@ -592,8 +592,8 @@ export const DashboardScreen: React.FC = () => {
       {
         label: 'CA Contracté (€)',
         data: barChartContractedData,
-        backgroundColor: '#635BFF',
-        borderColor: '#635BFF',
+        backgroundColor: '#0066CC',
+        borderColor: '#0066CC',
         borderWidth: 1,
         borderRadius: 4,
       },
@@ -708,7 +708,7 @@ export const DashboardScreen: React.FC = () => {
       {
         data: [cumulativeLaunch, cumulativePremium, cumulativeDigital, cumulativeCollabs],
         backgroundColor: [
-          '#635BFF', // Violet Stripe
+          '#0066CC', // Bleu principal
           '#93C5FD', // Bleu poudré
           '#FCA5A5', // Corail doux
           '#E2E8F0'  // Gris neutre

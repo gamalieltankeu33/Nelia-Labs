@@ -1100,9 +1100,9 @@ export const LaunchScreen: React.FC = () => {
                   return {
                     ratio,
                     state: "🔵 Scale agressif",
-                    color: "#635BFF",
-                    bgColor: "rgba(99, 91, 255, 0.05)",
-                    borderColor: "rgba(99, 91, 255, 0.2)",
+                    color: "#0066CC",
+                    bgColor: "rgba(0, 102, 204, 0.05)",
+                    borderColor: "rgba(0, 102, 204, 0.2)",
                     message: "Ton système est très rentable. Tu peux augmenter significativement tes investissements en acquisition (Reels, ManyChat, webinaires, publicités, partenariats...) tout en surveillant que le ratio reste supérieur à 5.",
                     explanation: "Rentabilité excellente. Vous avez une marge très confortable pour augmenter la cadence et dominer votre marché.",
                     risques: "Goulot d'étranglement opérationnel si la délivrabilité (onboarding, service client, coachs) ne suit pas le rythme des ventes.",
@@ -1398,9 +1398,9 @@ export const LaunchScreen: React.FC = () => {
                   } else if (convRate >= 5 && convRate < 8) {
                     return {
                       state: "🔵 Scale organique",
-                      color: "#635BFF",
-                      bgColor: "rgba(99, 91, 255, 0.05)",
-                      borderColor: "rgba(99, 91, 255, 0.2)",
+                      color: "#0066CC",
+                      bgColor: "rgba(0, 102, 204, 0.05)",
+                      borderColor: "rgba(0, 102, 204, 0.2)",
                       message: "Ton audience est ultra qualifiée et réactive. Tu disposes d'un levier organique puissant. Exploite-le pour structurer de nouvelles offres.",
                       explanation: "Conversion exceptionnelle pour du trafic non payant. Votre communauté est extrêmement engagée.",
                       risques: "Limite physique et goulot d'étranglement si la gestion de la délivrabilité se fait manuellement.",

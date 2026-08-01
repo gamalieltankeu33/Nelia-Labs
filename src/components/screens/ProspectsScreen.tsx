@@ -1084,9 +1084,9 @@ export const ProspectsScreen: React.FC = () => {
           } else if (ratePercent >= 25 && ratePercent < 40) {
             return {
               state: "🔵 Scale agressif",
-              color: "#635BFF",
-              bgColor: "rgba(99, 91, 255, 0.05)",
-              borderColor: "rgba(99, 91, 255, 0.2)",
+              color: "#0066CC",
+              bgColor: "rgba(0, 102, 204, 0.05)",
+              borderColor: "rgba(0, 102, 204, 0.2)",
               message: "Process de closing très performant. Ton système est hautement scalable.",
               explanation: "Conversions excellentes. Vos contacts sont très qualifiés et le taux d'appel converti en client est impressionnant.",
               risques: "Limite physique du nombre d'appels réalisables par jour par une seule personne.",

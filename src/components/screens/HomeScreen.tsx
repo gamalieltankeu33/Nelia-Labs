@@ -140,12 +140,12 @@ export const HomeScreen: React.FC<{ setActiveScreen: (screen: string) => void }>
       {
         label: 'Revenus Contractés (€)',
         data: chartContractedCA,
-        borderColor: '#635BFF',
-        backgroundColor: 'rgba(99, 91, 255, 0.04)',
+        borderColor: '#0066CC',
+        backgroundColor: 'rgba(0, 102, 204, 0.04)',
         fill: true,
         tension: 0.4,
         borderWidth: 3,
-        pointBackgroundColor: '#635BFF',
+        pointBackgroundColor: '#0066CC',
         pointHoverRadius: 7,
       },
       {
@@ -301,7 +301,7 @@ export const HomeScreen: React.FC<{ setActiveScreen: (screen: string) => void }>
               </div>
               <div className="chart-legend-custom">
                 <span className="legend-item"><span className="legend-dot" style={{ backgroundColor: '#10B981' }} /> CA Encaissé</span>
-                <span className="legend-item"><span className="legend-dot" style={{ backgroundColor: '#635BFF' }} /> CA Contracté</span>
+                <span className="legend-item"><span className="legend-dot" style={{ backgroundColor: '#0066CC' }} /> CA Contracté</span>
                 <span className="legend-item"><span className="legend-dot bg-slate" /> Objectif</span>
               </div>
             </div>
@@ -613,7 +613,7 @@ export const HomeScreen: React.FC<{ setActiveScreen: (screen: string) => void }>
           display: inline-block;
         }
 
-        .bg-violet { background-color: #635BFF; }
+        .bg-violet { background-color: #0066CC; }
         .bg-slate { background-color: #94A3B8; }
 
         .recent-list-card {
@@ -823,7 +823,7 @@ export const HomeScreen: React.FC<{ setActiveScreen: (screen: string) => void }>
 
         .btn-view-stats {
           width: 100%;
-          background: linear-gradient(135deg, #635BFF 0%, #4F46E5 100%);
+          background: linear-gradient(135deg, #0066CC 0%, #0052A3 100%);
           color: #FFFFFF;
           font-weight: 600;
           font-size: 12.5px;

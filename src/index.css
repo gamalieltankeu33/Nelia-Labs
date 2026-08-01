@@ -1,15 +1,20 @@
 :root {
-  /* Color Palette - Premium Stripe/Apple-inspired Light Soft UI Theme */
+  /* Color Palette - Premium Apple-inspired Light Soft UI Theme */
   --bg-primary: #F8F9FC; /* Gris-bleu très clair et lumineux */
   --bg-card: #FFFFFF;    /* Blanc pur pour les cartes */
   --bg-input: #FFFFFF;   /* Saisie sur fond blanc */
   --border-color: #E2E8F0; /* Bordures fines gris très clair (1px max) */
   --border-hover: #CBD5E1;
-  --border-focus: #635BFF;   /* Focus violet Stripe */
+  --border-focus: #0066CC;   /* Focus bleu Apple */
   
-  --accent-violet: #635BFF;  /* Violet moderne principal */
-  --accent-violet-dark: #4F46E5;
-  --accent-violet-glow: rgba(99, 91, 255, 0.08); /* Violet très doux */
+  --accent-blue: #0066CC;  /* Bleu Apple principal */
+  --accent-blue-dark: #0052A3;
+  --accent-blue-glow: rgba(0, 102, 204, 0.08);
+
+  /* Compatibilité avec les anciennes classes */
+  --accent-violet: #0066CC;
+  --accent-violet-dark: #0052A3;
+  --accent-violet-glow: rgba(0, 102, 204, 0.08);
   
   --text-primary: #0F172A;   /* Slate-900 pour une typographie lisible */
   --text-secondary: #475569; /* Slate-600 */

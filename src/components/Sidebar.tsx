@@ -1,9 +1,9 @@
+import React, { useState } from 'react';
 import { 
   Home,
   Calendar, 
   FileText, 
   Users, 
-  Send, 
   Briefcase, 
   DollarSign, 
   PieChart, 
@@ -12,7 +12,22 @@ import {
   CheckCircle,
   AlertTriangle,
   Menu,
-  X
+  X,
+  Cpu,
+  Tv,
+  MessageSquare,
+  Award,
+  Play,
+  TrendingUp,
+  Heart,
+  GraduationCap,
+  FolderOpen,
+  Zap,
+  Layers,
+  FileCheck,
+  Settings,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { supabase } from '../supabaseClient';
@@ -73,15 +88,72 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const monthlyObjective = objectives[selectedMonth] || 5000;
   const progressPercent = monthlyObjective > 0 ? Math.min((totalCollectedCA / monthlyObjective) * 100, 100) : 0;
 
-  const menuItems = [
-    { id: 'home', name: 'Accueil', icon: Home },
-    { id: 'today', name: "Aujourd'hui", icon: Calendar },
-    { id: 'content', name: 'Contenu', icon: FileText },
-    { id: 'prospects', name: 'Prospection', icon: Users },
-    { id: 'launch', name: 'Lancement', icon: Send },
-    { id: 'collabs', name: 'Collabs', icon: Briefcase },
-    { id: 'expenses', name: 'Charges', icon: DollarSign },
-    { id: 'dashboard', name: 'Tableau de bord', icon: PieChart },
+  const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({
+    pilotage: false,
+    acquisition: false,
+    contenu: false,
+    operations: true, // Collapsed by default
+  });
+
+  const toggleCategory = (catId: string) => {
+    setCollapsedCategories(prev => ({
+      ...prev,
+      [catId]: !prev[catId]
+    }));
+  };
+
+  const categories = [
+    {
+      name: "📊 PILOTAGE",
+      id: "pilotage",
+      items: [
+        { id: 'home', name: 'Accueil', icon: Home },
+        { id: 'dashboard', name: 'Cockpit', icon: PieChart },
+        { id: 'growth', name: 'Croissance', icon: TrendingUp },
+        { id: 'kpis', name: 'KPI', icon: PieChart },
+        { id: 'finances', name: 'Finances', icon: DollarSign },
+        { id: 'expenses', name: 'Charges', icon: DollarSign },
+        { id: 'team', name: 'Équipe', icon: Users },
+      ]
+    },
+    {
+      name: "📥 ACQUISITION",
+      id: "acquisition",
+      items: [
+        { id: 'prospects', name: 'Prospection', icon: Users },
+        { id: 'conversations', name: 'Conversations', icon: MessageSquare },
+        { id: 'closing', name: 'Closing', icon: Award },
+        { id: 'appointments', name: 'Rendez-vous', icon: Calendar },
+        { id: 'webinars', name: 'Webinaires', icon: Play },
+        { id: 'ads', name: 'Publicités', icon: TrendingUp },
+        { id: 'collabs', name: 'Collaborations', icon: Briefcase },
+      ]
+    },
+    {
+      name: "📝 CONTENU & COMMUNAUTÉ",
+      id: "contenu",
+      items: [
+        { id: 'content', name: 'Création de contenu', icon: FileText },
+        { id: 'reels', name: 'Reels', icon: Tv },
+        { id: 'editorial', name: 'Calendrier éditorial', icon: Calendar },
+        { id: 'club-ia', name: 'Club IA', icon: Heart },
+        { id: 'formations', name: 'Formations', icon: GraduationCap },
+        { id: 'resources', name: 'Ressources', icon: FolderOpen },
+      ]
+    },
+    {
+      name: "⚙️ OPÉRATIONS",
+      id: "operations",
+      items: [
+        { id: 'ia', name: 'IA', icon: Cpu },
+        { id: 'agents', name: 'Agents IA', icon: Layers },
+        { id: 'automations', name: 'Automatisations', icon: Zap },
+        { id: 'projects', name: 'Projets', icon: FolderOpen },
+        { id: 'tasks', name: 'Tâches', icon: FileCheck },
+        { id: 'documents', name: 'Documents', icon: FileText },
+        { id: 'settings', name: 'Paramètres', icon: Settings },
+      ]
+    }
   ];
 
   const renderSavingStatus = () => {
@@ -195,22 +267,64 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </select>
         </div>
 
-        <nav className="sidebar-nav">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeScreen === item.id;
+        <nav className="sidebar-nav" style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', flex: 1, padding: '16px 12px' }}>
+          {categories.map((category) => {
+            const isCollapsed = collapsedCategories[category.id];
             return (
-              <button
-                key={item.id}
-                onClick={() => {
-                  setActiveScreen(item.id);
-                  setIsOpen(false); // Fermer sur mobile
-                }}
-                className={`nav-item ${isActive ? 'nav-item-active' : ''}`}
-              >
-                <Icon className={`nav-icon ${isActive ? 'nav-icon-active' : ''}`} />
-                <span className="nav-text">{item.name}</span>
-              </button>
+              <div key={category.id} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <button
+                  type="button"
+                  onClick={() => toggleCategory(category.id)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '6px 8px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    color: 'rgba(255, 255, 255, 0.45)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    width: '100%',
+                    textAlign: 'left',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}
+                >
+                  <span>{category.name}</span>
+                  {isCollapsed ? <ChevronRight className="size-3" /> : <ChevronDown className="size-3" />}
+                </button>
+
+                {!isCollapsed && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', paddingLeft: '4px' }}>
+                    {category.items.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = activeScreen === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => {
+                            setActiveScreen(item.id);
+                            setIsOpen(false); // Fermer sur mobile
+                          }}
+                          className={`nav-item ${isActive ? 'nav-item-active' : ''}`}
+                          style={{
+                            padding: '8px 12px',
+                            fontSize: '13px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px'
+                          }}
+                        >
+                          <Icon className={`nav-icon ${isActive ? 'nav-icon-active' : ''}`} style={{ width: '16px', height: '16px' }} />
+                          <span className="nav-text">{item.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>
@@ -251,8 +365,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <style>{`
         .sidebar {
           width: var(--sidebar-width);
-          background: linear-gradient(135deg, #635BFF 0%, #4F46E5 100%);
-          border: none;
+          background-color: var(--bg-card);
+          border-right: 1px solid var(--border-color);
           height: calc(100vh - 32px);
           position: fixed;
           left: 16px;
@@ -262,7 +376,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           z-index: 100;
           transition: transform var(--transition-normal);
           border-radius: 24px;
-          box-shadow: 0 10px 40px rgba(99, 91, 255, 0.15);
+          box-shadow: var(--shadow-sm);
           overflow: hidden;
         }
 
@@ -273,14 +387,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
           align-items: center;
           justify-content: center;
           gap: 10px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          border-bottom: 1px solid var(--border-color);
         }
 
         .logo-text-below {
           font-family: var(--font-heading);
           font-weight: 700;
           font-size: 11px;
-          color: #FFFFFF;
+          color: var(--text-primary);
           letter-spacing: 0.08em;
           text-transform: uppercase;
         }
@@ -289,26 +403,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
           width: 42px;
           height: 42px;
           border-radius: 12px;
-          background: rgba(255, 255, 255, 0.1);
-          border: 1px solid rgba(255, 255, 255, 0.15);
+          background: var(--bg-primary);
+          border: 1px solid var(--border-color);
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.02);
           transition: var(--transition-fast);
         }
 
         .logo-icon-wrapper-premium:hover {
-          background: rgba(255, 255, 255, 0.15);
-          border-color: rgba(255, 255, 255, 0.25);
+          background: rgba(0, 102, 204, 0.05);
+          border-color: rgba(0, 102, 204, 0.2);
           transform: rotate(5deg) scale(1.05);
         }
 
         .logo-icon-premium {
-          color: #FFFFFF;
+          color: var(--accent-blue);
           width: 20px;
           height: 20px;
-          filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.3));
         }
 
         .sidebar-nav {
@@ -324,43 +437,43 @@ export const Sidebar: React.FC<SidebarProps> = ({
           display: flex;
           align-items: center;
           gap: 12px;
-          padding: 10px 14px;
+          padding: 8px 12px;
           background: none;
           border: none;
-          color: rgba(255, 255, 255, 0.75);
+          color: var(--text-secondary);
           border-radius: var(--radius-md);
           cursor: pointer;
           font-family: var(--font-body);
           font-weight: 500;
-          font-size: 13.5px;
+          font-size: 13px;
           text-align: left;
           transition: var(--transition-fast);
           width: 100%;
         }
 
         .nav-item:hover {
-          background-color: rgba(255, 255, 255, 0.08);
-          color: #FFFFFF;
+          background-color: var(--bg-primary);
+          color: var(--text-primary);
           transform: translateX(2px);
         }
 
         .nav-item-active {
-          background: rgba(255, 255, 255, 0.15);
-          color: #FFFFFF;
+          background: var(--accent-blue);
+          color: #FFFFFF !important;
           font-weight: 600;
           border-radius: var(--radius-md);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+          box-shadow: 0 4px 12px rgba(0, 102, 204, 0.15);
         }
 
         /* Sidebar Goal Widget Styles */
         .sidebar-goal-widget {
           margin: 16px;
           padding: 16px;
-          background: rgba(255, 255, 255, 0.06);
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: var(--bg-primary);
+          border: 1px solid var(--border-color);
           border-radius: var(--radius-md);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
-          color: #FFFFFF;
+          box-shadow: var(--shadow-sm);
+          color: var(--text-primary);
         }
 
         .goal-widget-header {
@@ -373,7 +486,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         .goal-widget-title {
           font-size: 10px;
           font-weight: 700;
-          color: rgba(255, 255, 255, 0.75);
+          color: var(--text-secondary);
           text-transform: uppercase;
           letter-spacing: 0.05em;
         }
@@ -381,13 +494,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         .goal-widget-percent {
           font-size: 11px;
           font-weight: 700;
-          color: #FFFFFF;
+          color: var(--text-primary);
         }
 
         .goal-widget-bar-track {
           width: 100%;
           height: 6px;
-          background-color: rgba(255, 255, 255, 0.15);
+          background-color: var(--border-color);
           border-radius: 9999px;
           overflow: hidden;
           margin-bottom: 8px;
@@ -395,14 +508,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         .goal-widget-bar-fill {
           height: 100%;
-          background-color: #FFFFFF;
+          background-color: var(--accent-blue);
           border-radius: 9999px;
           transition: width 0.4s ease;
         }
 
         .goal-widget-footer {
           font-size: 11px;
-          color: rgba(255, 255, 255, 0.6);
+          color: var(--text-secondary);
           font-weight: 600;
           font-variant-numeric: tabular-nums;
         }
@@ -410,17 +523,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
         .nav-icon {
           width: 18px;
           height: 18px;
-          color: rgba(255, 255, 255, 0.75);
+          color: var(--text-secondary);
           transition: var(--transition-fast);
         }
 
         .nav-icon-active {
-          color: #FFFFFF;
+          color: #FFFFFF !important;
         }
 
         .sidebar-footer {
           padding: 16px;
-          border-top: 1px solid rgba(255, 255, 255, 0.1);
+          border-top: 1px solid var(--border-color);
         }
 
         .status-indicator {
@@ -431,8 +544,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           font-weight: 600;
           padding: 6px 10px;
           border-radius: var(--radius-md);
-          background-color: rgba(255, 255, 255, 0.08);
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          background-color: var(--bg-primary);
+          border: 1px solid var(--border-color);
           text-transform: uppercase;
           letter-spacing: 0.02em;
         }
@@ -456,7 +569,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }
 
         .status-idle {
-          color: rgba(255, 255, 255, 0.5);
+          color: var(--text-muted);
         }
 
         .animate-spin {
@@ -480,20 +593,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
           font-weight: 600;
           text-transform: uppercase;
           letter-spacing: 0.05em;
-          color: rgba(255, 255, 255, 0.6);
+          color: var(--text-secondary);
         }
 
         .month-select-dropdown {
-          background-color: rgba(255, 255, 255, 0.1);
-          border: 1px solid rgba(255, 255, 255, 0.15);
-          color: #FFFFFF;
+          background-color: var(--bg-primary);
+          border: 1px solid var(--border-color);
+          color: var(--text-primary);
           font-size: 13px;
           font-weight: 500;
           border-radius: var(--radius-md);
           padding: 8px 12px;
           cursor: pointer;
           transition: all var(--transition-fast);
-          background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23FFFFFF' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
+          background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%230066CC' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
           background-position: right 12px center;
           background-repeat: no-repeat;
           background-size: 1.1rem;
