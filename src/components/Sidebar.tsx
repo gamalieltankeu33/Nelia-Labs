@@ -124,10 +124,50 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="mobile-logo">
           <CloudLightning className="logo-icon-dark animate-pulse" />
           <span className="logo-text">NEXT IA LABS</span>
+          <span className="mobile-month-badge" style={{
+            marginLeft: '6px',
+            fontSize: '10px',
+            fontWeight: 700,
+            background: 'var(--accent-violet-glow)',
+            color: 'var(--accent-violet)',
+            padding: '2px 6px',
+            borderRadius: '9999px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.02em',
+            fontVariantNumeric: 'tabular-nums'
+          }}>
+            {selectedMonth}
+          </span>
         </div>
-        <button className="mobile-toggle" onClick={() => setIsOpen(!isOpen)}>
-          {isOpen ? <X className="size-5" /> : <Menu className="size-5" />}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <select 
+            value={selectedMonth} 
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            style={{
+              padding: '4px 22px 4px 8px',
+              fontSize: '11px',
+              fontWeight: 600,
+              borderRadius: '8px',
+              border: '1px solid var(--border-color)',
+              backgroundPosition: 'right 6px center',
+              backgroundSize: '0.8rem',
+              width: '95px',
+              boxShadow: 'none',
+              height: '28px',
+              color: 'var(--text-primary)',
+              backgroundColor: 'var(--bg-primary)'
+            }}
+          >
+            {availableMonths.map((m) => (
+              <option key={m.value} value={m.value}>
+                {m.label.replace(' 2026', '')}
+              </option>
+            ))}
+          </select>
+          <button className="mobile-toggle" onClick={() => setIsOpen(!isOpen)}>
+            {isOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+          </button>
+        </div>
       </div>
 
       {/* Sidebar Container */}

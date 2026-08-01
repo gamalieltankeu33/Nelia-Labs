@@ -1157,7 +1157,7 @@ export const LaunchScreen: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="grid-cols-4" style={{ gap: '16px', marginBottom: '20px' }}>
+                  <div className="grid-cols-4 grid-cols-2-mobile" style={{ gap: '16px', marginBottom: '20px' }}>
                     <div className="card" style={{ padding: '16px', background: 'var(--bg-primary)', textAlign: 'center' }}>
                       <div style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '4px' }}>Coût d'Acquisition (CAC)</div>
                       <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--status-error)' }}>{cac > 0 ? `${cac.toFixed(2)} €` : '0.00 €'}</div>
@@ -1306,12 +1306,214 @@ export const LaunchScreen: React.FC = () => {
                       {globalConversionRate.toFixed(1)} %
                       {renderBenchmarkText(globalConversionRate, avgGlobalConvRate)}
                     </span>
-                    <span className="stat-subtext" style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                      {totalSalesCount} ventes / {currentLaunch.registered} inscrits
-                    </span>
                   </div>
                 </div>
               </div>
+
+              {/* Diagnostic Directeur Financier : Organique */}
+              {(() => {
+                const getOrganicDiagnostic = (convRate: number) => {
+                  if (convRate === 0) {
+                    return {
+                      state: "🔴 Critique",
+                      color: "#EF4444",
+                      bgColor: "rgba(239, 68, 68, 0.05)",
+                      borderColor: "rgba(239, 68, 68, 0.2)",
+                      message: "Aucune conversion enregistrée pour le moment. Votre audience n'est pas réceptive ou votre offre n'est pas adaptée.",
+                      explanation: "Le taux de conversion organique est nul. Il faut auditer d'urgence la proposition de valeur et relancer l'engagement.",
+                      risques: "Perte d'intérêt rapide de la communauté, stagnation de l'audience, démobilisation des créateurs.",
+                      actions: [
+                        "Publier des sondages pour comprendre les besoins réels de votre audience.",
+                        "Simplifier l'offre et proposer un appel de découverte gratuit.",
+                        "Créer des Reels ou Stories basés sur des études de cas réels."
+                      ],
+                      note: 10
+                    };
+                  }
+
+                  if (convRate < 1) {
+                    return {
+                      state: "🔴 Critique",
+                      color: "#EF4444",
+                      bgColor: "rgba(239, 68, 68, 0.05)",
+                      borderColor: "rgba(239, 68, 68, 0.2)",
+                      message: "Inscriptions froides ou manque d'intérêt. Ton taux de conversion organique est inférieur à 1%. C'est trop faible.",
+                      explanation: "Vous attirez des prospects mais ne parvenez pas à générer des ventes. La valeur perçue de l'offre gratuite ou payante doit être retravaillée.",
+                      risques: "Effort de création de contenu disproportionné par rapport aux revenus générés (ROI temps très défavorable).",
+                      actions: [
+                        "Clarifier le message et la promesse principale de votre accompagnement.",
+                        "Ajouter des témoignages clients dans votre tunnel de vente.",
+                        "Revoir l'appel à l'action final dans vos contenus."
+                      ],
+                      note: Math.round(convRate * 30)
+                    };
+                  } else if (convRate >= 1 && convRate < 2) {
+                    return {
+                      state: "🟠 Fragile",
+                      color: "#F97316",
+                      bgColor: "rgba(249, 115, 22, 0.05)",
+                      borderColor: "rgba(249, 115, 22, 0.2)",
+                      message: "Tu convertis mais difficilement. Optimise ton copywriting organique et tes appels à l'action.",
+                      explanation: "Votre audience est intéressée mais hésite au moment de l'achat. Il y a des frictions dans le tunnel organique.",
+                      risques: "Dépendance élevée vis-à-vis du volume d'impressions. Si vos vues baissent, vos ventes s'effondrent.",
+                      actions: [
+                        "Créer des stories interactives (Q&A, sondages) pour lever les objections courantes.",
+                        "Simplifier l'expérience d'achat sur mobile.",
+                        "Envoyer une relance par DM personnalisée à tous les inscrits au webinaire."
+                      ],
+                      note: Math.round(30 + (convRate - 1) * 15)
+                    };
+                  } else if (convRate >= 2 && convRate < 3) {
+                    return {
+                      state: "🟡 Acceptable",
+                      color: "#F59E0B",
+                      bgColor: "rgba(245, 158, 11, 0.05)",
+                      borderColor: "rgba(245, 158, 11, 0.2)",
+                      message: "Bonne base organique. Améliore la valeur moyenne par client pour rentabiliser pleinement vos efforts de création de contenu.",
+                      explanation: "Le taux de conversion se situe dans les standards du marché pour de l'organique. Il faut maintenant augmenter la LTV.",
+                      risques: "Sensibilité aux changements algorithmiques d'Instagram ou de TikTok.",
+                      actions: [
+                        "Introduire un order bump (offre complémentaire à bas prix au checkout).",
+                        "Structurer un plan de parrainage pour inciter vos clients actuels à inviter leurs proches.",
+                        "Augmenter légèrement les prix de vos accompagnements haut de gamme."
+                      ],
+                      note: Math.round(45 + (convRate - 2) * 15)
+                    };
+                  } else if (convRate >= 3 && convRate < 5) {
+                    return {
+                      state: "🟢 Healthy",
+                      color: "#10B981",
+                      bgColor: "rgba(16, 185, 129, 0.05)",
+                      borderColor: "rgba(16, 185, 129, 0.2)",
+                      message: "Excellente résonance organique. Ton audience fait confiance à ton expertise. C'est le moment idéal pour pérenniser ce canal.",
+                      explanation: "Taux de conversion très solide. Votre message résonne parfaitement avec le besoin de votre communauté.",
+                      risques: "Risque de saturer votre audience si vous faites des lancements organiques trop fréquemment.",
+                      actions: [
+                        "Automatiser les réponses en DM avec ManyChat pour ne perdre aucun lead chaud.",
+                        "Mettre en place un calendrier éditorial régulier axé sur la valeur ajoutée.",
+                        "Commencer à tester l'acquisition payante (Meta Ads) en clonant cette audience organique."
+                      ],
+                      note: Math.round(60 + ((convRate - 3) / 2) * 15)
+                    };
+                  } else if (convRate >= 5 && convRate < 8) {
+                    return {
+                      state: "🔵 Scale organique",
+                      color: "#635BFF",
+                      bgColor: "rgba(99, 91, 255, 0.05)",
+                      borderColor: "rgba(99, 91, 255, 0.2)",
+                      message: "Ton audience est ultra qualifiée et réactive. Tu disposes d'un levier organique puissant. Exploite-le pour structurer de nouvelles offres.",
+                      explanation: "Conversion exceptionnelle pour du trafic non payant. Votre communauté est extrêmement engagée.",
+                      risques: "Limite physique et goulot d'étranglement si la gestion de la délivrabilité se fait manuellement.",
+                      actions: [
+                        "Créer une offre premium exclusive à forte valeur ajoutée (ex: Mastermind ou coaching individuel).",
+                        "Mettre en place des automatisations de qualification avant l'appel (formulaires Notion/Tally).",
+                        "Lancer des partenariats (collabs croisées) pour élargir votre base d'abonnés organiques."
+                      ],
+                      note: Math.round(75 + ((convRate - 5) / 3) * 15)
+                    };
+                  } else {
+                    return {
+                      state: "🟣 Exceptionnel",
+                      color: "#8B5CF6",
+                      bgColor: "rgba(139, 92, 246, 0.05)",
+                      borderColor: "rgba(139, 92, 246, 0.2)",
+                      message: "Véritable machine d'acquisition organique d'élite. Ton autorité est absolue sur ton marché.",
+                      explanation: "Performances exceptionnelles. Vos leads organiques se convertissent à un taux impressionnant.",
+                      risques: "Sous-exploitation du système. Vous devez immédiatement utiliser ce flux pour nourrir des tunnels automatisés.",
+                      actions: [
+                        "Documenter votre tunnel organique sous forme d'étude de cas pour en faire un lead magnet.",
+                        "Lancer des campagnes d'acquisition payante à gros budget sur vos contenus organiques les plus performants (retargeting).",
+                        "Augmenter vos tarifs de 25% à 50% pour filtrer la demande et augmenter la LTV."
+                      ],
+                      note: Math.round(Math.min(100, 90 + (convRate - 8) * 1))
+                    };
+                  }
+                };
+
+                const diag = getOrganicDiagnostic(globalConversionRate);
+
+                return (
+                  <div className="card" style={{ marginTop: '24px', borderLeft: `5px solid ${diag.color}`, padding: '24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px', marginBottom: '16px' }}>
+                      <div>
+                        <h3 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                          <TrendingUp style={{ color: diag.color }} className="size-5" /> Diagnostic Directeur Financier : Efficacité Organique
+                        </h3>
+                        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
+                          Analyse automatique du rendement de votre acquisition organique & communautaire
+                        </p>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>Indice de Solidité</div>
+                          <div style={{ fontSize: '18px', fontWeight: 800, color: diag.color }}>{diag.note} / 100</div>
+                        </div>
+                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', border: `4px solid ${diag.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: diag.color, fontSize: '14px', background: diag.bgColor }}>
+                          {diag.note}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid-cols-4 grid-cols-2-mobile" style={{ gap: '16px', marginBottom: '20px' }}>
+                      <div className="card" style={{ padding: '16px', background: 'var(--bg-primary)', textAlign: 'center' }}>
+                        <div style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '4px' }}>Inscrits Totaux</div>
+                        <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)' }}>{registered.toLocaleString('fr-FR')}</div>
+                      </div>
+                      <div className="card" style={{ padding: '16px', background: 'var(--bg-primary)', textAlign: 'center' }}>
+                        <div style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '4px' }}>Valeur Client (LTV 12m)</div>
+                        <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--status-success)' }}>{ltv12.toFixed(2)} €</div>
+                      </div>
+                      <div className="card" style={{ padding: '16px', background: 'var(--bg-primary)', textAlign: 'center' }}>
+                        <div style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '4px' }}>Taux de Conversion Global</div>
+                        <div style={{ fontSize: '16px', fontWeight: 800, color: diag.color }}>{globalConversionRate.toFixed(1)} %</div>
+                      </div>
+                      <div className="card" style={{ padding: '16px', background: diag.bgColor, border: `1px solid ${diag.borderColor}`, textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                        <div style={{ fontSize: '9px', color: diag.color, textTransform: 'uppercase', fontWeight: 700, marginBottom: '2px' }}>État de conversion</div>
+                        <div style={{ fontSize: '14px', fontWeight: 800, color: diag.color }}>{diag.state}</div>
+                      </div>
+                    </div>
+
+                    <div style={{ background: diag.bgColor, border: `1px solid ${diag.borderColor}`, borderRadius: 'var(--radius-md)', padding: '16px', marginBottom: '20px' }}>
+                      <div style={{ fontWeight: 700, color: diag.color, fontSize: '13px', marginBottom: '4px' }}>
+                        💡 Avis du Conseiller Stratégique
+                      </div>
+                      <p style={{ fontSize: '13px', lineHeight: '1.5', color: 'var(--text-primary)', margin: 0, fontWeight: 500 }}>
+                        "{diag.message}"
+                      </p>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }} className="grid-cols-2-mobile">
+                      <div>
+                        <h4 style={{ fontSize: '13px', fontWeight: 700, marginBottom: '8px', color: 'var(--text-primary)' }}>Explication Pédagogique :</h4>
+                        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>
+                          {diag.explanation}
+                        </p>
+
+                        <h4 style={{ fontSize: '13px', fontWeight: 700, marginTop: '16px', marginBottom: '8px', color: 'var(--text-primary)' }}>Risques Éventuels :</h4>
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-start', background: 'rgba(239, 68, 68, 0.03)', padding: '8px 12px', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid var(--status-error)' }}>
+                          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0 }}>
+                            {diag.risques}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 style={{ fontSize: '13px', fontWeight: 700, marginBottom: '8px', color: 'var(--text-primary)' }}>Actions Prioritaires Recommandées :</h4>
+                        <ul style={{ listStyleType: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {diag.actions.map((act, i) => (
+                            <li key={i} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '18px', height: '18px', borderRadius: '50%', background: diag.bgColor, color: diag.color, fontWeight: 'bold', fontSize: '10px', flexShrink: 0, marginTop: '1px' }}>
+                                {i + 1}
+                              </span>
+                              <span>{act}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           )}
         </div>

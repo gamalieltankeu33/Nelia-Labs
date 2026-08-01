@@ -994,6 +994,209 @@ export const ProspectsScreen: React.FC = () => {
         </div>
       )}
 
+      {/* Diagnostic Directeur Financier de la Prospection */}
+      {(() => {
+        const getProspectsDiagnostic = (convRate: number, totalProspects: number) => {
+          const ratePercent = convRate * 100;
+          
+          if (totalProspects === 0) {
+            return {
+              state: "🟡 Inactif",
+              color: "#94A3B8",
+              bgColor: "rgba(148, 163, 184, 0.05)",
+              borderColor: "rgba(148, 163, 184, 0.2)",
+              message: "Aucune activité de prospection enregistrée pour ce mois.",
+              explanation: "Le tunnel est vide. Commencez à envoyer des messages ou à qualifier des contacts pour démarrer la prospection commerciale.",
+              risques: "Stagnation du chiffre d'affaires et assèchement du pipeline de closing à moyen terme.",
+              actions: [
+                "Envoyer 10 premiers DMs de prise de contact aujourd'hui.",
+                "Définir le profil idéal de votre prospect cible (avatar).",
+                "Créer un script d'approche conversationnelle structuré."
+              ],
+              note: 0
+            };
+          }
+
+          if (ratePercent < 5) {
+            return {
+              state: "🔴 Critique",
+              color: "#EF4444",
+              bgColor: "rgba(239, 68, 68, 0.05)",
+              borderColor: "rgba(239, 68, 68, 0.2)",
+              message: "Audience mal ciblée ou setters inefficaces. Votre taux de closing par rapport aux DMs initiés est trop bas.",
+              explanation: "Votre équipe engage beaucoup de conversations mais très peu finissent par acheter. Il y a un problème de qualification ou de script d'approche.",
+              risques: "Épuisement de la base de prospects, temps de prospection non rentable, frustration des équipes.",
+              actions: [
+                "Resserrer les critères de qualification des profils contactés.",
+                "Auditer les conversations en cours : revoir la phase de détection du besoin (pain points).",
+                "Proposer un script d'appel de closing plus percutant."
+              ],
+              note: Math.round(Math.max(10, ratePercent * 8))
+            };
+          } else if (ratePercent >= 5 && ratePercent < 10) {
+            return {
+              state: "🟠 Fragile",
+              color: "#F97316",
+              bgColor: "rgba(249, 115, 22, 0.05)",
+              borderColor: "rgba(249, 115, 22, 0.2)",
+              message: "Optimise le script de conversation ou de qualification. Ton taux de conversion de prospection est fragile.",
+              explanation: "Le pipeline convertit de manière timide. Le passage de la conversation DM à l'appel de closing (set) présente des frictions.",
+              risques: "Rendement de prospection moyen, vulnérabilité à une baisse de volume de prospection quotidienne.",
+              actions: [
+                "Mettre en place un outil de suivi rigoureux des relances (CRM/Tableau de bord).",
+                "Améliorer la transition conversationnelle pour proposer l'appel au bon moment.",
+                "Entraîner les setters à mieux qualifier les prospects avant de booker l'appel."
+              ],
+              note: Math.round(35 + (ratePercent - 5) * 4)
+            };
+          } else if (ratePercent >= 10 && ratePercent < 15) {
+            return {
+              state: "🟡 Acceptable",
+              color: "#F59E0B",
+              bgColor: "rgba(245, 158, 11, 0.05)",
+              borderColor: "rgba(245, 158, 11, 0.2)",
+              message: "Performances dans les standards de l'industrie. Le système tourne mais a besoin d'optimisation.",
+              explanation: "Votre funnel de vente organique fonctionne correctement. C'est une bonne base pour stabiliser vos revenus.",
+              risques: "Dépendance aux efforts individuels quotidiens de prospection (risque de burnout ou de baisse de régime).",
+              actions: [
+                "Introduire des automatisations ManyChat pour pré-qualifier les contacts entrants en automatique.",
+                "Augmenter l'AOV des offres pour compenser le coût temporel de la prospection.",
+                "Mettre en place un processus de reciblage par contenu (retargeting organique)."
+              ],
+              note: Math.round(50 + (ratePercent - 10) * 3)
+            };
+          } else if (ratePercent >= 15 && ratePercent < 25) {
+            return {
+              state: "🟢 Healthy",
+              color: "#10B981",
+              bgColor: "rgba(16, 185, 129, 0.05)",
+              borderColor: "rgba(16, 185, 129, 0.2)",
+              message: "Bon alignement entre setters et closers. Vos conversions sont saines.",
+              explanation: "Le pipeline de prospection est robuste. Vos scripts d'approche et de closing sont validés par le marché.",
+              risques: "Risque de sous-investissement opérationnel ou de goulot d'étranglement sur l'agenda des appels.",
+              actions: [
+                "Commencer à recruter et former un premier setter dédié pour vous libérer du temps.",
+                "Optimiser l'agenda de prise de rendez-vous pour maximiser la disponibilité.",
+                "Mettre en place des automatisations de rappels de rendez-vous pour réduire le no-show."
+              ],
+              note: Math.round(75 + ((ratePercent - 15) / 10) * 10)
+            };
+          } else if (ratePercent >= 25 && ratePercent < 40) {
+            return {
+              state: "🔵 Scale agressif",
+              color: "#635BFF",
+              bgColor: "rgba(99, 91, 255, 0.05)",
+              borderColor: "rgba(99, 91, 255, 0.2)",
+              message: "Process de closing très performant. Ton système est hautement scalable.",
+              explanation: "Conversions excellentes. Vos contacts sont très qualifiés et le taux d'appel converti en client est impressionnant.",
+              risques: "Limite physique du nombre d'appels réalisables par jour par une seule personne.",
+              actions: [
+                "Recruter des closers commissionnés pour multiplier le volume d'appels.",
+                "Créer une offre high-ticket d'accompagnement haut de gamme pour maximiser les profits.",
+                "Intégrer de l'acquisition payante (Meta Ads) pour générer des leads qualifiés à grande échelle."
+              ],
+              note: Math.round(85 + ((ratePercent - 25) / 15) * 10)
+            };
+          } else {
+            return {
+              state: "🟣 Exceptionnel",
+              color: "#8B5CF6",
+              bgColor: "rgba(139, 92, 246, 0.05)",
+              borderColor: "rgba(139, 92, 246, 0.2)",
+              message: "Closing d'élite. Prémédite un ticket d'offre plus élevé. Vous dominez votre segment.",
+              explanation: "Performances exceptionnelles. Votre taux de conversion est exceptionnellement élevé. Votre audience vous perçoit comme l'autorité absolue.",
+              risques: "Perte de rentabilité par sous-tarification de votre temps et de votre expertise.",
+              actions: [
+                "Augmenter immédiatement les tarifs de vos offres d'au moins 30%.",
+                "Mettre en place une offre d'abonnement ou de rétention (membership) pour les clients existants.",
+                "Automatiser à 100% le pré-ciblage et le vetting des prospects."
+              ],
+              note: Math.round(Math.min(100, 95 + (ratePercent - 40) * 0.3))
+            };
+          }
+        };
+
+        const diag = getProspectsDiagnostic(conversionRate, prospectsInSelectedMonth.length);
+
+        return (
+          <div className="card" style={{ marginTop: '32px', borderLeft: `5px solid ${diag.color}`, padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px', marginBottom: '16px' }}>
+              <div>
+                <h3 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                  <TrendingUp style={{ color: diag.color }} className="size-5" /> Diagnostic Directeur Financier : Pipeline Commercial
+                </h3>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
+                  Analyse automatique de l'efficacité et de la viabilité de votre tunnel de prospection active
+                </p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>Indice de Solidité</div>
+                  <div style={{ fontSize: '18px', fontWeight: 800, color: diag.color }}>{diag.note} / 100</div>
+                </div>
+                <div style={{ width: '48px', height: '48px', borderRadius: '50%', border: `4px solid ${diag.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: diag.color, fontSize: '14px', background: diag.bgColor }}>
+                  {diag.note}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid-cols-3 grid-cols-2-mobile" style={{ gap: '16px', marginBottom: '20px' }}>
+              <div className="card" style={{ padding: '16px', background: 'var(--bg-primary)', textAlign: 'center' }}>
+                <div style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '4px' }}>Total Prospects</div>
+                <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>{prospectsInSelectedMonth.length}</div>
+              </div>
+              <div className="card" style={{ padding: '16px', background: 'var(--bg-primary)', textAlign: 'center' }}>
+                <div style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '4px' }}>Taux de Conversion (Closing)</div>
+                <div style={{ fontSize: '18px', fontWeight: 800, color: diag.color }}>{(conversionRate * 100).toFixed(1)} %</div>
+              </div>
+              <div className="card" style={{ padding: '16px', background: diag.bgColor, border: `1px solid ${diag.borderColor}`, textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                <div style={{ fontSize: '9px', color: diag.color, textTransform: 'uppercase', fontWeight: 700, marginBottom: '2px' }}>État du pipeline</div>
+                <div style={{ fontSize: '14px', fontWeight: 800, color: diag.color }}>{diag.state}</div>
+              </div>
+            </div>
+
+            <div style={{ background: diag.bgColor, border: `1px solid ${diag.borderColor}`, borderRadius: 'var(--radius-md)', padding: '16px', marginBottom: '20px' }}>
+              <div style={{ fontWeight: 700, color: diag.color, fontSize: '13px', marginBottom: '4px' }}>
+                💡 Avis du Conseiller Stratégique
+              </div>
+              <p style={{ fontSize: '13px', lineHeight: '1.5', color: 'var(--text-primary)', margin: 0, fontWeight: 500 }}>
+                "{diag.message}"
+              </p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }} className="grid-cols-2-mobile">
+              <div>
+                <h4 style={{ fontSize: '13px', fontWeight: 700, marginBottom: '8px', color: 'var(--text-primary)' }}>Explication Pédagogique :</h4>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>
+                  {diag.explanation}
+                </p>
+
+                <h4 style={{ fontSize: '13px', fontWeight: 700, marginTop: '16px', marginBottom: '8px', color: 'var(--text-primary)' }}>Risques Éventuels :</h4>
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-start', background: 'rgba(239, 68, 68, 0.03)', padding: '8px 12px', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid var(--status-error)' }}>
+                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0 }}>
+                    {diag.risques}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <h4 style={{ fontSize: '13px', fontWeight: 700, marginBottom: '8px', color: 'var(--text-primary)' }}>Actions Prioritaires Recommandées :</h4>
+                <ul style={{ listStyleType: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {diag.actions.map((act, i) => (
+                    <li key={i} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '18px', height: '18px', borderRadius: '50%', background: diag.bgColor, color: diag.color, fontWeight: 'bold', fontSize: '10px', flexShrink: 0, marginTop: '1px' }}>
+                        {i + 1}
+                      </span>
+                      <span>{act}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       <style>{`
         /* Styles du Tableau Kanban CRM */
         .kanban-board-wrapper {
