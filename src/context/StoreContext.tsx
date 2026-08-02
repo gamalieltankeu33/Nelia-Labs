@@ -439,7 +439,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             await supabase.from('sales').insert(store.sales.map(s => ({
               id: s.id,
               date: s.date,
-              product: s.product,
+              product: `${s.product} [${s.currency || 'EUR'}]`,
               price: s.price,
               channel: s.channel
             })));
@@ -518,10 +518,21 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           setSavingStatus('saved');
           setTimeout(() => setSavingStatus('idle'), 1500);
         } else {
-          // Si la DB n'est pas vide, on charge normalement les données de Supabase dans le store React
+          const parsedSalesList: DigitalSale[] = (resSales.data || []).map((s: any) => {
+            const match = s.product.match(/(.*)\s\[(EUR|USD|FCFA)\]$/);
+            return {
+              id: s.id,
+              date: s.date,
+              product: match ? match[1] : s.product,
+              price: Number(s.price),
+              channel: s.channel,
+              currency: match ? (match[2] as any) : 'EUR'
+            };
+          });
+
           const rawStore = {
             contents: resContents.data || [],
-            sales: resSales.data || [],
+            sales: parsedSalesList,
             prospects: prospectsList,
             launches: launchesMap,
             collabs: collabsList,
@@ -668,10 +679,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     if (supabase) {
       setSavingStatus('saving');
+      const productWithCurrency = `${sale.product} [${sale.currency || 'EUR'}]`;
       const { error } = await supabase.from('sales').insert({
         id,
         date: sale.date,
-        product: sale.product,
+        product: productWithCurrency,
         price: sale.price,
         channel: sale.channel
       });

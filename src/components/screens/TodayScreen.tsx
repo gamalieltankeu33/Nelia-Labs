@@ -44,7 +44,8 @@ export const TodayScreen: React.FC = () => {
   const [saleForm, setSaleForm] = useState({
     product: '',
     price: '',
-    channel: 'Instagram' as const
+    channel: 'Instagram' as const,
+    currency: 'EUR' as 'EUR' | 'USD' | 'FCFA'
   });
 
   // Success Feedbacks
@@ -101,13 +102,15 @@ export const TodayScreen: React.FC = () => {
       date: todayStr,
       product: saleForm.product,
       price: priceNum,
-      channel: saleForm.channel
+      channel: saleForm.channel,
+      currency: saleForm.currency
     });
     
     setSaleForm({
       product: '',
       price: '',
-      channel: 'Instagram'
+      channel: 'Instagram',
+      currency: 'EUR'
     });
     triggerSuccess('sale');
   };
@@ -274,17 +277,30 @@ export const TodayScreen: React.FC = () => {
               />
             </div>
 
-            <div className="form-group">
-              <label>Prix de vente (€)</label>
-              <input 
-                type="number" 
-                placeholder="Ex. 29" 
-                value={saleForm.price}
-                onChange={e => setSaleForm(p => ({ ...p, price: e.target.value }))}
-                required
-                min="0"
-                step="0.01"
-              />
+            <div className="form-group" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '8px' }}>
+              <div>
+                <label>Prix de vente</label>
+                <input 
+                  type="number" 
+                  placeholder="Ex. 29" 
+                  value={saleForm.price}
+                  onChange={e => setSaleForm(p => ({ ...p, price: e.target.value }))}
+                  required
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+              <div>
+                <label>Devise</label>
+                <select
+                  value={saleForm.currency}
+                  onChange={e => setSaleForm(p => ({ ...p, currency: e.target.value as any }))}
+                >
+                  <option value="EUR">EUR (€)</option>
+                  <option value="USD">USD ($)</option>
+                  <option value="FCFA">FCFA (F)</option>
+                </select>
+              </div>
             </div>
 
             <div className="form-group">

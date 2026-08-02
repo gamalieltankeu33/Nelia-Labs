@@ -39,7 +39,15 @@ export function calculatePremiumCA(prospects: Prospect[], month: string): number
 export function calculateDigitalCA(sales: DigitalSale[], month: string): number {
   return sales
     .filter(s => getYearMonth(s.date) === month)
-    .reduce((sum, s) => sum + s.price, 0);
+    .reduce((sum, s) => {
+      const currency = s.currency || 'EUR';
+      if (currency === 'USD') {
+        return sum + (s.price * EXCHANGE_RATES.USD_TO_EUR);
+      } else if (currency === 'FCFA') {
+        return sum + (s.price * EXCHANGE_RATES.FCFA_TO_EUR);
+      }
+      return sum + s.price;
+    }, 0);
 }
 
 /**

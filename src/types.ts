@@ -13,6 +13,7 @@ export interface DigitalSale {
   product: string;
   price: number;
   channel: 'Facebook' | 'Instagram' | 'Autre';
+  currency?: 'EUR' | 'USD' | 'FCFA';
 }
 
 export interface ProspectHistory {
