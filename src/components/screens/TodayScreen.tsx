@@ -277,29 +277,54 @@ export const TodayScreen: React.FC = () => {
               />
             </div>
 
-            <div className="form-group" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '8px' }}>
-              <div>
-                <label>Prix de vente</label>
-                <input 
-                  type="number" 
-                  placeholder="Ex. 29" 
-                  value={saleForm.price}
-                  onChange={e => setSaleForm(p => ({ ...p, price: e.target.value }))}
-                  required
-                  min="0"
-                  step="0.01"
-                />
-              </div>
-              <div>
-                <label>Devise</label>
-                <select
-                  value={saleForm.currency}
-                  onChange={e => setSaleForm(p => ({ ...p, currency: e.target.value as any }))}
-                >
-                  <option value="EUR">EUR (€)</option>
-                  <option value="USD">USD ($)</option>
-                  <option value="FCFA">FCFA (F)</option>
-                </select>
+            <div className="form-group">
+              <label>Prix de vente</label>
+              <input 
+                type="number" 
+                placeholder="Ex. 29" 
+                value={saleForm.price}
+                onChange={e => setSaleForm(p => ({ ...p, price: e.target.value }))}
+                required
+                min="0"
+                step="0.01"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Devise</label>
+              <div style={{ 
+                display: 'flex', 
+                borderRadius: '8px', 
+                background: 'var(--bg-primary)', 
+                padding: '3px',
+                border: '1px solid var(--border-color)'
+              }}>
+                {(['EUR', 'USD', 'FCFA'] as const).map((curr) => {
+                  const isActive = saleForm.currency === curr;
+                  const symbols = { EUR: 'EUR (€)', USD: 'USD ($)', FCFA: 'FCFA' };
+                  return (
+                    <button
+                      key={curr}
+                      type="button"
+                      onClick={() => setSaleForm(p => ({ ...p, currency: curr }))}
+                      style={{
+                        flex: 1,
+                        padding: '6px 0',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        textAlign: 'center',
+                        borderRadius: '6px',
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all var(--transition-fast)',
+                        background: isActive ? 'var(--accent-blue)' : 'transparent',
+                        color: isActive ? '#FFFFFF' : 'var(--text-secondary)'
+                      }}
+                    >
+                      {symbols[curr]}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
