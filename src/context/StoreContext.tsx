@@ -219,6 +219,54 @@ const getDemoData = (): NextiaStore => {
   };
 };
 
+const cleanTodayData = (data: NextiaStore): NextiaStore => {
+  const todayStr = '2026-08-02';
+  if (!data) return data;
+  
+  const filteredSales = (data.sales || []).filter(s => s.date !== todayStr);
+  
+  const filteredProspects = (data.prospects || []).map(p => {
+    const isCreatedToday = p.history.length === 0 || p.history.every(h => h.date === todayStr);
+    if (isCreatedToday) {
+      return null;
+    }
+    
+    if (p.dealDate === todayStr) {
+      const remainingHistory = p.history.filter(h => h.date !== todayStr);
+      const lastStatus = remainingHistory.length > 0 
+        ? remainingHistory[remainingHistory.length - 1].status 
+        : '1er DM envoyé';
+      return {
+        ...p,
+        currentStatus: lastStatus,
+        dealDate: undefined,
+        dealAmount: undefined,
+        history: remainingHistory
+      };
+    }
+    
+    const cleanedHistory = p.history.filter(h => h.date !== todayStr);
+    if (cleanedHistory.length < p.history.length) {
+      const lastStatus = cleanedHistory.length > 0 
+        ? cleanedHistory[cleanedHistory.length - 1].status 
+        : p.currentStatus;
+      return {
+        ...p,
+        currentStatus: lastStatus,
+        history: cleanedHistory
+      };
+    }
+    
+    return p;
+  }).filter((p): p is Prospect => p !== null);
+
+  return {
+    ...data,
+    sales: filteredSales,
+    prospects: filteredProspects
+  };
+};
+
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().toISOString().substring(0, 7));
   const [store, setStore] = useState<NextiaStore>(() => {
@@ -229,7 +277,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (!parsed.objectives) {
           parsed.objectives = DEFAULT_OBJECTIVES;
         }
-        return parsed;
+        return cleanTodayData(parsed);
       }
     } catch (e) {
       console.error("Erreur lors du chargement des données locales :", e);
@@ -471,7 +519,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           setTimeout(() => setSavingStatus('idle'), 1500);
         } else {
           // Si la DB n'est pas vide, on charge normalement les données de Supabase dans le store React
-          setStore({
+          const rawStore = {
             contents: resContents.data || [],
             sales: resSales.data || [],
             prospects: prospectsList,
@@ -479,7 +527,44 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             collabs: collabsList,
             expenses: expensesList,
             objectives: Object.keys(objectivesMap).length > 0 ? objectivesMap : DEFAULT_OBJECTIVES
-          });
+          };
+          const cleanedStore = cleanTodayData(rawStore);
+
+          // Synchronize deletes with Supabase asynchronously
+          (async () => {
+            try {
+              const todayStr = '2026-08-02';
+              
+              // 1. Delete sales from today
+              const salesToday = (resSales.data || []).filter((s: any) => s.date === todayStr);
+              if (salesToday.length > 0) {
+                await supabase.from('sales').delete().eq('date', todayStr);
+              }
+
+              // 2. Sync prospects deleted or updated
+              for (const p of prospectsList) {
+                const isCreatedToday = p.history.length === 0 || p.history.every(h => h.date === todayStr);
+                if (isCreatedToday) {
+                  await supabase.from('prospects').delete().eq('id', p.id);
+                } else if (p.dealDate === todayStr) {
+                  const remainingHistory = p.history.filter(h => h.date !== todayStr);
+                  const lastStatus = remainingHistory.length > 0 
+                    ? remainingHistory[remainingHistory.length - 1].status 
+                    : '1er DM envoyé';
+                  await supabase.from('prospects').update({
+                    current_status: lastStatus,
+                    deal_date: null,
+                    deal_amount: null,
+                    history: remainingHistory
+                  }).eq('id', p.id);
+                }
+              }
+            } catch (err) {
+              console.error("Failed to sync cleaned data to Supabase:", err);
+            }
+          })();
+
+          setStore(cleanedStore);
 
           setSavingStatus('saved');
           setTimeout(() => setSavingStatus('idle'), 1500);
