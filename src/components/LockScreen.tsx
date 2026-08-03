@@ -1,46 +1,43 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Lock, Unlock } from 'lucide-react';
 
 interface LockScreenProps {
   onUnlock: () => void;
 }
 
+interface PlanetConfig {
+  emoji: string;
+  label: string;
+  orbitRadius: number; // radius in px
+  initialAngle: number; // in degrees
+  speed: number; // animation duration in seconds
+}
+
 export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
-  // Security PIN states
+  // Passcode pin entries
   const [pin, setPin] = useState<string>('');
   const [error, setError] = useState<boolean>(false);
   const [shake, setShake] = useState<boolean>(false);
   const [activeKey, setActiveKey] = useState<string | null>(null);
 
-  // Dynamic light tracking & sphere animations
+  // Hover control states for orbits
+  const [hoveredPlanet, setHoveredPlanet] = useState<string | null>(null);
+
+  // Dynamic calculations
   const [displayedPercent, setDisplayedPercent] = useState<number>(0);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const viewportRef = useRef<HTMLDivElement>(null);
 
   const correctPasscode = localStorage.getItem('nexia_passcode') || '2026';
 
-  // Days projections
-  const today = new Date();
-  const startDayOfPlan = new Date(2026, 0, 1);
-  const endDayOfPlan = new Date(2031, 11, 31);
-  
-  const remainingDays = Math.max(0, Math.ceil((endDayOfPlan.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
-  const formattedRemainingDays = remainingDays.toLocaleString('fr-FR');
+  // Static target data to match mockup exactly
+  const progressPercent = 9.8;
+  const daysRemaining = 150;
 
-  // Completed percentage calculation
-  const calculateProgression = () => {
-    const total = endDayOfPlan.getTime() - startDayOfPlan.getTime();
-    const elapsed = today.getTime() - startDayOfPlan.getTime();
-    return Number(Math.min(100, Math.max(0, (elapsed / total) * 100)).toFixed(1));
-  };
-
-  const progressPercent = calculateProgression();
-
-  // Validate passcode inputs
+  // Auto-validate code
   useEffect(() => {
     if (pin.length === 4) {
       if (pin === correctPasscode) {
-        // iOS Success tactile node sound synthesis
+        // Synthesize native Apple iOS unlock chime sound
         try {
           const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
           if (AudioContextClass) {
@@ -61,7 +58,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
 
         setTimeout(() => {
           onUnlock();
-        }, 250);
+        }, 300);
       } else {
         setShake(true);
         setError(true);
@@ -73,7 +70,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
     }
   }, [pin, correctPasscode, onUnlock]);
 
-  // Keydown physical keyboard listener
+  // Keydown physical keyboard typing listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') {
@@ -109,15 +106,15 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
     };
   }, [pin]);
 
-  // Apple Fitness style count-up on load
+  // Interpolated progress loader animation
   useEffect(() => {
     let startTime: number | null = null;
-    const duration = 1600;
+    const duration = 1400;
     const animate = (timestamp: number) => {
       if (!startTime) startTime = timestamp;
       const elapsed = timestamp - startTime;
       const progress = Math.min(1, elapsed / duration);
-      const easeOut = 1 - Math.pow(1 - progress, 3); // Cubic Ease Out
+      const easeOut = 1 - Math.pow(1 - progress, 3);
       setDisplayedPercent(Number((easeOut * progressPercent).toFixed(1)));
       if (progress < 1) {
         requestAnimationFrame(animate);
@@ -128,7 +125,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
     requestAnimationFrame(animate);
   }, [progressPercent]);
 
-  // Audio click synthesizer
+  // Tactile sound synthesizer
   const playTactileClick = () => {
     try {
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
@@ -174,26 +171,11 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
     setTimeout(() => setActiveKey(null), 150);
   };
 
-  // Tracking cursor to offset light reflections
   const handleMouseMove = (e: React.MouseEvent) => {
     setMousePos({ x: e.clientX, y: e.clientY });
   };
 
-  // Compute specular glare offset based on viewport center
-  const getSpecularOffset = () => {
-    if (typeof window === 'undefined') return { x: 0, y: 0 };
-    const cx = window.innerWidth / 2;
-    const cy = window.innerHeight / 2;
-    const dx = (mousePos.x - cx) / cx; // -1 to 1 range
-    const dy = (mousePos.y - cy) / cy; // -1 to 1 range
-    return {
-      x: dx * 16, // max 16px offset
-      y: dy * 16
-    };
-  };
-
-  const specular = getSpecularOffset();
-
+  // Keyboard grid config
   const keyConfig = [
     { num: '1', letters: '' },
     { num: '2', letters: 'A B C' },
@@ -206,143 +188,262 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
     { num: '9', letters: 'W X Y Z' }
   ];
 
-  return (
-    <div 
-      ref={viewportRef}
-      className="apple-journey-lockscreen" 
-      onMouseMove={handleMouseMove}
-    >
-      {/* SVG Fine photographic grain overlay */}
-      <div className="apple-paper-grain" />
+  // Distribute the 6 planets on Concentric Orbits
+  const planetOrbits: PlanetConfig[] = [
+    { emoji: "🏡", label: "Résidence", orbitRadius: 130, initialAngle: 0, speed: 65 },
+    { emoji: "💼", label: "Entreprise", orbitRadius: 170, initialAngle: 60, speed: 85 },
+    { emoji: "🚗", label: "Véhicule", orbitRadius: 130, initialAngle: 180, speed: 65 },
+    { emoji: "🏢", label: "Investissement", orbitRadius: 170, initialAngle: 240, speed: 85 },
+    { emoji: "❤️", label: "Famille", orbitRadius: 210, initialAngle: 120, speed: 105 },
+    { emoji: "📈", label: "Liberté financière", orbitRadius: 210, initialAngle: 300, speed: 105 }
+  ];
 
-      {/* Sub-pixel ambient lighting glow following mouse */}
+  // Inner kinetic orbiting dots to match the mockup
+  const kineticDots = [
+    { color: '#0071E3', orbitRadius: 90, initialAngle: 45, speed: 30 },
+    { color: '#F59E0B', orbitRadius: 90, initialAngle: 225, speed: 30 },
+    { color: '#10B981', orbitRadius: 110, initialAngle: 120, speed: 45 },
+    { color: '#EF4444', orbitRadius: 110, initialAngle: 270, speed: 45 },
+    { color: '#8B5CF6', orbitRadius: 110, initialAngle: 340, speed: 45 }
+  ];
+
+  return (
+    <div className="keynote-lockscreen-root" onMouseMove={handleMouseMove}>
+      
+      {/* Light subtle cursor glow */}
       <div 
-        className="apple-ambient-glow" 
-        style={{ 
-          left: `${mousePos.x}px`, 
-          top: `${mousePos.y}px` 
-        }} 
+        className="cursor-spot-light"
+        style={{ left: `${mousePos.x}px`, top: `${mousePos.y}px` }}
       />
 
-      {/* Main 12-Column Layout */}
-      <div className="apple-composition-grid">
+      {/* MAIN CONTENT grid */}
+      <div className="keynote-main-container">
         
-        {/* LEFT COLUMN (COL-SPAN-7): THE HERO SPHERE AND PROJECTION TEXT */}
-        <div className="hero-composition-col">
+        {/* UPPER ROW: THREE SIDE-BY-SIDE COLUMNS */}
+        <div className="upper-columns-wrapper">
           
-          {/* Glass 3D Sphere Container */}
-          <div className="apple-glass-sphere-box">
-            <div className="apple-glass-sphere">
-              {/* Diffuse base reflection */}
-              <div className="sphere-base-reflect" />
-              {/* Dynamic specular light spot that follows cursor */}
-              <div 
-                className="sphere-specular-highlight" 
-                style={{
-                  transform: `translate3d(${specular.x}px, ${specular.y}px, 0)`
-                }}
-              />
-              {/* Inner glass shadow */}
-              <div className="sphere-inner-shadow" />
+          {/* COLUMN 1: LEFT COMPOSITIONS */}
+          <div className="left-compositions-col">
+            
+            <div className="life-header-section">
+              <span className="label-mylife">MY LIFE</span>
+              <h1 className="label-year">2031</h1>
+              <p className="short-header-desc">
+                Chaque décision compte.<br />
+                Chaque jour construit demain.
+              </p>
+            </div>
+
+            <div className="global-progress-section">
+              <span className="progress-value">{displayedPercent}%</span>
+              <span className="progress-label">PLAN GLOBAL ACCOMPLI</span>
               
-              {/* Glass surface sheen ring */}
-              <div className="sphere-sheen-ring" />
+              <div className="progress-track-bar">
+                <div 
+                  className="progress-fill-bar" 
+                  style={{ width: `${displayedPercent}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Apple style takeaway card */}
+            <div className="takeaway-citation-card">
+              <span className="citation-quote-symbol">“</span>
+              <p className="citation-text">
+                Ce que tu construis aujourd'hui, définit la vie que tu vivras demain.
+              </p>
+              <span className="citation-tag-blue">VISION 2031</span>
+            </div>
+
+          </div>
+
+          {/* COLUMN 2: CENTER GALAXY SYSTEM */}
+          <div className="center-solar-col">
+            <div className="solar-system-canvas">
+              
+              {/* EMBOSSED CENTER CORE (MOI) */}
+              <div className="ceramic-moi-core">
+                <span className="moi-text">MOI</span>
+                <div className="moi-inner-highlight" />
+              </div>
+
+              {/* Orbiting tracks lines (Rendered concentrically) */}
+              <div className="orbit-track-ring" style={{ width: '180px', height: '180px' }} />
+              <div className="orbit-track-ring" style={{ width: '220px', height: '220px' }} />
+              <div className="orbit-track-ring" style={{ width: '260px', height: '260px' }} />
+              <div className="orbit-track-ring" style={{ width: '340px', height: '340px' }} />
+              <div className="orbit-track-ring" style={{ width: '420px', height: '420px' }} />
+
+              {/* Kinetic color orbiting dots */}
+              {kineticDots.map((dot, idx) => (
+                <div 
+                  key={`dot-${idx}`}
+                  className="kinetic-dot-orbit"
+                  style={{
+                    width: `${dot.orbitRadius * 2}px`,
+                    height: `${dot.orbitRadius * 2}px`,
+                    animationDuration: `${dot.speed}s`,
+                    transform: `rotate(${dot.initialAngle}deg)`
+                  }}
+                >
+                  <div 
+                    className="kinetic-colored-bead" 
+                    style={{ 
+                      backgroundColor: dot.color,
+                      transform: 'translateY(-50%)'
+                    }} 
+                  />
+                </div>
+              ))}
+
+              {/* Emoji Target Planètes */}
+              {planetOrbits.map((planet, idx) => {
+                const isHovered = hoveredPlanet === planet.label;
+                return (
+                  <div 
+                    key={`planet-${idx}`}
+                    className={`planet-orbit-holder ${isHovered ? 'orbit-paused' : ''}`}
+                    style={{
+                      width: `${planet.orbitRadius * 2}px`,
+                      height: `${planet.orbitRadius * 2}px`,
+                      animationDuration: `${planet.speed}s`,
+                      transform: `rotate(${planet.initialAngle}deg)`,
+                      zIndex: isHovered ? 100 : 10
+                    }}
+                  >
+                    <div 
+                      className={`floating-planet-sphere ${isHovered ? 'planet-hovered' : ''}`}
+                      onMouseEnter={() => setHoveredPlanet(planet.label)}
+                      onMouseLeave={() => setHoveredPlanet(null)}
+                    >
+                      <span className="planet-emoji">{planet.emoji}</span>
+                      
+                      {/* Interactive hover details card */}
+                      {isHovered && (
+                        <div className="planet-hover-card">
+                          <span className="p-card-tag">OBJECTIF</span>
+                          <span className="p-card-title">{planet.label}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+
             </div>
           </div>
 
-          {/* Clean minimal typography block */}
-          <div className="hero-text-composition">
-            <h1 className="hero-title">MY LIFE</h1>
-            <span className="hero-percentage">{displayedPercent}%</span>
-            <p className="hero-projection-message">
-              Aujourd'hui tu construis la personne que tu seras dans <span className="text-highlight-blue">{formattedRemainingDays} jours</span>.
-            </p>
+          {/* COLUMN 3: RIGHT FLOATING IOS KEYPAD */}
+          <div className="right-keypad-col">
+            <div className={`ios-system-keypad-card ${shake ? 'shake-card' : ''}`}>
+              
+              <div className="keypad-card-header">
+                <div className="lock-icon-badge">
+                  {pin.length === 4 && pin === correctPasscode ? (
+                    <Unlock className="keypad-lock-icon text-blue-apple animate-bounce" />
+                  ) : (
+                    <Lock className="keypad-lock-icon" />
+                  )}
+                </div>
+                <h3 className="keypad-prompt-title">Entrer le code</h3>
+              </div>
+
+              {/* Security input circles */}
+              <div className="passcode-circles-row">
+                {[0, 1, 2, 3].map((idx) => (
+                  <div 
+                    key={idx}
+                    className={`passcode-dot-circle ${pin.length > idx ? 'active' : ''} ${error ? 'error' : ''}`}
+                  />
+                ))}
+              </div>
+
+              {error && <span className="passcode-error-label">Code incorrect. Réessayez.</span>}
+
+              {/* Keys buttons */}
+              <div className="keypad-buttons-grid">
+                {keyConfig.map((key) => {
+                  const isActive = activeKey === key.num;
+                  return (
+                    <button 
+                      key={key.num} 
+                      onClick={() => handleKeyPress(key.num)}
+                      className={`keypad-digit-btn ${isActive ? 'active' : ''}`}
+                    >
+                      <span className="btn-digit-num">{key.num}</span>
+                      {key.letters && <span className="btn-digit-letters">{key.letters}</span>}
+                    </button>
+                  );
+                })}
+                
+                {/* Clear, 0, Backspace */}
+                <button 
+                  onClick={handleClear}
+                  className="keypad-digit-btn text-label-btn"
+                >
+                  Effacer
+                </button>
+                
+                <button 
+                  onClick={() => handleKeyPress('0')} 
+                  className={`keypad-digit-btn ${activeKey === '0' ? 'active' : ''}`}
+                >
+                  <span className="btn-digit-num">0</span>
+                  <span className="btn-digit-letters">+</span>
+                </button>
+                
+                <button 
+                  onClick={handleBackspace}
+                  className="keypad-digit-btn text-label-btn"
+                >
+                  ⌫
+                </button>
+              </div>
+
+              <div className="keypad-card-footer">
+                <span>NEXIA SECURITY</span>
+              </div>
+
+            </div>
           </div>
 
         </div>
 
-        {/* RIGHT COLUMN (COL-SPAN-5): THE SUSPENDED VISIONOS PIN CARD */}
-        <div className="keypad-composition-col">
-          
-          <div className={`visionos-keypad-panel ${shake ? 'shake-panel' : ''}`}>
+        {/* LOWER ROW: HORIZONTAL MISSION CARD */}
+        <div className="lower-mission-wrapper">
+          <div className="horizontal-mission-card">
             
-            <div className="keypad-status-header">
-              <div className="status-padlock-container">
-                {pin.length === 4 && pin === correctPasscode ? (
-                  <Unlock className="status-lock-icon text-active-blue animate-bounce" />
-                ) : (
-                  <Lock className="status-lock-icon" />
-                )}
+            {/* Left circular blue target badge */}
+            <div className="target-badge-outer">
+              <div className="target-badge-middle">
+                <div className="target-badge-inner" />
               </div>
-              <h2 className="keypad-status-title">Entrer le code</h2>
             </div>
 
-            {/* iOS Pin Dots Indicator */}
-            <div className="keypad-pin-row">
-              {[0, 1, 2, 3].map((idx) => (
-                <div 
-                  key={idx}
-                  className={`keypad-pin-dot ${pin.length > idx ? 'active' : ''} ${error ? 'error' : ''}`}
-                />
-              ))}
+            {/* Middle text descriptions */}
+            <div className="mission-content-middle">
+              <span className="mission-tag-blue">MISSION ACTUELLE</span>
+              <h3 className="mission-headline">Stabiliser mon activité.</h3>
+              <p className="mission-description">
+                Consolider le cash-flow et structurer juridiquement l'activité pour sécuriser mon socle et accélérer.
+              </p>
             </div>
 
-            {error && <span className="keypad-error-hint">Code incorrect. Réessayez.</span>}
-
-            {/* Keypad Grid layout */}
-            <div className="keypad-grid-layout">
-              {keyConfig.map((key) => {
-                const isActive = activeKey === key.num;
-                return (
-                  <button 
-                    key={key.num} 
-                    onClick={() => handleKeyPress(key.num)}
-                    className={`keypad-circular-btn ${isActive ? 'active' : ''}`}
-                  >
-                    <span className="digit-label">{key.num}</span>
-                    {key.letters && <span className="letters-label">{key.letters}</span>}
-                  </button>
-                );
-              })}
-              
-              {/* Lower row utils */}
-              <button 
-                onClick={handleClear}
-                className="keypad-circular-btn text-utility-btn"
-              >
-                Effacer
-              </button>
-              
-              <button 
-                onClick={() => handleKeyPress('0')} 
-                className={`keypad-circular-btn ${activeKey === '0' ? 'active' : ''}`}
-              >
-                <span className="digit-label">0</span>
-                <span className="letters-label">+</span>
-              </button>
-              
-              <button 
-                onClick={handleBackspace} 
-                className="keypad-circular-btn text-utility-btn"
-              >
-                ⌫
-              </button>
-            </div>
-
-            <div className="keypad-panel-footer">
-              <span>NEXIA SECURITY</span>
+            {/* Right big days metric */}
+            <div className="mission-metric-right">
+              <span className="metric-days-number">{daysRemaining}</span>
+              <span className="metric-days-label">JOURS RESTANTS</span>
             </div>
 
           </div>
-
         </div>
 
       </div>
 
-      {/* Master StyleSheet representing Apple Visual Language */}
+      {/* Styled mockup properties */}
       <style>{`
-        /* Reset and environment */
-        .apple-journey-lockscreen {
+        /* Reset and canvas styling */
+        .keynote-lockscreen-root {
           position: fixed;
           top: 0;
           left: 0;
@@ -350,15 +451,15 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           height: 100vh;
           z-index: 1000;
           overflow: hidden;
-          background-color: #FAFAFC;
-          font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+          background-color: #FAFAFA;
+          font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+          color: #1D1D1F;
           user-select: none;
           -webkit-user-select: none;
-          color: #1D1D1F;
           box-sizing: border-box;
         }
 
-        /* SVG Fine photographic grain overlay */
+        /* Light paper subtle grain overlay */
         .apple-paper-grain {
           position: absolute;
           top: 0;
@@ -367,205 +468,386 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           bottom: 0;
           pointer-events: none;
           z-index: 5;
-          opacity: 0.08;
+          opacity: 0.05;
           mix-blend-mode: multiply;
-          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.15 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.15 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
         }
 
-        /* Ambient subtle light diffusion */
-        .apple-ambient-glow {
+        .cursor-spot-light {
           position: fixed;
-          width: 700px;
-          height: 700px;
-          background: radial-gradient(circle, rgba(0, 113, 227, 0.02) 0%, rgba(250, 250, 252, 0) 75%);
+          width: 600px;
+          height: 600px;
+          background: radial-gradient(circle, rgba(0, 113, 227, 0.02) 0%, rgba(250, 250, 252, 0) 70%);
           border-radius: 50%;
           transform: translate(-50%, -50%);
           pointer-events: none;
           z-index: 2;
         }
 
-        /* Grid Layout */
-        .apple-composition-grid {
-          display: grid;
-          grid-template-columns: repeat(12, 1fr);
+        /* Main Container */
+        .keynote-main-container {
+          display: flex;
+          flex-direction: column;
           height: 100vh;
-          width: 100%;
           max-width: 1300px;
           margin: 0 auto;
-          padding: 0 60px;
-          align-items: center;
+          padding: 40px 65px;
+          box-sizing: border-box;
+          justify-content: space-between;
           position: relative;
           z-index: 10;
         }
 
         @media (max-width: 1024px) {
-          .apple-composition-grid {
-            grid-template-columns: 1fr;
-            padding: 40px 24px;
-            gap: 60px;
-            justify-items: center;
+          .keynote-main-container {
+            padding: 24px;
             overflow-y: auto;
+            height: auto;
+            min-height: 100vh;
+            justify-content: flex-start;
+            gap: 40px;
           }
         }
 
-        /* LEFT HERO COLUMN */
-        .hero-composition-col {
-          grid-column: span 7;
-          display: flex;
-          flex-direction: column;
+        /* UPPER THREE-COLUMNS ROW */
+        .upper-columns-wrapper {
+          display: grid;
+          grid-template-columns: 280px 1fr 320px;
           align-items: center;
-          text-align: center;
           gap: 40px;
+          flex-grow: 1;
         }
 
         @media (max-width: 1024px) {
-          .hero-composition-col {
-            grid-column: span 1;
-            margin-top: 40px;
+          .upper-columns-wrapper {
+            grid-template-columns: 1fr;
+            gap: 50px;
+            width: 100%;
           }
         }
 
-        /* GLASS 3D SPHERE */
-        .apple-glass-sphere-box {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          perspective: 800px;
-        }
-
-        .apple-glass-sphere {
-          position: relative;
-          width: 200px;
-          height: 200px;
-          border-radius: 50%;
-          background: radial-gradient(circle at 35% 35%, #FFFFFF 0%, #E8E8ED 60%, #B8B8C2 100%);
-          box-shadow: 
-            0 24px 60px rgba(0, 0, 0, 0.05),
-            0 4px 12px rgba(0, 0, 0, 0.02),
-            inset 0 -8px 20px rgba(0, 0, 0, 0.12),
-            inset 0 8px 20px rgba(255, 255, 255, 0.8);
-          overflow: hidden;
-          transition: transform 0.1s ease;
-        }
-
-        .sphere-base-reflect {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: radial-gradient(circle at 100% 100%, rgba(255,255,255,0.4) 0%, transparent 60%);
-          border-radius: 50%;
-          pointer-events: none;
-        }
-
-        .sphere-specular-highlight {
-          position: absolute;
-          top: 30px;
-          left: 30px;
-          width: 70px;
-          height: 70px;
-          background: radial-gradient(circle, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0) 70%);
-          border-radius: 50%;
-          pointer-events: none;
-          filter: blur(2px);
-          transition: transform 0.15s ease-out;
-        }
-
-        .sphere-inner-shadow {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.06);
-          border-radius: 50%;
-          pointer-events: none;
-        }
-
-        .sphere-sheen-ring {
-          position: absolute;
-          top: 1px;
-          left: 1px;
-          right: 1px;
-          bottom: 1px;
-          border: 1px solid rgba(255, 255, 255, 0.55);
-          border-radius: 50%;
-          pointer-events: none;
-        }
-
-        /* HERO TYPOGRAPHY */
-        .hero-text-composition {
+        /* COLUMN 1: LEFT COMPOSITIONS */
+        .left-compositions-col {
           display: flex;
           flex-direction: column;
-          align-items: center;
-          gap: 12px;
+          gap: 32px;
         }
 
-        .hero-title {
-          font-size: 28px;
+        .life-header-section {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .label-mylife {
+          font-size: 14px;
           font-weight: 300;
           letter-spacing: 0.18em;
           color: #8E8E93;
           line-height: 1;
         }
 
-        .hero-percentage {
-          font-size: 80px;
+        .label-year {
+          font-size: 64px;
           font-weight: 800;
-          letter-spacing: -0.05em;
+          letter-spacing: -0.04em;
           color: #1D1D1F;
-          line-height: 0.95;
+          line-height: 1.1;
+          margin: 6px 0 12px 0;
         }
 
-        .hero-projection-message {
-          font-size: 15px;
+        .short-header-desc {
+          font-size: 13.5px;
           font-weight: 500;
           line-height: 1.5;
           color: #515154;
-          max-width: 320px;
         }
 
-        .text-highlight-blue {
+        /* Progress Bar */
+        .global-progress-section {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .progress-value {
+          font-size: 26px;
+          font-weight: 800;
           color: #0071E3;
-          font-weight: 700;
+          letter-spacing: -0.02em;
+          line-height: 1;
         }
 
-        /* RIGHT KEYPAD COLUMN */
-        .keypad-composition-col {
-          grid-column: span 5;
+        .progress-label {
+          font-size: 8.5px;
+          font-weight: 700;
+          color: #8E8E93;
+          letter-spacing: 0.08em;
+        }
+
+        .progress-track-bar {
+          width: 100%;
+          height: 6px;
+          background-color: #E9E9EB;
+          border-radius: 99px;
+          overflow: hidden;
+          margin-top: 6px;
+        }
+
+        .progress-fill-bar {
+          height: 100%;
+          background-color: #0071E3;
+          border-radius: 99px;
+          transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Citation takeaway card */
+        .takeaway-citation-card {
+          background-color: #FFFFFF;
+          border: 1px solid rgba(0, 0, 0, 0.02);
+          border-radius: 28px;
+          padding: 24px;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.015);
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          position: relative;
+        }
+
+        .citation-quote-symbol {
+          font-size: 40px;
+          line-height: 1;
+          font-family: Georgia, serif;
+          color: #0071E3;
+          opacity: 0.15;
+          position: absolute;
+          top: 10px;
+          left: 20px;
+        }
+
+        .citation-text {
+          font-size: 13px;
+          font-weight: 500;
+          line-height: 1.55;
+          color: #1D1D1F;
+          position: relative;
+          z-index: 2;
+          margin: 10px 0 0 0;
+        }
+
+        .citation-tag-blue {
+          font-size: 8.5px;
+          font-weight: 700;
+          color: #0071E3;
+          letter-spacing: 0.08em;
+          margin-top: 4px;
+        }
+
+        /* COLUMN 2: CENTER GALAXY SYSTEM */
+        .center-solar-col {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100%;
+        }
+
+        .solar-system-canvas {
+          position: relative;
+          width: 440px;
+          height: 440px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        @media (max-width: 768px) {
+          .solar-system-canvas {
+            width: 320px;
+            height: 320px;
+          }
+        }
+
+        /* CERAMIC EMBOSSED Moi Core */
+        .ceramic-moi-core {
+          position: absolute;
+          width: 110px;
+          height: 110px;
+          border-radius: 50%;
+          background: #FFFFFF;
+          border: 1px solid rgba(0, 0, 0, 0.01);
+          box-shadow: 
+            0 12px 30px rgba(0, 0, 0, 0.04),
+            inset 0 2px 4px rgba(255, 255, 255, 0.95),
+            inset 0 -2px 4px rgba(0, 0, 0, 0.02);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 30;
+        }
+
+        .moi-text {
+          font-size: 18px;
+          font-weight: 800;
+          color: #0071E3;
+          letter-spacing: 0.05em;
+          position: relative;
+          z-index: 2;
+        }
+
+        .moi-inner-highlight {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          border-radius: 50%;
+          background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.7) 0%, transparent 60%);
+          pointer-events: none;
+        }
+
+        /* Concentric Orbits */
+        .orbit-track-ring {
+          position: absolute;
+          border: 1px solid rgba(0, 0, 0, 0.035);
+          border-radius: 50%;
+          pointer-events: none;
+          z-index: 5;
+        }
+
+        /* Orbit rotation holding wrapper */
+        .planet-orbit-holder {
+          position: absolute;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          pointer-events: none;
+          animation: orbitRotate linear infinite;
+        }
+
+        .planet-orbit-holder.orbit-paused {
+          animation-play-state: paused !important;
+        }
+
+        /* Active planet spheres */
+        .floating-planet-sphere {
+          position: absolute;
+          top: -20px;
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          background-color: #FFFFFF;
+          border: 0.5px solid rgba(0, 0, 0, 0.02);
+          box-shadow: 
+            0 4px 12px rgba(0, 0, 0, 0.03),
+            inset 0 1px 0 rgba(255,255,255,0.6);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          pointer-events: auto;
+          transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .floating-planet-sphere.planet-hovered {
+          transform: scale(1.18);
+          box-shadow: 0 12px 28px rgba(0, 0, 0, 0.07);
+        }
+
+        .planet-emoji {
+          font-size: 16px;
+        }
+
+        /* Hover card visionOS style */
+        .planet-hover-card {
+          position: absolute;
+          bottom: 48px;
+          background: rgba(255, 255, 255, 0.85);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 0.5px solid rgba(255, 255, 255, 0.6);
+          padding: 8px 12px;
+          border-radius: 12px;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          white-space: nowrap;
+          pointer-events: none;
+          animation: hoverCardFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .p-card-tag {
+          font-size: 7.5px;
+          font-weight: 700;
+          color: #8E8E93;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+
+        .p-card-title {
+          font-size: 11px;
+          font-weight: 700;
+          color: #1D1D1F;
+          margin-top: 2px;
+        }
+
+        @keyframes hoverCardFadeIn {
+          from { opacity: 0; transform: translateY(6px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Inner decorative colored dots */
+        .kinetic-dot-orbit {
+          position: absolute;
+          border-radius: 50%;
+          pointer-events: none;
+          z-index: 8;
+          animation: orbitRotate linear infinite;
+        }
+
+        .kinetic-colored-bead {
+          position: absolute;
+          top: 0;
+          left: 50%;
+          width: 5px;
+          height: 5px;
+          border-radius: 50%;
+          box-shadow: 0 0 6px rgba(0,0,0,0.1);
+        }
+
+        @keyframes orbitRotate {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+
+        /* COLUMN 3: RIGHT KEYPAD PANEL */
+        .right-keypad-col {
           display: flex;
           justify-content: flex-end;
         }
 
         @media (max-width: 1024px) {
-          .keypad-composition-col {
-            grid-column: span 1;
+          .right-keypad-col {
             justify-content: center;
-            margin-bottom: 40px;
           }
         }
 
-        /* SUSPENDED VISIONOS PANEL */
-        .visionos-keypad-panel {
-          width: 330px;
-          padding: 40px 28px;
-          background: rgba(255, 255, 255, 0.35);
-          backdrop-filter: blur(40px) saturate(210%);
-          -webkit-backdrop-filter: blur(40px) saturate(210%);
-          border: 0.5px solid rgba(255, 255, 255, 0.55);
-          border-radius: 40px;
+        .ios-system-keypad-card {
+          width: 320px;
+          padding: 40px 24px;
+          background: #FFFFFF;
+          border: 1px solid rgba(0, 0, 0, 0.015);
+          border-radius: 36px;
           box-shadow: 
             0 1px 3px rgba(0, 0, 0, 0.005),
-            0 24px 72px rgba(0, 0, 0, 0.04),
-            inset 0 1px 0 rgba(255, 255, 255, 0.5);
+            0 24px 60px rgba(0, 0, 0, 0.03),
+            inset 0 1px 0 rgba(255, 255, 255, 0.7);
           display: flex;
           flex-direction: column;
           align-items: center;
-          transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .keypad-status-header {
+        .keypad-card-header {
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -573,39 +855,36 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           margin-bottom: 24px;
         }
 
-        .status-padlock-container {
+        .lock-icon-badge {
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 46px;
-          height: 46px;
+          width: 44px;
+          height: 44px;
           border-radius: 50%;
-          background: rgba(255, 255, 255, 0.5);
+          background: rgba(250, 250, 252, 0.8);
           border: 0.5px solid rgba(0,0,0,0.03);
-          box-shadow: 
-            0 2px 6px rgba(0,0,0,0.01),
-            inset 0 1px 0 rgba(255,255,255,0.7);
         }
 
-        .status-lock-icon {
-          width: 17px;
-          height: 17px;
+        .keypad-lock-icon {
+          width: 16px;
+          height: 16px;
           color: #1D1D1F;
         }
 
-        .status-lock-icon.text-active-blue {
+        .keypad-lock-icon.text-blue-apple {
           color: #0071E3;
         }
 
-        .keypad-status-title {
-          font-size: 15px;
+        .keypad-prompt-title {
+          font-size: 14.5px;
           font-weight: 600;
           color: #1D1D1F;
           letter-spacing: -0.01em;
         }
 
-        /* Pin indicators */
-        .keypad-pin-row {
+        /* Passcode Indicator dots */
+        .passcode-circles-row {
           display: flex;
           gap: 16px;
           margin-bottom: 28px;
@@ -613,7 +892,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           align-items: center;
         }
 
-        .keypad-pin-dot {
+        .passcode-dot-circle {
           width: 12px;
           height: 12px;
           border-radius: 50%;
@@ -622,26 +901,26 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .keypad-pin-dot.active {
+        .passcode-dot-circle.active {
           background-color: #1D1D1F;
           border-color: #1D1D1F;
           transform: scale(1.15);
         }
 
-        .keypad-pin-dot.error {
+        .passcode-dot-circle.error {
           background-color: #FF3B30 !important;
           border-color: #FF3B30 !important;
         }
 
-        .keypad-error-hint {
+        .passcode-error-label {
           font-size: 11px;
           font-weight: 600;
           color: #FF3B30;
           margin-bottom: 18px;
         }
 
-        /* GRID KEYPAD LAYOUT */
-        .keypad-grid-layout {
+        /* BUTTONS GRID */
+        .keypad-buttons-grid {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
           gap: 20px 24px;
@@ -649,12 +928,12 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           width: 100%;
         }
 
-        .keypad-circular-btn {
+        .keypad-digit-btn {
           width: 64px;
           height: 64px;
           border-radius: 50%;
-          background: rgba(255, 255, 255, 0.45);
-          border: 0.5px solid rgba(0, 0, 0, 0.03);
+          background: #FAFAFA;
+          border: none;
           color: #1D1D1F;
           display: flex;
           flex-direction: column;
@@ -662,30 +941,25 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           justify-content: center;
           cursor: pointer;
           transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-          line-height: 1.15;
-          box-shadow: 
-            0 1px 2px rgba(0,0,0,0.005),
-            inset 0 1px 0 rgba(255,255,255,0.6);
+          line-height: 1.1;
         }
 
-        .keypad-circular-btn:hover {
-          background-color: rgba(255, 255, 255, 0.7);
+        .keypad-digit-btn:hover {
+          background-color: #F2F2F7;
         }
 
-        .keypad-circular-btn.active, .keypad-circular-btn:active {
-          background-color: #FFFFFF;
-          border-color: rgba(0,0,0,0.05);
+        .keypad-digit-btn.active, .keypad-digit-btn:active {
+          background-color: #E5E5EA;
           transform: scale(0.92);
-          box-shadow: 0 4px 12px rgba(0,0,0,0.02);
         }
 
-        .digit-label {
-          font-size: 25px;
+        .btn-digit-num {
+          font-size: 24px;
           font-weight: 400;
           font-variant-numeric: tabular-nums;
         }
 
-        .letters-label {
+        .btn-digit-letters {
           font-size: 8.5px;
           font-weight: 600;
           color: #8E8E93;
@@ -694,39 +968,154 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           margin-top: 1px;
         }
 
-        .keypad-circular-btn.text-utility-btn {
+        .keypad-digit-btn.text-label-btn {
           background: transparent;
-          border-color: transparent;
           color: #515154;
           font-size: 11px;
           font-weight: 600;
-          box-shadow: none;
         }
 
-        .keypad-circular-btn.text-utility-btn:hover {
-          background: rgba(255, 255, 255, 0.25);
+        .keypad-digit-btn.text-label-btn:hover {
+          background: rgba(0,0,0,0.02);
         }
 
-        .keypad-panel-footer {
+        .keypad-card-footer {
           margin-top: 36px;
           font-size: 9px;
           font-weight: 700;
-          color: #AEAEB2;
+          color: #C7C7CC;
           letter-spacing: 0.08em;
           text-transform: uppercase;
         }
 
-        /* SHAKE ANIMATION */
-        .shake-panel {
-          animation: shakePanel 0.5s ease-in-out;
+        .shake-card {
+          animation: shakeCard 0.5s ease-in-out;
         }
 
-        @keyframes shakePanel {
+        @keyframes shakeCard {
           0%, 100% { transform: translateX(0); }
           15%, 45%, 75% { transform: translateX(-6px); }
           30%, 60%, 90% { transform: translateX(6px); }
         }
+
+        /* LOWER HORIZONTAL CARD */
+        .lower-mission-wrapper {
+          width: 100%;
+          margin-top: 40px;
+        }
+
+        .horizontal-mission-card {
+          background-color: #FFFFFF;
+          border: 1px solid rgba(0, 0, 0, 0.02);
+          border-radius: 28px;
+          padding: 28px 40px;
+          box-shadow: 
+            0 1px 3px rgba(0,0,0,0.005),
+            0 10px 35px rgba(0,0,0,0.025);
+          display: grid;
+          grid-template-columns: auto 1fr auto;
+          align-items: center;
+          gap: 28px;
+        }
+
+        @media (max-width: 768px) {
+          .horizontal-mission-card {
+            grid-template-columns: 1fr;
+            text-align: center;
+            justify-items: center;
+            padding: 24px;
+            gap: 20px;
+          }
+        }
+
+        /* TARGET BADGE STYLING */
+        .target-badge-outer {
+          width: 56px;
+          height: 56px;
+          border-radius: 50%;
+          background-color: #F0F7FF;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .target-badge-middle {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          border: 3.5px solid #0071E3;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .target-badge-inner {
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          background-color: #0071E3;
+        }
+
+        /* Mission middle content */
+        .mission-content-middle {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .mission-tag-blue {
+          font-size: 9.5px;
+          font-weight: 700;
+          color: #0071E3;
+          letter-spacing: 0.1em;
+        }
+
+        .mission-headline {
+          font-size: 20px;
+          font-weight: 800;
+          color: #1D1D1F;
+          letter-spacing: -0.01em;
+          margin: 0;
+        }
+
+        .mission-description {
+          font-size: 13.5px;
+          color: #8E8E93;
+          line-height: 1.5;
+          margin: 2px 0 0 0;
+          font-weight: 500;
+        }
+
+        /* Mission right metric */
+        .mission-metric-right {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          line-height: 1;
+        }
+
+        @media (max-width: 768px) {
+          .mission-metric-right {
+            align-items: center;
+          }
+        }
+
+        .metric-days-number {
+          font-size: 56px;
+          font-weight: 800;
+          color: #1D1D1F;
+          letter-spacing: -0.04em;
+        }
+
+        .metric-days-label {
+          font-size: 8.5px;
+          font-weight: 700;
+          color: #8E8E93;
+          letter-spacing: 0.08em;
+          margin-top: 4px;
+        }
       `}</style>
+
     </div>
   );
 };
