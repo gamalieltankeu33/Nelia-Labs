@@ -8,13 +8,13 @@ import {
   Briefcase, 
   DollarSign, 
   PieChart, 
-  CloudLightning,
+  Sparkles, 
   Loader2,
   CheckCircle,
   AlertTriangle,
   Menu,
   X,
-  Sparkles,
+  CloudLightning,
   Lock
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
@@ -64,7 +64,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const selectedMonthName = dateObj.toLocaleDateString('fr-FR', { month: 'long' });
   const capitalizedMonth = selectedMonthName.charAt(0).toUpperCase() + selectedMonthName.slice(1);
   
-  // Calculate current month's CA (Collected vs Contracted)
   const launch = launches[selectedMonth];
   const launchCA = calculateLaunchCA(launch);
   const premiumCA = calculatePremiumCA(prospects, selectedMonth);
@@ -94,30 +93,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
     switch (savingStatus) {
       case 'saving':
         return (
-          <div className="status-indicator status-saving">
-            <Loader2 className="animate-spin size-4" />
+          <div className="sidebar-status-pill status-saving">
+            <Loader2 className="animate-spin size-3.5" />
             <span>Sauvegarde...</span>
           </div>
         );
       case 'saved':
         return (
-          <div className="status-indicator status-saved">
-            <CheckCircle className="size-4" />
+          <div className="sidebar-status-pill status-saved">
+            <CheckCircle className="size-3.5" />
             <span>Sauvegardé</span>
           </div>
         );
       case 'error':
         return (
-          <div className="status-indicator status-error" title={savingError || "Erreur de sauvegarde"}>
-            <AlertTriangle className="size-4" />
-            <span className="truncate">Erreur sauvegarde</span>
+          <div className="sidebar-status-pill status-error" title={savingError || "Erreur de sauvegarde"}>
+            <AlertTriangle className="size-3.5" />
+            <span className="truncate">Erreur</span>
           </div>
         );
       default:
         return (
-          <div className="status-indicator status-idle">
-            <CheckCircle className="size-4 opacity-50" style={{ color: supabase ? 'var(--status-success)' : 'inherit' }} />
-            <span>{supabase ? 'Données Supabase' : 'Données locales'}</span>
+          <div className="sidebar-status-pill status-idle">
+            <CheckCircle className="size-3.5 opacity-50" style={{ color: supabase ? '#10B981' : 'inherit' }} />
+            <span>{supabase ? 'Connecté' : 'Hors ligne'}</span>
           </div>
         );
     }
@@ -125,44 +124,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      {/* Mobile Top Bar */}
-      <div className="mobile-header">
-        <div className="mobile-logo">
-          <CloudLightning className="logo-icon-dark animate-pulse" />
-          <span className="logo-text">NEXT IA LABS</span>
-          <span className="mobile-month-badge" style={{
-            marginLeft: '6px',
-            fontSize: '10px',
-            fontWeight: 700,
-            background: 'var(--accent-violet-glow)',
-            color: 'var(--accent-violet)',
-            padding: '2px 6px',
-            borderRadius: '9999px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.02em',
-            fontVariantNumeric: 'tabular-nums'
-          }}>
-            {selectedMonth}
-          </span>
+      {/* Mobile Header Menu bar */}
+      <div className="mobile-top-bar-panel">
+        <div className="mobile-logo-group">
+          <CloudLightning className="logo-icon-sparkle animate-pulse" />
+          <span className="mobile-logo-lbl">NEXT IA LABS</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="mobile-actions-group">
           <select 
             value={selectedMonth} 
             onChange={(e) => setSelectedMonth(e.target.value)}
-            style={{
-              padding: '4px 22px 4px 8px',
-              fontSize: '11px',
-              fontWeight: 600,
-              borderRadius: '8px',
-              border: '1px solid var(--border-color)',
-              backgroundPosition: 'right 6px center',
-              backgroundSize: '0.8rem',
-              width: '95px',
-              boxShadow: 'none',
-              height: '28px',
-              color: 'var(--text-primary)',
-              backgroundColor: 'var(--bg-primary)'
-            }}
+            className="mobile-month-select"
           >
             {availableMonths.map((m) => (
               <option key={m.value} value={m.value}>
@@ -170,28 +142,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </option>
             ))}
           </select>
-          <button className="mobile-toggle" onClick={() => setIsOpen(!isOpen)}>
+          <button className="mobile-menu-toggle-btn" onClick={() => setIsOpen(!isOpen)}>
             {isOpen ? <X className="size-5" /> : <Menu className="size-5" />}
           </button>
         </div>
       </div>
 
-      {/* Sidebar Container */}
-      <div className={`sidebar ${isOpen ? 'sidebar-open' : ''}`}>
-        <div className="sidebar-logo">
-          <div className="logo-icon-wrapper-premium">
-            <CloudLightning className="logo-icon-premium" />
+      {/* Sidebar Navigation Panel */}
+      <div className={`apple-sidebar-panel ${isOpen ? 'mobile-open' : ''}`}>
+        
+        {/* Logo brand */}
+        <div className="sidebar-brand-logo-box">
+          <div className="brand-logo-icon">
+            <CloudLightning className="logo-icon-svg" />
           </div>
-          <span className="logo-text-below">NEXT IA LABS</span>
+          <span className="brand-logo-title">NEXT IA LABS</span>
         </div>
 
-        {/* Global Month Selector */}
-        <div className="sidebar-month-selector">
-          <label className="month-selector-label">Période active</label>
+        {/* Global selector dropdown */}
+        <div className="sidebar-period-dropdown-box">
+          <label className="period-box-label">PÉRIODE DE COCKPIT</label>
           <select 
             value={selectedMonth} 
             onChange={(e) => setSelectedMonth(e.target.value)}
-            className="month-select-dropdown"
+            className="period-box-select"
           >
             {availableMonths.map((m) => (
               <option key={m.value} value={m.value}>
@@ -201,7 +175,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </select>
         </div>
 
-        <nav className="sidebar-nav">
+        {/* Navigation list */}
+        <nav className="sidebar-links-nav">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeScreen === item.id;
@@ -210,408 +185,415 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 key={item.id}
                 onClick={() => {
                   setActiveScreen(item.id);
-                  setIsOpen(false); // Fermer sur mobile
+                  setIsOpen(false);
                 }}
-                className={`nav-item ${isActive ? 'nav-item-active' : ''}`}
+                className={`sidebar-nav-link-btn ${isActive ? 'active' : ''}`}
               >
-                <Icon className={`nav-icon ${isActive ? 'nav-icon-active' : ''}`} />
-                <span className="nav-text">{item.name}</span>
+                <Icon className="nav-link-icon" />
+                <span className="nav-link-text">{item.name}</span>
               </button>
             );
           })}
         </nav>
 
-        {/* Mini Objectif Widget */}
-        <div className="sidebar-goal-widget">
-          <div className="goal-widget-header">
-            <span className="goal-widget-title">Objectif {capitalizedMonth}</span>
-            <span className="goal-widget-percent">{progressPercent.toFixed(0)}%</span>
+        {/* Goal Indicator Card */}
+        <div className="sidebar-progress-summary-card">
+          <div className="progress-summary-header">
+            <span className="p-sum-title">Objectif {capitalizedMonth}</span>
+            <span className="p-sum-percent">{progressPercent.toFixed(0)}%</span>
           </div>
-          <div className="goal-widget-bar-track">
-            <div className="goal-widget-bar-fill" style={{ width: `${progressPercent}%` }} />
+          <div className="progress-summary-bar-track">
+            <div className="progress-summary-bar-fill" style={{ width: `${progressPercent}%` }} />
           </div>
-          <div className="goal-widget-footer" style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-              <span style={{ opacity: 0.8 }}>Encaissé :</span>
-              <span style={{ fontWeight: 700, color: '#FFFFFF' }}>{totalCollectedCA.toLocaleString('fr-FR')} € / {monthlyObjective.toLocaleString('fr-FR')} €</span>
+          <div className="progress-summary-details">
+            <div className="p-sum-detail-row">
+              <span className="p-sum-lbl">Encaissé</span>
+              <span className="p-sum-val">{totalCollectedCA.toLocaleString('fr-FR')} €</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', opacity: 0.7 }}>
-              <span>Contracté :</span>
-              <span>{totalContractedCA.toLocaleString('fr-FR')} €</span>
+            <div className="p-sum-detail-row">
+              <span className="p-sum-lbl">Contracté</span>
+              <span className="p-sum-val">{totalContractedCA.toLocaleString('fr-FR')} €</span>
             </div>
           </div>
         </div>
 
-        {/* Sidebar Footer with Saving Status */}
-        <div className="sidebar-footer" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {/* Footer controls */}
+        <div className="sidebar-controls-footer">
           {renderSavingStatus()}
           {onLock && (
             <button 
               onClick={onLock}
-              className="btn btn-secondary btn-sm"
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                padding: '8px 12px',
-                fontSize: '12px',
-                fontWeight: 600,
-                color: 'var(--text-secondary)',
-                borderRadius: '8px',
-                border: '1px solid var(--border-color)',
-                backgroundColor: 'transparent',
-                cursor: 'pointer'
-              }}
+              className="sidebar-lock-btn-action"
             >
-              <Lock className="size-3.5" style={{ color: 'var(--text-muted)' }} />
-              <span>Verrouiller</span>
+              <Lock className="size-3.5" />
+              <span>Verrouiller le cockpit</span>
             </button>
           )}
         </div>
+
       </div>
 
-      {/* Mobile overlay */}
+      {/* Sidebar background overlay */}
       {isOpen && (
-        <div className="sidebar-overlay" onClick={() => setIsOpen(false)} />
+        <div className="sidebar-mobile-backdrop-overlay" onClick={() => setIsOpen(false)} />
       )}
 
-      {/* Styles localisés pour la sidebar */}
+      {/* Styled local Apple Sidebar layout styles */}
       <style>{`
-        .sidebar {
-          width: var(--sidebar-width);
-          background-color: var(--bg-card);
-          border-right: 1px solid var(--border-color);
-          height: calc(100vh - 32px);
+        .apple-sidebar-panel {
           position: fixed;
-          left: 16px;
-          top: 16px;
+          left: 0;
+          top: 0;
+          bottom: 0;
+          width: 240px;
+          height: 100vh;
+          background-color: #FFFFFF;
           display: flex;
           flex-direction: column;
-          z-index: 100;
-          transition: transform var(--transition-normal);
-          border-radius: 24px;
-          box-shadow: var(--shadow-sm);
-          overflow: hidden;
+          z-index: 900;
+          padding: 36px 20px;
+          box-sizing: border-box;
+          transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .sidebar-logo {
-          padding: 24px 0 16px 0;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 10px;
-          border-bottom: 1px solid var(--border-color);
-        }
-
-        .logo-text-below {
-          font-family: var(--font-heading);
-          font-weight: 700;
-          font-size: 11px;
-          color: var(--text-primary);
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-        }
-
-        .logo-icon-wrapper-premium {
-          width: 42px;
-          height: 42px;
-          border-radius: 12px;
-          background: var(--bg-primary);
-          border: 1px solid var(--border-color);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.02);
-          transition: var(--transition-fast);
-        }
-
-        .logo-icon-wrapper-premium:hover {
-          background: rgba(0, 102, 204, 0.05);
-          border-color: rgba(0, 102, 204, 0.2);
-          transform: rotate(5deg) scale(1.05);
-        }
-
-        .logo-icon-premium {
-          color: var(--accent-blue);
-          width: 20px;
-          height: 20px;
-        }
-
-        .sidebar-nav {
-          padding: 20px 12px;
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-          flex: 1;
-          overflow-y: auto;
-        }
-
-        .nav-item {
+        .sidebar-brand-logo-box {
           display: flex;
           align-items: center;
           gap: 12px;
-          padding: 8px 12px;
-          background: none;
-          border: none;
-          color: var(--text-secondary);
-          border-radius: var(--radius-md);
-          cursor: pointer;
-          font-family: var(--font-body);
-          font-weight: 500;
+          margin-bottom: 32px;
+          padding-left: 6px;
+        }
+
+        .brand-logo-icon {
+          width: 32px;
+          height: 32px;
+          border-radius: 8px;
+          background-color: #FAFAFA;
+          border: 0.5px solid rgba(0,0,0,0.05);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .logo-icon-svg {
+          width: 16px;
+          height: 16px;
+          color: #0071E3;
+        }
+
+        .brand-logo-title {
           font-size: 13px;
-          text-align: left;
-          transition: var(--transition-fast);
-          width: 100%;
-        }
-
-        .nav-item:hover {
-          background-color: var(--bg-primary);
-          color: var(--text-primary);
-          transform: translateX(2px);
-        }
-
-        .nav-item-active {
-          background: var(--accent-blue);
-          color: #FFFFFF !important;
-          font-weight: 600;
-          border-radius: var(--radius-md);
-          box-shadow: 0 4px 12px rgba(0, 102, 204, 0.15);
-        }
-
-        /* Sidebar Goal Widget Styles */
-        .sidebar-goal-widget {
-          margin: 16px;
-          padding: 16px;
-          background: var(--bg-primary);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
-          box-shadow: var(--shadow-sm);
-          color: var(--text-primary);
-        }
-
-        .goal-widget-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 8px;
-        }
-
-        .goal-widget-title {
-          font-size: 10px;
-          font-weight: 700;
-          color: var(--text-secondary);
-          text-transform: uppercase;
+          font-weight: 800;
           letter-spacing: 0.05em;
+          color: #1D1D1F;
         }
 
-        .goal-widget-percent {
-          font-size: 11px;
-          font-weight: 700;
-          color: var(--text-primary);
-        }
-
-        .goal-widget-bar-track {
-          width: 100%;
-          height: 6px;
-          background-color: var(--border-color);
-          border-radius: 9999px;
-          overflow: hidden;
-          margin-bottom: 8px;
-        }
-
-        .goal-widget-bar-fill {
-          height: 100%;
-          background-color: var(--accent-blue);
-          border-radius: 9999px;
-          transition: width 0.4s ease;
-        }
-
-        .goal-widget-footer {
-          font-size: 11px;
-          color: var(--text-secondary);
-          font-weight: 600;
-          font-variant-numeric: tabular-nums;
-        }
-
-        .nav-icon {
-          width: 18px;
-          height: 18px;
-          color: var(--text-secondary);
-          transition: var(--transition-fast);
-        }
-
-        .nav-icon-active {
-          color: #FFFFFF !important;
-        }
-
-        .sidebar-footer {
-          padding: 16px;
-          border-top: 1px solid var(--border-color);
-        }
-
-        .status-indicator {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 11px;
-          font-weight: 600;
-          padding: 6px 10px;
-          border-radius: var(--radius-md);
-          background-color: var(--bg-primary);
-          border: 1px solid var(--border-color);
-          text-transform: uppercase;
-          letter-spacing: 0.02em;
-        }
-
-        .status-saving {
-          color: var(--status-warning);
-          border-color: rgba(245, 158, 11, 0.2);
-          background-color: rgba(245, 158, 11, 0.05);
-        }
-
-        .status-saved {
-          color: var(--status-success);
-          border-color: rgba(16, 185, 129, 0.2);
-          background-color: rgba(16, 185, 129, 0.05);
-        }
-
-        .status-error {
-          color: var(--status-error);
-          border-color: rgba(239, 68, 68, 0.2);
-          background-color: rgba(239, 68, 68, 0.05);
-        }
-
-        .status-idle {
-          color: var(--text-muted);
-        }
-
-        .animate-spin {
-          animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-
-        .sidebar-month-selector {
-          padding: 0 20px 20px 20px;
+        /* Period drop box selector */
+        .sidebar-period-dropdown-box {
           display: flex;
           flex-direction: column;
           gap: 6px;
+          margin-bottom: 28px;
+          padding: 0 6px;
         }
 
-        .month-selector-label {
-          font-size: 10px;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          color: var(--text-secondary);
+        .period-box-label {
+          font-size: 8px;
+          font-weight: 700;
+          color: #8E8E93;
+          letter-spacing: 0.08em;
         }
 
-        .month-select-dropdown {
-          background-color: var(--bg-primary);
-          border: 1px solid var(--border-color);
-          color: var(--text-primary);
-          font-size: 13px;
-          font-weight: 500;
-          border-radius: var(--radius-md);
-          padding: 8px 12px;
+        .period-box-select {
+          width: 100%;
+          padding: 8px 12px !important;
+          border-radius: 10px !important;
+          border: 1px solid rgba(0, 0, 0, 0.08) !important;
+          font-size: 12.5px !important;
+          font-weight: 600 !important;
+          background-color: #FAFAFA !important;
           cursor: pointer;
-          transition: all var(--transition-fast);
-          background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%230066CC' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
-          background-position: right 12px center;
-          background-repeat: no-repeat;
-          background-size: 1.1rem;
-          padding-right: 32px !important;
-          box-shadow: none;
-          outline: none;
-          -webkit-appearance: none;
-          -moz-appearance: none;
-          appearance: none;
         }
 
-        .month-select-dropdown:hover {
-          background-color: rgba(255, 255, 255, 0.15);
-          border-color: rgba(255, 255, 255, 0.25);
+        /* Links Navigation List */
+        .sidebar-links-nav {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          flex: 1;
+          overflow-y: auto;
+          margin-bottom: 24px;
         }
 
-        .month-select-dropdown:focus {
-          border-color: rgba(255, 255, 255, 0.4);
-          box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+        .sidebar-nav-link-btn {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 10px 14px;
+          border-radius: 12px;
+          border: none;
+          background: transparent;
+          color: #8E8E93;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+          text-align: left;
         }
 
-        .month-select-dropdown option {
-          background-color: #4F46E5;
-          color: #FFFFFF;
+        .sidebar-nav-link-btn:hover {
+          background-color: rgba(0, 0, 0, 0.02);
+          color: #1D1D1F;
         }
 
-        /* Mobile specific styles */
-        .mobile-header {
+        .nav-link-icon {
+          width: 18px;
+          height: 18px;
+          stroke-width: 2;
+        }
+
+        /* Material change active state capsule */
+        .sidebar-nav-link-btn.active {
+          background-color: #0071E3 !important;
+          color: #FFFFFF !important;
+          box-shadow: 
+            0 8px 20px rgba(0, 113, 227, 0.25),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+        }
+
+        .sidebar-nav-link-btn.active .nav-link-icon {
+          color: #FFFFFF !important;
+        }
+
+        /* Monthly Progress indicator Card */
+        .sidebar-progress-summary-card {
+          background-color: #FAFAFA;
+          border-radius: 18px;
+          padding: 16px;
+          margin-bottom: 24px;
+          border: 0.5px solid rgba(0,0,0,0.03);
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .progress-summary-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .p-sum-title {
+          font-size: 10.5px;
+          font-weight: 700;
+          color: #515154;
+        }
+
+        .p-sum-percent {
+          font-size: 11px;
+          font-weight: 800;
+          color: #0071E3;
+        }
+
+        .progress-summary-bar-track {
+          width: 100%;
+          height: 5px;
+          background-color: rgba(0,0,0,0.05);
+          border-radius: 99px;
+          overflow: hidden;
+        }
+
+        .progress-summary-bar-fill {
+          height: 100%;
+          background-color: #0071E3;
+          border-radius: 99px;
+        }
+
+        .progress-summary-details {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          border-top: 0.5px solid rgba(0,0,0,0.05);
+          padding-top: 8px;
+        }
+
+        .p-sum-detail-row {
+          display: flex;
+          justify-content: space-between;
+          font-size: 10px;
+        }
+
+        .p-sum-lbl {
+          color: #8E8E93;
+          font-weight: 500;
+        }
+
+        .p-sum-val {
+          color: #1D1D1F;
+          font-weight: 700;
+        }
+
+        /* Footer Controls */
+        .sidebar-controls-footer {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          border-top: 0.5px solid rgba(0,0,0,0.05);
+          padding-top: 18px;
+        }
+
+        .sidebar-status-pill {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 12px;
+          border-radius: 10px;
+          font-size: 11px;
+          font-weight: 600;
+          color: #8E8E93;
+          background-color: #FAFAFA;
+        }
+
+        .sidebar-status-pill.status-saving {
+          color: #0071E3;
+          background-color: rgba(0, 113, 227, 0.05);
+        }
+
+        .sidebar-status-pill.status-saved {
+          color: #10B981;
+          background-color: rgba(16, 185, 129, 0.05);
+        }
+
+        .sidebar-status-pill.status-error {
+          color: #EF4444;
+          background-color: rgba(239, 68, 68, 0.05);
+        }
+
+        .sidebar-lock-btn-action {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 10px;
+          font-size: 11.5px;
+          font-weight: 600;
+          color: #FF3B30;
+          background-color: rgba(255, 59, 48, 0.05);
+          border: none;
+          border-radius: 12px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .sidebar-lock-btn-action:hover {
+          background-color: rgba(255, 59, 48, 0.1);
+          transform: translateY(-1px);
+        }
+
+        .sidebar-lock-btn-action:active {
+          transform: scale(0.97);
+        }
+
+        /* Hide mobile header panel on desktop */
+        .mobile-top-bar-panel {
           display: none;
         }
 
-        @media (max-width: 768px) {
-          .mobile-header {
+        .sidebar-mobile-backdrop-overlay {
+          display: none;
+        }
+
+        /* Responsive Mobile Layouts */
+        @media (max-width: 900px) {
+          .apple-sidebar-panel {
+            transform: translateX(-100%);
+            top: 56px;
+            height: calc(100vh - 56px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+            z-index: 990;
+          }
+
+          .apple-sidebar-panel.mobile-open {
+            transform: translateX(0);
+          }
+
+          .mobile-top-bar-panel {
             display: flex;
-            align-items: center;
-            justify-content: space-between;
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             height: 56px;
-            background-color: var(--bg-card);
-            border-bottom: 1px solid var(--border-color);
+            background-color: rgba(255,255,255,0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 0.5px solid rgba(0,0,0,0.05);
+            z-index: 1000;
+            align-items: center;
+            justify-content: space-between;
             padding: 0 16px;
-            z-index: 110;
+            box-sizing: border-box;
           }
 
-          .mobile-logo {
+          .mobile-logo-group {
             display: flex;
             align-items: center;
             gap: 8px;
           }
 
-          .mobile-toggle {
-            background: none;
-            border: none;
-            color: var(--text-primary);
-            cursor: pointer;
+          .logo-icon-sparkle {
+            color: #0071E3;
+            width: 18px;
+            height: 18px;
+          }
+
+          .mobile-logo-lbl {
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+          }
+
+          .mobile-actions-group {
             display: flex;
             align-items: center;
-            justify-content: center;
+            gap: 12px;
           }
 
-          .sidebar {
-            transform: translateX(-100%);
-            top: 56px;
-            left: 0;
-            height: calc(100vh - 56px - 64px);
-            margin: 0;
-            border-radius: 0;
+          .mobile-month-select {
+            padding: 4px 20px 4px 8px !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            border-radius: 8px !important;
+            background-color: #FAFAFA !important;
+            border: 0.5px solid rgba(0,0,0,0.08) !important;
+            width: 90px;
+            height: 28px;
           }
 
-          .sidebar-open {
-            transform: translateX(0);
+          .mobile-menu-toggle-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #1D1D1F;
           }
 
-          .sidebar-logo {
+          .sidebar-brand-logo-box {
             display: none;
           }
 
-          .sidebar-overlay {
+          .sidebar-mobile-backdrop-overlay {
+            display: block;
             position: fixed;
             top: 56px;
             left: 0;
             right: 0;
-            bottom: 64px;
-            background-color: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(2px);
-            z-index: 90;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.3);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 850;
           }
         }
       `}</style>

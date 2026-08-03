@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StoreProvider } from './context/StoreContext';
-import { FloatingNav } from './components/FloatingNav';
+import { Sidebar } from './components/Sidebar';
 import { HomeScreen } from './components/screens/HomeScreen';
 import { TodayScreen } from './components/screens/TodayScreen';
 import { ContentScreen } from './components/screens/ContentScreen';
@@ -14,6 +14,7 @@ import { LockScreen } from './components/LockScreen';
 
 const AppContent: React.FC = () => {
   const [activeScreen, setActiveScreen] = useState('home');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState<boolean>(() => {
     return sessionStorage.getItem('nexia_cockpit_unlocked') === 'true';
   });
@@ -59,13 +60,15 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="app-container">
-      <FloatingNav 
+      <Sidebar 
         activeScreen={activeScreen} 
         setActiveScreen={setActiveScreen} 
+        isOpen={isSidebarOpen}
+        setIsOpen={setIsSidebarOpen}
         onLock={handleLock}
       />
       
-      <main className="main-content" style={{ paddingBottom: '120px' }}>
+      <main className="main-content">
         {renderActiveScreen()}
       </main>
     </div>

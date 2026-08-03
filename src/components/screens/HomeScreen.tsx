@@ -15,7 +15,8 @@ import {
   Settings,
   Calendar,
   Briefcase,
-  FileSpreadsheet
+  FileSpreadsheet,
+  ArrowUpRight
 } from 'lucide-react';
 
 interface HomeScreenProps {
@@ -28,8 +29,8 @@ const Sparkline: React.FC<{ points: number[]; color?: string }> = ({ points, col
   const max = Math.max(...points, 1);
   const min = Math.min(...points, 0);
   const range = max - min || 1;
-  const width = 100;
-  const height = 30;
+  const width = 120;
+  const height = 32;
   const coords = points.map((p, i) => {
     const x = (i / (points.length - 1)) * width;
     const y = height - ((p - min) / range) * height;
@@ -37,8 +38,8 @@ const Sparkline: React.FC<{ points: number[]; color?: string }> = ({ points, col
   }).join(' ');
   
   return (
-    <svg width={width} height={height} className="kpi-sparkline">
-      <polyline fill="none" stroke={color} strokeWidth="1.5" points={coords} />
+    <svg width={width} height={height} className="kpi-sparkline" style={{ opacity: 0.85 }}>
+      <polyline fill="none" stroke={color} strokeWidth="1.8" points={coords} strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 };
@@ -61,6 +62,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setActiveScreen }) => {
   const [selectedYear, selectedMonthNum] = selectedMonth.split('-');
   const dateObj = new Date(Number(selectedYear), Number(selectedMonthNum) - 1, 15);
   const currentMonthName = dateObj.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+  const capitalizedMonth = currentMonthName.charAt(0).toUpperCase() + currentMonthName.slice(1);
 
   const launch = launches[currentMonth];
   
@@ -88,12 +90,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setActiveScreen }) => {
 
   // Animate progression circular gauge
   const [radialProgress, setRadialProgress] = useState(0);
+  const [lineProgress, setLineProgress] = useState(0);
+
   useEffect(() => {
     const timer = setTimeout(() => {
-      setRadialProgress(9.8); // Mock target to match global indicator
+      setRadialProgress(Math.min(100, Math.round(objectiveProgressCollected)));
+      setLineProgress(9.8);
     }, 200);
     return () => clearTimeout(timer);
-  }, []);
+  }, [objectiveProgressCollected]);
 
   // Generate dynamic sparkline data (June to current month)
   const getHistoricalValues = () => {
@@ -129,79 +134,70 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setActiveScreen }) => {
   };
 
   // Circular gauge SVG Math
-  const radius = 90;
+  const radius = 55;
   const circumference = 2 * Math.PI * radius;
   const strokeOffset = circumference - (radialProgress / 100) * circumference;
 
   return (
     <div className="vision-cockpit-wrapper fade-in">
       
-      {/* 1. HERO TABLEAU DE BORD VIVANT */}
-      <div className="cockpit-hero-section">
+      {/* 1. NEW HERO BANNER (Apple Wide Plate format) */}
+      <div className="cockpit-hero-card">
         
-        {/* Left Greeting & Summary */}
-        <div className="hero-welcome-info">
-          <span className="hero-tag-system">OS PERSONNEL • {currentMonthName.toUpperCase()} • CONNECTÉ</span>
-          <span className="hero-greeting">Bonjour {userName}.</span>
-          <h1 className="hero-state-headline">Aujourd'hui.</h1>
-          <p className="hero-substate">Votre entreprise progresse.</p>
+        {/* Left Welcome header info */}
+        <div className="hero-left-col">
+          <span className="hero-meta-subtitle">OS PERSONNEL • {currentMonthName.toUpperCase()}</span>
+          <h1 className="hero-title-greeting">Bonjour {userName} 👋</h1>
+          <p className="hero-title-desc">Voici votre cockpit aujourd'hui.</p>
         </div>
 
-        {/* Center Circular Progress Jauge */}
-        <div className="hero-progress-jauge-box">
-          <div className="progress-jauge-svg-wrapper">
-            <svg className="jauge-circle-svg" width="220" height="220" viewBox="0 0 220 220">
-              <circle 
-                className="jauge-track" 
-                cx="110" 
-                cy="110" 
-                r={radius} 
-                strokeWidth="5"
-                fill="transparent"
-              />
-              <circle 
-                className="jauge-fill" 
-                cx="110" 
-                cy="110" 
-                r={radius} 
-                strokeWidth="5"
-                fill="transparent"
-                strokeDasharray={circumference}
-                strokeDashoffset={strokeOffset}
-                strokeLinecap="round"
-              />
-            </svg>
-            <div className="jauge-text-content">
-              <span className="jauge-percent-val">{radialProgress}%</span>
-              <span className="jauge-percent-lbl">GLOBAL</span>
-            </div>
+        {/* Right horizontal long progress bar info */}
+        <div className="hero-right-col">
+          <div className="annual-progress-header">
+            <span className="ann-progress-title">Progression annuelle</span>
+            <span className="ann-progress-value">{lineProgress}%</span>
           </div>
-          
-          <div className="jauge-text-meta">
-            <p className="jauge-meta-quote">
-              « Chaque décision rapproche votre système de sa cible. »
-            </p>
+
+          {/* Thin, long Apple progress bar */}
+          <div className="ann-progress-track">
+            <div 
+              className="ann-progress-fill" 
+              style={{ width: `${lineProgress}%` }}
+            />
+          </div>
+
+          <div className="ann-progress-legend-row">
+            <div className="ann-legend-col">
+              <span className="ann-legend-lbl">Objectif</span>
+              <span className="ann-legend-val">Vision 2031</span>
+            </div>
+            <div className="ann-legend-col align-center">
+              <span className="ann-legend-lbl">Progression</span>
+              <span className="ann-legend-val">{lineProgress}%</span>
+            </div>
+            <div className="ann-legend-col align-right">
+              <span className="ann-legend-lbl">Temps restant</span>
+              <span className="ann-legend-val">1 975 jours</span>
+            </div>
           </div>
         </div>
 
       </div>
 
-      {/* 2. OBJECTS KPI (Apple Hardware style) */}
+      {/* 2. OBJECTS KPI (Premium Hardware style) */}
       <div className="cockpit-kpi-grid">
         
         {/* KPI 1: Chiffre d'Affaires Encaissé */}
         <div className="kpi-object-card" onClick={() => setActiveScreen('dashboard')}>
           <div className="kpi-card-header">
-            <span className="kpi-label">CA ENCAISSÉ</span>
             <div className="kpi-icon-wrapper active-blue">
               <TrendingUp className="size-4" />
             </div>
+            <span className="kpi-tag-variation positive">+ {objectiveProgressCollected.toFixed(0)}%</span>
           </div>
           <span className="kpi-massive-num">{totalCollectedCA.toLocaleString('fr-FR')} €</span>
           <div className="kpi-footer-row">
-            <span className="kpi-subtext" style={{ fontSize: '9px' }}>
-              Obj: {objectiveProgressCollected.toFixed(0)}% | Contr: {totalContractedCA.toLocaleString('fr-FR')} €
-            </span>
+            <span className="kpi-label-text">CA ENCAISSÉ (CONTR: {totalContractedCA.toLocaleString('fr-FR')} €)</span>
             <Sparkline points={revenueHistory} color="#0071E3" />
           </div>
         </div>
@@ -209,16 +205,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setActiveScreen }) => {
         {/* KPI 2: Bénéfice Net Encaissé */}
         <div className="kpi-object-card" onClick={() => setActiveScreen('dashboard')}>
           <div className="kpi-card-header">
-            <span className="kpi-label">PROFIT NET</span>
             <div className="kpi-icon-wrapper active-emerald">
               <DollarSign className="size-4" />
             </div>
+            <span className={`kpi-tag-variation ${netProfitCollected >= 0 ? 'positive' : 'negative'}`}>
+              {totalCollectedCA > 0 ? ((netProfitCollected / totalCollectedCA) * 100).toFixed(0) : 0}% net
+            </span>
           </div>
           <span className={`kpi-massive-num ${netProfitCollected >= 0 ? 'text-success' : 'text-error'}`}>
             {netProfitCollected.toLocaleString('fr-FR')} €
           </span>
           <div className="kpi-footer-row">
-            <span className="kpi-subtext">Marge nette estimée</span>
+            <span className="kpi-label-text">PROFIT NET</span>
             <Sparkline points={profitHistory} color={netProfitCollected >= 0 ? '#10B981' : '#EF4444'} />
           </div>
         </div>
@@ -226,14 +224,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setActiveScreen }) => {
         {/* KPI 3: Prospects Actifs */}
         <div className="kpi-object-card" onClick={() => setActiveScreen('prospects')}>
           <div className="kpi-card-header">
-            <span className="kpi-label">PROSPECTS ACTIFS</span>
             <div className="kpi-icon-wrapper">
               <Users className="size-4" />
             </div>
+            <span className="kpi-tag-variation">Pipeline</span>
           </div>
           <span className="kpi-massive-num">{activeProspects}</span>
           <div className="kpi-footer-row">
-            <span className="kpi-subtext">Dans le pipeline de vente</span>
+            <span className="kpi-label-text">PROSPECTS ACTIFS</span>
             <Sparkline points={[0, activeProspects / 2, activeProspects]} color="#8E8E93" />
           </div>
         </div>
@@ -241,24 +239,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setActiveScreen }) => {
         {/* KPI 4: Contenus Publiés */}
         <div className="kpi-object-card" onClick={() => setActiveScreen('content')}>
           <div className="kpi-card-header">
-            <span className="kpi-label">CONTENUS PUBLIÉS</span>
             <div className="kpi-icon-wrapper">
               <FileText className="size-4" />
             </div>
+            <span className="kpi-tag-variation">Ce mois</span>
           </div>
           <span className="kpi-massive-num">{monthlyContents}</span>
           <div className="kpi-footer-row">
-            <span className="kpi-subtext">Publiés ce mois-ci</span>
+            <span className="kpi-label-text">CONTENUS PUBLIÉS</span>
             <Sparkline points={[0, monthlyContents / 2, monthlyContents]} color="#8E8E93" />
           </div>
         </div>
 
       </div>
 
-      {/* 3. LOWER SPLIT GRID: TIMELINE & MODULES APPLICATIONS */}
+      {/* 3. LOWER SPLIT GRID: TIMELINE & MONTH OBJECTIVE/APPS */}
       <div className="cockpit-split-layout">
         
-        {/* Timeline Reminders block */}
+        {/* Column 1: Reminders Timeline */}
         <div className="cockpit-reminders-timeline">
           <h3 className="section-small-title">ACTIONS DU JOUR</h3>
           
@@ -270,7 +268,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setActiveScreen }) => {
               </button>
               <div className="reminder-meta-info" onClick={() => setActiveScreen('prospects')}>
                 <span className="reminder-title-text">Suivi des prospects</span>
-                <p className="reminder-sub-text">Prendre contact avec les {activeProspects} leads actifs du pipeline.</p>
+                <p className="reminder-sub-text">Relancer les {activeProspects} opportunités de vente actives.</p>
               </div>
             </div>
 
@@ -290,127 +288,166 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setActiveScreen }) => {
               </button>
               <div className="reminder-meta-info" onClick={() => setActiveScreen('simulation')}>
                 <span className="reminder-title-text">Simulations financières</span>
-                <p className="reminder-sub-text">Ajuster les métriques du simulateur de lancements Meta.</p>
-              </div>
-            </div>
-
-            <div className={`reminder-timeline-card ${checkedTasks['expenses'] ? 'completed' : ''}`}>
-              <button className="reminder-check-dot" onClick={() => toggleTask('expenses')}>
-                {checkedTasks['expenses'] && <Check className="size-3 text-white" />}
-              </button>
-              <div className="reminder-meta-info" onClick={() => setActiveScreen('expenses')}>
-                <span className="reminder-title-text">Revue des charges</span>
-                <p className="reminder-sub-text">Enregistrer les dépenses et factures mensuelles.</p>
+                <p className="reminder-sub-text">Ajuster les KPI prévisionnels du simulateur.</p>
               </div>
             </div>
 
           </div>
         </div>
 
-        {/* Modules App Shortcuts block */}
-        <div className="cockpit-apps-shortcuts">
-          <h3 className="section-small-title">APPLICATIONS</h3>
+        {/* Column 2: Monthly circular objective & Apps Grid */}
+        <div className="cockpit-right-widgets-col">
           
-          <div className="apps-shortcuts-grid">
+          {/* Card: Objectif du mois (Circular progression) */}
+          <div className="premium-month-objective-card">
             
-            <div className="app-icon-shortcut-card" onClick={() => setActiveScreen('dashboard')}>
-              <div className="app-icon-badge color-blue">
-                <TrendingUp className="size-5" />
+            <div className="objective-card-header">
+              <div className="objective-header-text">
+                <span className="obj-card-tag">OBJECTIF MENSUEL</span>
+                <h3 className="obj-card-title">{capitalizedMonth}</h3>
+                <p className="obj-card-subtitle">Cible : {monthlyObjective.toLocaleString('fr-FR')} €</p>
               </div>
-              <span className="app-shortcut-name">Finances</span>
+              
+              {/* Circular gauge */}
+              <div className="objective-circular-jauge">
+                <svg className="obj-jauge-svg" width="130" height="130" viewBox="0 0 130 130">
+                  <circle 
+                    className="obj-jauge-track" 
+                    cx="65" 
+                    cy="65" 
+                    r={radius} 
+                    strokeWidth="4.5"
+                    fill="transparent"
+                  />
+                  <circle 
+                    className="obj-jauge-fill" 
+                    cx="65" 
+                    cy="65" 
+                    r={radius} 
+                    strokeWidth="4.5"
+                    fill="transparent"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={strokeOffset}
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <div className="obj-jauge-percentage">
+                  <span>{radialProgress}%</span>
+                </div>
+              </div>
             </div>
 
-            <div className="app-icon-shortcut-card" onClick={() => setActiveScreen('prospects')}>
-              <div className="app-icon-badge color-purple">
-                <Users className="size-5" />
-              </div>
-              <span className="app-shortcut-name">Prospection</span>
-            </div>
-
-            <div className="app-icon-shortcut-card" onClick={() => setActiveScreen('content')}>
-              <div className="app-icon-badge color-orange">
-                <FileText className="size-5" />
-              </div>
-              <span className="app-shortcut-name">Contenu</span>
-            </div>
-
-            <div className="app-icon-shortcut-card" onClick={() => setActiveScreen('prospects')}>
-              <div className="app-icon-badge color-emerald">
-                <Briefcase className="size-5" />
-              </div>
-              <span className="app-shortcut-name">CRM</span>
-            </div>
-
-            <div className="app-icon-shortcut-card" onClick={() => setActiveScreen('simulation')}>
-              <div className="app-icon-badge color-teal">
-                <Settings className="size-5" />
-              </div>
-              <span className="app-shortcut-name">Automatisation</span>
-            </div>
-
-            <div className="app-icon-shortcut-card" onClick={() => setActiveScreen('content')}>
-              <div className="app-icon-badge color-gray">
-                <FileSpreadsheet className="size-5" />
-              </div>
-              <span className="app-shortcut-name">Documents</span>
-            </div>
-
-            <div className="app-icon-shortcut-card" onClick={() => setActiveScreen('today')}>
-              <div className="app-icon-badge color-indigo">
-                <Calendar className="size-5" />
-              </div>
-              <span className="app-shortcut-name">Planning</span>
+            <div className="objective-card-footer">
+              <button className="apple-btn-secondary" onClick={() => setActiveScreen('dashboard')}>
+                Voir les détails <ArrowUpRight className="size-3.5" />
+              </button>
             </div>
 
           </div>
+
+          {/* Apps shortcuts section */}
+          <div className="cockpit-apps-shortcuts-card">
+            <h3 className="section-small-title">APPLICATIONS</h3>
+            
+            <div className="apps-shortcuts-grid">
+              <div className="app-icon-shortcut-card" onClick={() => setActiveScreen('dashboard')}>
+                <div className="app-icon-badge color-blue">
+                  <TrendingUp className="size-5" />
+                </div>
+                <span className="app-shortcut-name">Finances</span>
+              </div>
+
+              <div className="app-icon-shortcut-card" onClick={() => setActiveScreen('prospects')}>
+                <div className="app-icon-badge color-purple">
+                  <Users className="size-5" />
+                </div>
+                <span className="app-shortcut-name">Prospection</span>
+              </div>
+
+              <div className="app-icon-shortcut-card" onClick={() => setActiveScreen('content')}>
+                <div className="app-icon-badge color-orange">
+                  <FileText className="size-5" />
+                </div>
+                <span className="app-shortcut-name">Contenu</span>
+              </div>
+
+              <div className="app-icon-shortcut-card" onClick={() => setActiveScreen('launch')}>
+                <div className="app-icon-badge color-emerald">
+                  <Briefcase className="size-5" />
+                </div>
+                <span className="app-shortcut-name">CRM</span>
+              </div>
+
+              <div className="app-icon-shortcut-card" onClick={() => setActiveScreen('simulation')}>
+                <div className="app-icon-badge color-teal">
+                  <Settings className="size-5" />
+                </div>
+                <span className="app-shortcut-name">Automatisation</span>
+              </div>
+
+              <div className="app-icon-shortcut-card" onClick={() => setActiveScreen('content')}>
+                <div className="app-icon-badge color-gray">
+                  <FileSpreadsheet className="size-5" />
+                </div>
+                <span className="app-shortcut-name">Documents</span>
+              </div>
+
+              <div className="app-icon-shortcut-card" onClick={() => setActiveScreen('today')}>
+                <div className="app-icon-badge color-indigo">
+                  <Calendar className="size-5" />
+                </div>
+                <span className="app-shortcut-name">Planning</span>
+              </div>
+            </div>
+          </div>
+
         </div>
 
       </div>
 
-      {/* Styles for Cockpit Home Screen */}
+      {/* Styled local Apple Cockpit Home styles */}
       <style>{`
         .vision-cockpit-wrapper {
-          max-width: 1200px;
+          max-width: 1000px;
           margin: 0 auto;
-          padding: 60px 40px;
           display: flex;
           flex-direction: column;
-          gap: 60px;
+          gap: 40px;
           background-color: #FAFAFA;
           min-height: 100vh;
           box-sizing: border-box;
+          padding: 10px 0;
         }
 
-        @media (max-width: 768px) {
-          .vision-cockpit-wrapper {
-            padding: 24px;
-            gap: 40px;
-          }
-        }
-
-        /* 1. HERO SECTION */
-        .cockpit-hero-section {
+        /* 1. NEW APPLE HERO PLATE CARD */
+        .cockpit-hero-card {
+          background-color: #FFFFFF;
+          border-radius: 36px;
+          padding: 48px;
+          border: 1px solid rgba(0, 0, 0, 0.015);
+          box-shadow: 
+            0 1px 3px rgba(0, 0, 0, 0.005),
+            0 16px 40px rgba(0, 0, 0, 0.015);
           display: grid;
-          grid-template-columns: 1fr 340px;
+          grid-template-columns: 1fr 1.1fr;
           align-items: center;
-          gap: 40px;
-          width: 100%;
+          gap: 60px;
         }
 
         @media (max-width: 900px) {
-          .cockpit-hero-section {
+          .cockpit-hero-card {
             grid-template-columns: 1fr;
-            gap: 30px;
-            text-align: center;
+            gap: 36px;
+            padding: 32px;
           }
         }
 
-        .hero-welcome-info {
+        .hero-left-col {
           display: flex;
           flex-direction: column;
         }
 
-        .hero-tag-system {
+        .hero-meta-subtitle {
           font-size: 10px;
           font-weight: 700;
           color: #8E8E93;
@@ -418,97 +455,98 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setActiveScreen }) => {
           margin-bottom: 8px;
         }
 
-        .hero-greeting {
-          font-size: 20px;
-          font-weight: 500;
-          color: #8E8E93;
-          letter-spacing: -0.01em;
-          line-height: 1;
-        }
-
-        .hero-state-headline {
-          font-size: 72px;
-          font-weight: 800;
-          letter-spacing: -0.05em;
-          color: #1D1D1F;
-          line-height: 1.05;
-          margin: 4px 0 10px 0;
-        }
-
-        .hero-substate {
-          font-size: 20px;
-          font-weight: 500;
-          color: #8E8E93;
-          letter-spacing: -0.01em;
-        }
-
-        /* Jauge de progression circulaire */
-        .hero-progress-jauge-box {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 16px;
-        }
-
-        .progress-jauge-svg-wrapper {
-          position: relative;
-          width: 220px;
-          height: 220px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .jauge-circle-svg {
-          transform: rotate(-90deg);
-        }
-
-        .jauge-track {
-          stroke: rgba(0, 0, 0, 0.035);
-        }
-
-        .jauge-fill {
-          stroke: #0071E3;
-          transition: stroke-dashoffset 1.5s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .jauge-text-content {
-          position: absolute;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          line-height: 1;
-        }
-
-        .jauge-percent-val {
+        .hero-title-greeting {
           font-size: 40px;
           font-weight: 800;
-          color: #1D1D1F;
           letter-spacing: -0.04em;
+          color: #1D1D1F;
+          line-height: 1.1;
+          margin: 0;
         }
 
-        .jauge-percent-lbl {
-          font-size: 8.5px;
-          font-weight: 700;
+        .hero-title-desc {
+          font-size: 16px;
+          font-weight: 500;
           color: #8E8E93;
-          letter-spacing: 0.1em;
           margin-top: 4px;
         }
 
-        .jauge-text-meta {
-          text-align: center;
-          max-width: 280px;
+        /* Right column: long progress bar group */
+        .hero-right-col {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
         }
 
-        .jauge-meta-quote {
-          font-size: 11px;
-          font-style: italic;
+        .annual-progress-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: baseline;
+        }
+
+        .ann-progress-title {
+          font-size: 12.5px;
+          font-weight: 700;
+          color: #1D1D1F;
+        }
+
+        .ann-progress-value {
+          font-size: 16px;
+          font-weight: 800;
+          color: #0071E3;
+        }
+
+        .ann-progress-track {
+          width: 100%;
+          height: 6px;
+          background-color: rgba(0, 0, 0, 0.04);
+          border-radius: 99px;
+          overflow: hidden;
+        }
+
+        .ann-progress-fill {
+          height: 100%;
+          background-color: #0071E3;
+          border-radius: 99px;
+          transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .ann-progress-legend-row {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 10px;
+          margin-top: 4px;
+        }
+
+        .ann-legend-col {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+
+        .ann-legend-col.align-center {
+          align-items: center;
+        }
+
+        .ann-legend-col.align-right {
+          align-items: flex-end;
+        }
+
+        .ann-legend-lbl {
+          font-size: 8px;
+          font-weight: 700;
           color: #8E8E93;
-          line-height: 1.4;
-          font-weight: 500;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
         }
 
-        /* 2. OBJECTS KPI */
+        .ann-legend-val {
+          font-size: 11px;
+          font-weight: 700;
+          color: #515154;
+        }
+
+        /* 2. OBJECTS KPI GRID */
         .cockpit-kpi-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
@@ -530,41 +568,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setActiveScreen }) => {
 
         .kpi-object-card {
           background-color: #FFFFFF;
-          border: 1px solid rgba(0, 0, 0, 0.015);
           border-radius: 36px;
           padding: 32px;
+          border: 1px solid rgba(0, 0, 0, 0.015);
           box-shadow: 
             0 1px 3px rgba(0, 0, 0, 0.005),
             0 16px 40px rgba(0, 0, 0, 0.015);
           display: flex;
           flex-direction: column;
-          gap: 16px;
+          gap: 12px;
           cursor: pointer;
           transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .kpi-object-card:hover {
-          transform: translateY(-4px) scale(1.02);
-          box-shadow: 
-            0 1px 3px rgba(0, 0, 0, 0.005),
-            0 24px 60px rgba(0, 0, 0, 0.035);
-        }
-
-        .kpi-object-card:active {
-          transform: scale(0.97);
         }
 
         .kpi-card-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-        }
-
-        .kpi-label {
-          font-size: 9px;
-          font-weight: 700;
-          color: #8E8E93;
-          letter-spacing: 0.1em;
         }
 
         .kpi-icon-wrapper {
@@ -588,8 +608,27 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setActiveScreen }) => {
           color: #10B981;
         }
 
+        .kpi-tag-variation {
+          font-size: 9px;
+          font-weight: 700;
+          color: #8E8E93;
+          background-color: rgba(0,0,0,0.03);
+          padding: 3px 8px;
+          border-radius: 99px;
+        }
+
+        .kpi-tag-variation.positive {
+          background-color: rgba(16, 185, 129, 0.06);
+          color: #10B981;
+        }
+
+        .kpi-tag-variation.negative {
+          background-color: rgba(239, 68, 68, 0.06);
+          color: #EF4444;
+        }
+
         .kpi-massive-num {
-          font-size: 32px;
+          font-size: 34px;
           font-weight: 800;
           color: #1D1D1F;
           letter-spacing: -0.04em;
@@ -603,20 +642,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setActiveScreen }) => {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-top: 8px;
+          border-top: 0.5px solid rgba(0,0,0,0.03);
+          padding-top: 14px;
+          margin-top: 4px;
         }
 
-        .kpi-subtext {
-          font-size: 11px;
+        .kpi-label-text {
+          font-size: 9px;
+          font-weight: 700;
           color: #8E8E93;
-          font-weight: 500;
+          letter-spacing: 0.08em;
         }
 
         .kpi-sparkline {
-          filter: drop-shadow(0 2px 4px rgba(0,0,0,0.02));
+          filter: drop-shadow(0 2px 4px rgba(0,0,0,0.01));
         }
 
-        /* 3. SPLIT LAYOUT */
+        /* 3. LOWER SPLIT LAYOUT */
         .cockpit-split-layout {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -639,7 +681,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setActiveScreen }) => {
           margin-bottom: 20px;
         }
 
-        /* Reminders Timeline */
+        /* Timeline reminders list styling */
         .reminders-timeline-list {
           display: flex;
           flex-direction: column;
@@ -648,9 +690,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setActiveScreen }) => {
 
         .reminder-timeline-card {
           background-color: #FFFFFF;
-          border: 1px solid rgba(0, 0, 0, 0.01);
+          border: 1px solid rgba(0, 0, 0, 0.015);
           border-radius: 24px;
-          padding: 20px 24px;
+          padding: 24px;
           box-shadow: 0 10px 24px rgba(0,0,0,0.015);
           display: flex;
           align-items: flex-start;
@@ -658,20 +700,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setActiveScreen }) => {
           transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .reminder-timeline-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 16px 36px rgba(0,0,0,0.03);
-        }
-
         .reminder-timeline-card.completed {
-          opacity: 0.5;
+          opacity: 0.55;
         }
 
         .reminder-check-dot {
           width: 22px;
           height: 22px;
           border-radius: 50%;
-          border: 1px solid rgba(0, 0, 0, 0.15);
+          border: 1.5px solid rgba(0, 0, 0, 0.12);
           background: transparent;
           display: flex;
           align-items: center;
@@ -683,8 +720,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setActiveScreen }) => {
         }
 
         .reminder-timeline-card.completed .reminder-check-dot {
-          background-color: #10B981;
-          border-color: #10B981;
+          background-color: #0071E3;
+          border-color: #0071E3;
         }
 
         .reminder-meta-info {
@@ -692,7 +729,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setActiveScreen }) => {
           flex-direction: column;
           gap: 2px;
           cursor: pointer;
-          flex-grow: 1;
         }
 
         .reminder-title-text {
@@ -712,7 +748,116 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setActiveScreen }) => {
           margin: 0;
         }
 
-        /* Apps Shortcuts Grid */
+        /* Right column widgets panel */
+        .cockpit-right-widgets-col {
+          display: flex;
+          flex-direction: column;
+          gap: 36px;
+        }
+
+        /* Monthly Objective Card (Circular Progress) */
+        .premium-month-objective-card {
+          background-color: #FFFFFF;
+          border-radius: 36px;
+          padding: 32px;
+          border: 1px solid rgba(0, 0, 0, 0.015);
+          box-shadow: 
+            0 1px 3px rgba(0, 0, 0, 0.005),
+            0 16px 40px rgba(0, 0, 0, 0.015);
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+        }
+
+        .objective-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .objective-header-text {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .obj-card-tag {
+          font-size: 9px;
+          font-weight: 700;
+          color: #8E8E93;
+          letter-spacing: 0.08em;
+        }
+
+        .obj-card-title {
+          font-size: 26px;
+          font-weight: 800;
+          color: #1D1D1F;
+          letter-spacing: -0.02em;
+          margin: 2px 0;
+        }
+
+        .obj-card-subtitle {
+          font-size: 13px;
+          color: #515154;
+          font-weight: 500;
+        }
+
+        /* Circular Jauge inside card */
+        .objective-circular-jauge {
+          position: relative;
+          width: 130px;
+          height: 130px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .obj-jauge-svg {
+          transform: rotate(-90deg);
+        }
+
+        .obj-jauge-track {
+          stroke: rgba(0, 0, 0, 0.03);
+        }
+
+        .obj-jauge-fill {
+          stroke: #0071E3;
+          transition: stroke-dashoffset 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .obj-jauge-percentage {
+          position: absolute;
+          font-size: 20px;
+          font-weight: 800;
+          color: #1D1D1F;
+          letter-spacing: -0.02em;
+        }
+
+        .apple-btn-secondary {
+          background-color: rgba(0, 0, 0, 0.03);
+          color: #515154;
+          border: none;
+          border-radius: 12px;
+          padding: 8px 16px;
+          font-size: 12px;
+          font-weight: 600;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .apple-btn-secondary:hover {
+          background-color: rgba(0, 0, 0, 0.06);
+          color: #1D1D1F;
+        }
+
+        /* Apps grid shortcut box */
+        .cockpit-apps-shortcuts-card {
+          display: flex;
+          flex-direction: column;
+        }
+
         .apps-shortcuts-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
