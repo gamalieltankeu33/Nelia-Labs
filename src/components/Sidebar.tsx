@@ -13,7 +13,8 @@ import {
   CheckCircle,
   AlertTriangle,
   Menu,
-  X
+  X,
+  Sparkles
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { supabase } from '../supabaseClient';
@@ -83,6 +84,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'collabs', name: 'Collabs', icon: Briefcase },
     { id: 'expenses', name: 'Charges', icon: DollarSign },
     { id: 'dashboard', name: 'Tableau de bord', icon: PieChart },
+    { id: 'simulation', name: 'Simulateur', icon: Sparkles },
   ];
 
   const renderSavingStatus = () => {
