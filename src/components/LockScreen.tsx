@@ -738,9 +738,9 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         /* Active planet spheres */
         .floating-planet-sphere {
           position: absolute;
-          top: -28px;
-          width: 56px;
-          height: 56px;
+          top: -36px;
+          width: 72px;
+          height: 72px;
           border-radius: 50%;
           background-color: #FFFFFF;
           border: 0.5px solid rgba(0, 0, 0, 0.02);
@@ -761,13 +761,13 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         }
 
         .planet-emoji {
-          font-size: 28px;
+          font-size: 40px;
         }
 
         /* Hover card visionOS style */
         .planet-hover-card {
           position: absolute;
-          bottom: 58px;
+          bottom: 78px;
           background: rgba(255, 255, 255, 0.85);
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
