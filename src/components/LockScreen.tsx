@@ -1,49 +1,75 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Lock, 
-  Unlock, 
-  KeyRound, 
-  Compass, 
   Star, 
   Quote, 
-  ArrowRight,
   Zap,
-  Info,
-  Check
+  Check,
+  X,
+  Target,
+  Clock,
+  LockKeyhole
 } from 'lucide-react';
 
 interface LockScreenProps {
   onUnlock: () => void;
 }
 
+interface PhaseDetail {
+  title: string;
+  subtitle: string;
+  dates: string;
+  objectives: string[];
+  financial?: string;
+  takeaway: string;
+}
+
 export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
   const [pin, setPin] = useState<string>('');
   const [error, setError] = useState<boolean>(false);
   const [shake, setShake] = useState<boolean>(false);
-  const [showPlanMobile, setShowPlanMobile] = useState<boolean>(false);
+  
+  // Interactive elements state
+  const [activePhaseIndex, setActivePhaseIndex] = useState<number | null>(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
-  // Default code is '2026', representing the starting point of your roadmap
   const correctPasscode = localStorage.getItem('nexia_passcode') || '2026';
 
-  const handleKeyPress = (num: string) => {
-    if (pin.length < 4) {
-      const newPin = pin + num;
-      setPin(newPin);
-      setError(false);
-    }
+  // Handle mouse moves to shift radial glow
+  const handleMouseMove = (e: React.MouseEvent) => {
+    setMousePos({ x: e.clientX, y: e.clientY });
   };
 
-  const handleBackspace = () => {
-    setPin(prev => prev.slice(0, -1));
-    setError(false);
-  };
+  // Keyboard listener for code entry
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore inputs if user is focusing an input (though there are none on this page)
+      if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') {
+        return;
+      }
+      
+      const key = e.key;
+      
+      if (/^[0-9]$/.test(key)) {
+        if (pin.length < 4) {
+          setPin(prev => prev + key);
+          setError(false);
+        }
+      } else if (key === 'Backspace') {
+        setPin(prev => prev.slice(0, -1));
+        setError(false);
+      } else if (key === 'Escape') {
+        setPin('');
+        setError(false);
+      }
+    };
 
-  const handleClear = () => {
-    setPin('');
-    setError(false);
-  };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [pin]);
 
-  // Auto-validate when 4 digits are entered
+  // Auto-validate PIN
   useEffect(() => {
     if (pin.length === 4) {
       if (pin === correctPasscode) {
@@ -51,7 +77,6 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           onUnlock();
         }, 300);
       } else {
-        // Trigger shake and clear pin
         setShake(true);
         setError(true);
         setTimeout(() => {
@@ -61,6 +86,32 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
       }
     }
   }, [pin, correctPasscode, onUnlock]);
+
+  // Calculate dynamic 5-year progression
+  const calculateProgression = () => {
+    const startDate = new Date(2026, 0, 1);
+    const endDate = new Date(2031, 11, 31);
+    const today = new Date();
+    
+    const totalDuration = endDate.getTime() - startDate.getTime();
+    const elapsedDuration = today.getTime() - startDate.getTime();
+    
+    const percentage = Math.min(100, Math.max(0, (elapsedDuration / totalDuration) * 100));
+    return Number(percentage.toFixed(1));
+  };
+
+  const progressPercent = calculateProgression();
+
+  // Calculate days remaining in Phase 1 (ends Dec 31, 2026)
+  const calculateDaysRemainingInPhase1 = () => {
+    const today = new Date();
+    const phase1End = new Date(2026, 11, 31);
+    const difference = phase1End.getTime() - today.getTime();
+    const days = Math.ceil(difference / (1000 * 60 * 60 * 24));
+    return Math.max(0, days);
+  };
+
+  const daysRemaining = calculateDaysRemainingInPhase1();
 
   const rulesOfLife = [
     "Je ne compare pas mon chapitre 1 au chapitre 20 des autres.",
@@ -73,858 +124,1157 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
     "Je ne poursuis pas l'argent ; je construis un système qui le génère."
   ];
 
-  const visionTags = [
-    { label: "ENTREPRENEUR", color: "var(--accent-blue)" },
-    { label: "RÉSIDENCE PRINCIPALE", color: "#6366F1" },
-    { label: "IMMEUBLE AU PAYS", color: "#10B981" },
-    { label: "PERMIS & VOITURE", color: "#F59E0B" },
-    { label: "MARIÉ", color: "#EC4899" },
-    { label: "REVENUS MULTIPLES", color: "#8B5CF6" },
-    { label: "STABLE FINANCIÈREMENT", color: "#06B6D4" },
-    { label: "VIE APAISÉE", color: "#14B8A6" }
+  // Dynamic quote changer based on current day of week
+  const getDailyQuote = () => {
+    const quotes = [
+      "Je ne compare pas mon chapitre 1 au chapitre 20 des autres. Restez focalisé sur vos propres jalons.",
+      "Ce n'est pas une question d'outils, mais de système. Un bon système bat toujours les meilleurs raccourcis.",
+      "Le cash d'aujourd'hui finance les actifs de demain. Discipline budgétaire avant tout.",
+      "Chaque actif acheté augmente votre liberté. Éliminez les distractions qui drainent vos ressources.",
+      "La santé est votre premier actif. Préservez votre rythme pour construire de manière durable.",
+      "Le bonheur n'est pas une destination finale, c'est la vie que vous construisez chaque jour.",
+      "Pensez en années, pas en semaines. Les fondations les plus solides prennent du temps à s'ancrer.",
+      "Je ne poursuis pas l'argent ; je construis un système qui le génère avec régularité."
+    ];
+    const day = new Date().getDay();
+    return quotes[day % quotes.length];
+  };
+
+  const dailyQuote = getDailyQuote();
+
+  // Timeline Phase configurations
+  const phases: PhaseDetail[] = [
+    {
+      title: "Phase 1 : Les Fondations",
+      subtitle: "Stabiliser le socle de l'activité",
+      dates: "Année 2026",
+      objectives: [
+        "Stabiliser mon activité de freelance et sécuriser mes clients majeurs",
+        "Passer en statut entreprise pour structurer les opérations",
+        "Sécuriser la situation administrative générale",
+        "Préserver la santé et réinstaurer un rythme de travail durable"
+      ],
+      financial: "Revenu stable garanti chaque mois",
+      takeaway: "Les fondations solides valent plus que la vitesse."
+    },
+    {
+      title: "Phase 2 : Accumulation",
+      subtitle: "Automatiser et capitaliser",
+      dates: "Janvier → Juillet 2027",
+      objectives: [
+        "Développer fortement le chiffre d'affaires",
+        "Automatiser une partie du business de prestation",
+        "Atteindre 150 000 € de liquidités disponibles (épargne + trésorerie)",
+        "Préparer les dossiers bancaires pour le financement immobilier"
+      ],
+      financial: "150 000 € de liquidités disponibles sécurisées",
+      takeaway: "Le cash d'aujourd'hui finance les actifs de demain."
+    },
+    {
+      title: "Phase 3 : Premier Actif",
+      subtitle: "Acquisition immobilière",
+      dates: "Juillet 2027 → Mi-2028",
+      objectives: [
+        "Trouver le bien immobilier idéal",
+        "Obtenir le financement bancaire optimisé",
+        "Acheter ma résidence principale",
+        "Continuer à développer et stabiliser l'entreprise"
+      ],
+      financial: "Propriétaire de la résidence principale",
+      takeaway: "La résidence principale est le socle de ma stabilité."
+    },
+    {
+      title: "Phase 4 : Montée en Puissance",
+      subtitle: "Optimiser et déléguer",
+      dates: "Année 2028",
+      objectives: [
+        "Développer l'entreprise à son plein potentiel",
+        "Acheter ma voiture personnelle",
+        "Continuer à investir sur les marchés et optimiser",
+        "Automatiser davantage les systèmes et déléguer l'opérationnel"
+      ],
+      financial: "Croissance des revenus passifs financiers",
+      takeaway: "Chaque actif acheté augmente ma liberté."
+    },
+    {
+      title: "Phase 5 : Internationalisation",
+      subtitle: "Diversification des actifs",
+      dates: "Année 2029",
+      objectives: [
+        "Financer un immeuble au pays (investissement physique)",
+        "Générer des revenus immobiliers internationaux",
+        "Diversifier globalement mon patrimoine",
+        "Construire un actif durable et décorrélé des devises locales"
+      ],
+      financial: "Immeuble financé et opérationnel à l'international",
+      takeaway: "Mon argent travaille dans plusieurs pays."
+    },
+    {
+      title: "Phase 6 : Construction",
+      subtitle: "Pérennité et Famille",
+      dates: "2030 → 2031",
+      objectives: [
+        "Me marier",
+        "Construire une famille solide",
+        "Vivre une vie équilibrée et apaisée",
+        "Continuer à développer mon patrimoine et organiser la transmission"
+      ],
+      financial: "Liberté financière complète et foyer établi",
+      takeaway: "Le bonheur n'est pas une destination, c'est la vie que je construis."
+    }
   ];
 
   return (
-    <div className="lock-screen-wrapper">
+    <div className="cockpit-container" onMouseMove={handleMouseMove}>
       
-      {/* LEFT COLUMN: Mon Plan de Vie (Vision Board) */}
-      <div className={`vision-board-column ${showPlanMobile ? 'show-mobile' : ''}`}>
-        
-        {/* Top Header info */}
-        <div className="vision-header">
-          <div className="vision-badge">
-            <Compass className="size-3.5" />
-            <span>MA FEUILLE DE ROUTE</span>
+      {/* Background Interactive Mouse Glow */}
+      <div 
+        className="mouse-glow" 
+        style={{ 
+          left: `${mousePos.x}px`, 
+          top: `${mousePos.y}px` 
+        }} 
+      />
+
+      {/* Floating command console (Raycast style) */}
+      <div className={`command-bar-wrapper ${shake ? 'shake-animation' : ''}`}>
+        <div className="command-bar">
+          <div className="command-bar-left">
+            <LockKeyhole className="size-4 text-blue animate-pulse" />
+            <span className="command-text">Nexia Cockpit</span>
           </div>
-          <h1 className="vision-title">Mon plan de vie sur 5 ans</h1>
-          <p className="vision-subtitle">De freelance à entrepreneur, investisseur et père de famille.</p>
-          
-          <div className="vision-tags-row">
-            <span className="info-tag">30 ans</span>
-            <span className="info-tag">Auto-entrepreneur</span>
-            <span className="info-tag">Objectifs clairs</span>
-            <span className="info-tag">Discipline & Focus</span>
-          </div>
-        </div>
-
-        {/* Quote container */}
-        <div className="vision-quote-card">
-          <Quote className="quote-icon" />
-          <div className="quote-content">
-            <p className="quote-text">« Ce n'est pas une question d'outils, mais de système. Un plan aujourd'hui, une liberté demain. »</p>
-          </div>
-        </div>
-
-        {/* Roadmap Roadmap Timeline */}
-        <div className="timeline-section">
-          <h2 className="section-title">FEUILLE DE ROUTE 2026 → 2031</h2>
-          
-          <div className="timeline-grid">
-            {/* Phase 1 */}
-            <div className="timeline-phase-card">
-              <div className="phase-header bg-phase-1">
-                <span className="phase-number">1</span>
-                <div>
-                  <h4 className="phase-title">PHASE 1 | 2026</h4>
-                  <p className="phase-subtitle">LES FONDATIONS</p>
-                </div>
-              </div>
-              <div className="phase-body">
-                <ul className="phase-objectives">
-                  <li>Stabiliser mon activité de freelance</li>
-                  <li>Passer en statut entreprise</li>
-                  <li>Sécuriser ma situation administrative</li>
-                  <li>Préserver ma santé & retrouver un rythme durable</li>
-                </ul>
-                <div className="phase-financial">
-                  <strong>Finances:</strong> Revenu stable chaque mois
-                </div>
-                <div className="phase-footer">
-                  <Star className="size-3 text-orange mr-1" />
-                  <span>Les fondations solides valent plus que la vitesse.</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Phase 2 */}
-            <div className="timeline-phase-card">
-              <div className="phase-header bg-phase-2">
-                <span className="phase-number">2</span>
-                <div>
-                  <h4 className="phase-title">PHASE 2 | JANV. → JUIL. 2027</h4>
-                  <p className="phase-subtitle">ACCUMULATION</p>
-                </div>
-              </div>
-              <div className="phase-body">
-                <ul className="phase-objectives">
-                  <li>Développer fortement l'activité</li>
-                  <li>Automatiser une partie du business</li>
-                  <li>Atteindre 150 000€ de liquidités dispo</li>
-                  <li>Préparer le financement immobilier</li>
-                </ul>
-                <div className="phase-financial text-emerald-text">
-                  <strong>Finances:</strong> 150 000 € de liquidités dispo.
-                </div>
-                <div className="phase-footer">
-                  <Star className="size-3 text-emerald mr-1" />
-                  <span>Le cash d'aujourd'hui finance les actifs de demain.</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Phase 3 */}
-            <div className="timeline-phase-card">
-              <div className="phase-header bg-phase-3">
-                <span className="phase-number">3</span>
-                <div>
-                  <h4 className="phase-title">PHASE 3 | JUIL. 2027 → MI-2028</h4>
-                  <p className="phase-subtitle">PREMIER GRAND ACTIF</p>
-                </div>
-              </div>
-              <div className="phase-body">
-                <ul className="phase-objectives">
-                  <li>Trouver le bien immobilier idéal</li>
-                  <li>Obtenir le financement bancaire</li>
-                  <li>Acheter ma résidence principale</li>
-                  <li>Continuer à développer mon entreprise</li>
-                </ul>
-                <div className="phase-footer">
-                  <Star className="size-3 text-indigo mr-1" />
-                  <span>La résidence principale est le socle de ma stabilité.</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Phase 4 */}
-            <div className="timeline-phase-card">
-              <div className="phase-header bg-phase-4">
-                <span className="phase-number">4</span>
-                <div>
-                  <h4 className="phase-title">PHASE 4 | 2028</h4>
-                  <p className="phase-subtitle">MONTÉE EN PUISSANCE</p>
-                </div>
-              </div>
-              <div className="phase-body">
-                <ul className="phase-objectives">
-                  <li>Développer l'entreprise et la structure</li>
-                  <li>Acheter ma voiture personnelle</li>
-                  <li>Continuer à investir et optimiser</li>
-                  <li>Automatiser davantage & déléguer</li>
-                </ul>
-                <div className="phase-footer">
-                  <Star className="size-3 text-amber mr-1" />
-                  <span>Chaque actif acheté augmente ma liberté.</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Phase 5 */}
-            <div className="timeline-phase-card">
-              <div className="phase-header bg-phase-5">
-                <span className="phase-number">5</span>
-                <div>
-                  <h4 className="phase-title">PHASE 5 | 2029</h4>
-                  <p className="phase-subtitle">INVESTISSEMENT INT.</p>
-                </div>
-              </div>
-              <div className="phase-body">
-                <ul className="phase-objectives">
-                  <li>Financer un immeuble au pays</li>
-                  <li>Générer des revenus locatifs durables</li>
-                  <li>Diversifier le patrimoine mondial</li>
-                  <li>Construire un actif durable résistant</li>
-                </ul>
-                <div className="phase-footer">
-                  <Star className="size-3 text-cyan mr-1" />
-                  <span>Mon argent travaille dans plusieurs pays.</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Phase 6 */}
-            <div className="timeline-phase-card">
-              <div className="phase-header bg-phase-6">
-                <span className="phase-number">6</span>
-                <div>
-                  <h4 className="phase-title">PHASE 6 | 2030 → 2031</h4>
-                  <p className="phase-subtitle">CONSTRUIRE UNE FAMILLE</p>
-                </div>
-              </div>
-              <div className="phase-body">
-                <ul className="phase-objectives">
-                  <li>Me marier</li>
-                  <li>Construire une famille solide</li>
-                  <li>Vivre une vie apaisée et accomplie</li>
-                  <li>Transmettre mon patrimoine et mes valeurs</li>
-                </ul>
-                <div className="phase-footer">
-                  <Star className="size-3 text-pink mr-1" />
-                  <span>Le bonheur n'est pas une destination, c'est la vie que je construis.</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Split Grid for rules of life and vision at 35 */}
-        <div className="vision-details-grid">
-          
-          {/* Rules of life */}
-          <div className="card details-subcard">
-            <h3 className="section-title-small">MES RÈGLES DE VIE</h3>
-            <ul className="rules-list">
-              {rulesOfLife.map((rule, idx) => (
-                <li key={idx}>
-                  <div className="rule-dot"><Check className="size-3 text-white" /></div>
-                  <span>{rule}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Vision at 35 */}
-          <div className="card details-subcard">
-            <h3 className="section-title-small">MA VISION À 35 ANS</h3>
-            <div className="tags-container">
-              {visionTags.map((tag, idx) => (
-                <span key={idx} className="vision-tag" style={{ borderLeft: `3px solid ${tag.color}`, backgroundColor: `${tag.color}0a` }}>
-                  {tag.label}
-                </span>
-              ))}
-            </div>
-            <p className="vision-quote-footer">
-              <Quote className="size-4 inline text-muted" style={{ marginRight: '6px' }} />
-              À 35 ans, je vis la vie que j'ai construite avec discipline.
-            </p>
-          </div>
-        </div>
-
-        {/* Bottom banner info */}
-        <div className="bottom-system-banner">
-          <div className="bottom-tip-box">
-            <Zap className="size-4 text-violet" />
-            <span><strong>Un bon système bat toujours plus d'outils.</strong> Restez simple, soyez régulier, créez de la valeur.</span>
-          </div>
-          <div className="bottom-advice-box">
-            <Info className="size-4 text-blue" />
-            <span><strong>Le conseil en plus :</strong> Maîtrisez votre système avant d'ajouter de nouveaux outils.</span>
-          </div>
-        </div>
-
-        <div className="vision-brand-footer">
-          <span>Le Club IA</span>
-          <span className="dot-divider">•</span>
-          <span>Gamaliel Tankeu</span>
-        </div>
-
-        {/* Mobile close button */}
-        <button 
-          className="btn-view-passcode-mobile"
-          onClick={() => setShowPlanMobile(false)}
-        >
-          Accéder à la saisie du code <ArrowRight className="size-4 ml-1" />
-        </button>
-
-      </div>
-
-      {/* RIGHT COLUMN: Keypad Security Entry Portal */}
-      <div className="security-portal-column">
-        
-        {/* Mobile Switcher Button */}
-        <button 
-          className="btn-view-plan-mobile"
-          onClick={() => setShowPlanMobile(true)}
-        >
-          <Compass className="size-4 mr-2" /> Consulter mon Plan de Vie
-        </button>
-
-        <div className={`keypad-card card ${shake ? 'shake-animation' : ''}`}>
-          <div className="keypad-header">
-            <div className="lock-icon-container">
-              {pin.length === 4 && pin === correctPasscode ? (
-                <Unlock className="lock-icon text-success animate-bounce" />
-              ) : (
-                <Lock className="lock-icon text-blue" />
-              )}
-            </div>
-            <h2 className="keypad-title">Accès Sécurisé</h2>
-            <p className="keypad-subtitle">Nexia Labs Cockpit</p>
-          </div>
-
-          <div className="pin-indicator-row">
+          <div className="pin-slots-container">
             {[0, 1, 2, 3].map((idx) => (
               <div 
                 key={idx} 
-                className={`pin-dot ${pin.length > idx ? 'dot-active' : ''} ${error ? 'dot-error' : ''}`}
+                className={`pin-slot-dot ${pin.length > idx ? 'active' : ''} ${error ? 'error' : ''}`}
               />
             ))}
           </div>
+          <div className="command-hint">Taper le code</div>
+        </div>
+        {error && <span className="command-error-text">Code incorrect. Indice: L'année de départ</span>}
+      </div>
 
-          {error && (
-            <p className="error-message">Code incorrect. Veuillez réessayer.</p>
-          )}
+      {/* Scrollable Cockpit Content */}
+      <div className="cockpit-content">
+        
+        {/* HERO SECTION */}
+        <section className="hero-section">
+          <div className="hero-meta">GAMALIEL TANKEU  •  2026 → 2031</div>
+          <h1 className="hero-title">Mon plan de vie.</h1>
+          <p className="hero-subtitle">
+            Chaque décision prise aujourd'hui construit ma liberté de demain.
+          </p>
+        </section>
 
-          <div className="numeric-keypad-grid">
-            {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((num) => (
-              <button 
-                key={num} 
-                onClick={() => handleKeyPress(num)}
-                className="keypad-btn"
-              >
-                {num}
-              </button>
-            ))}
-            
-            <button onClick={handleClear} className="keypad-btn btn-utility">
-              Effacer
-            </button>
-            
-            <button onClick={() => handleKeyPress('0')} className="keypad-btn">
-              0
-            </button>
-            
-            <button onClick={handleBackspace} className="keypad-btn btn-utility">
-              ⌫
-            </button>
+        {/* PROGRESS BANNER */}
+        <section className="progress-section">
+          <div className="progress-label-row">
+            <span className="progress-count">{progressPercent}%</span>
+            <span className="progress-text">du plan sur 5 ans accompli</span>
           </div>
+          <div className="progress-bar-track">
+            <div 
+              className="progress-bar-fill" 
+              style={{ width: `${progressPercent}%` }} 
+            />
+          </div>
+        </section>
+
+        {/* CORE GRID: Today's Mission & Timeline */}
+        <div className="cockpit-core-grid">
           
-          <div className="passcode-hint-box">
-            <KeyRound className="size-3.5 text-muted" />
-            <span>Indice : L'année de départ de votre plan de vie.</span>
+          {/* Column Left: Today's Main Mission */}
+          <div className="mission-column">
+            <div className="card mission-card">
+              <div className="mission-card-header">
+                <div className="mission-badge">
+                  <Target className="size-3.5 text-orange" />
+                  <span>MISSION DE LA PHASE EN COURS</span>
+                </div>
+                <div className="mission-days-badge">
+                  <Clock className="size-3 text-orange" />
+                  <span>{daysRemaining} jours restants</span>
+                </div>
+              </div>
+              
+              <h2 className="mission-title">Stabiliser l'activité de freelance</h2>
+              <p className="mission-why">
+                <strong>Pourquoi c'est important :</strong> Consolider le cash-flow et structurer juridiquement l'activité sous forme de société afin d'établir un socle solide, résilient et pérenne pour les phases d'accumulation suivantes.
+              </p>
+
+              <div className="divider" style={{ margin: '20px 0' }} />
+
+              <h3 className="sub-section-title">Objectifs Clés à Valider</h3>
+              <ul className="checklist-container">
+                <li className="checklist-item">
+                  <div className="check-box checked"><Check className="size-3.5" /></div>
+                  <span className="item-text text-muted">Stabiliser l'activité freelance majeure</span>
+                </li>
+                <li className="checklist-item">
+                  <div className="check-box"><Check className="size-3.5" /></div>
+                  <span className="item-text">Migrer vers un statut d'entreprise</span>
+                </li>
+                <li className="checklist-item">
+                  <div className="check-box"><Check className="size-3.5" /></div>
+                  <span className="item-text">Sécuriser la situation administrative</span>
+                </li>
+                <li className="checklist-item">
+                  <div className="check-box"><Check className="size-3.5" /></div>
+                  <span className="item-text">Préserver le sommeil et réinstaurer un rythme de santé</span>
+                </li>
+              </ul>
+
+              <div className="mission-card-footer">
+                <Zap className="size-4 text-violet" />
+                <span><strong>Prochaine action :</strong> Finaliser la structure légale de la société.</span>
+              </div>
+            </div>
+            
+            {/* Daily Quote Card */}
+            <div className="card quote-card">
+              <Quote className="quote-icon text-muted" />
+              <p className="quote-text">{dailyQuote}</p>
+              <span className="quote-author">Règle de vie du jour</span>
+            </div>
+          </div>
+
+          {/* Column Right: Rules of Life & Vision */}
+          <div className="rules-vision-column">
+            
+            {/* Rules of Life Panel */}
+            <div className="card rules-card">
+              <h3 className="section-title-small">MES RÈGLES DE VIE</h3>
+              <ul className="rules-list">
+                {rulesOfLife.map((rule, idx) => (
+                  <li key={idx} className="rule-item">
+                    <div className="rule-bullet"><Check className="size-3 text-white" /></div>
+                    <span className="rule-text">{rule}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Vision 2031 Grid */}
+            <div className="card vision-card">
+              <h3 className="section-title-small">VISION 2031 (CIBLES)</h3>
+              <div className="vision-poster-grid">
+                <div className="vision-poster-item">
+                  <span className="vision-emoji">🏡</span>
+                  <div className="vision-item-meta">
+                    <span className="vision-item-title">R. Principale</span>
+                    <span className="vision-item-desc">Socle de stabilité</span>
+                  </div>
+                </div>
+                <div className="vision-poster-item">
+                  <span className="vision-emoji">🏢</span>
+                  <div className="vision-item-meta">
+                    <span className="vision-item-title">Immeuble Pays</span>
+                    <span className="vision-item-desc">Diversification ext.</span>
+                  </div>
+                </div>
+                <div className="vision-poster-item">
+                  <span className="vision-emoji">💍</span>
+                  <div className="vision-item-meta">
+                    <span className="vision-item-title">Mariage</span>
+                    <span className="vision-item-desc">Foyer & Famille</span>
+                  </div>
+                </div>
+                <div className="vision-poster-item">
+                  <span className="vision-emoji">🚘</span>
+                  <div className="vision-item-meta">
+                    <span className="vision-item-title">Voiture</span>
+                    <span className="vision-item-desc">Liberté mobile</span>
+                  </div>
+                </div>
+                <div className="vision-poster-item">
+                  <span className="vision-emoji">📈</span>
+                  <div className="vision-item-meta">
+                    <span className="vision-item-title">Entreprise</span>
+                    <span className="vision-item-desc">Systèmes IA</span>
+                  </div>
+                </div>
+                <div className="vision-poster-item">
+                  <span className="vision-emoji">🧘</span>
+                  <div className="vision-item-meta">
+                    <span className="vision-item-title">Vie Paisible</span>
+                    <span className="vision-item-desc">Discipline & Esprit</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
 
+        {/* TIMELINE SECTION (Horizontal Continuous timeline) */}
+        <section className="timeline-axis-section">
+          <h3 className="section-title-timeline">FEUILLE DE ROUTE HORIZONTALE</h3>
+          
+          <div className="timeline-axis-container">
+            {/* Axis continuous line */}
+            <div className="timeline-axis-line" />
+
+            {/* Timeline nodes */}
+            <div className="timeline-axis-nodes">
+              {phases.map((phase, idx) => {
+                const isCurrentPhase = idx === 0; // Phase 1 is current (2026)
+                return (
+                  <div 
+                    key={idx} 
+                    className={`timeline-axis-node-wrapper ${isCurrentPhase ? 'active-node' : ''}`}
+                    onClick={() => setActivePhaseIndex(idx)}
+                  >
+                    <div className="node-year">{phase.dates.replace("Année ", "")}</div>
+                    <div className="node-circle">
+                      <span>{idx + 1}</span>
+                    </div>
+                    <div className="node-title">{phase.title.split(": ")[1]}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
       </div>
 
-      {/* Styled JSX for the vision board and security keypad */}
+      {/* DETAILED PHASE POPUP MODAL (Glassmorphism Modal) */}
+      {activePhaseIndex !== null && (
+        <div className="modal-backdrop" onClick={() => setActivePhaseIndex(null)}>
+          <div className="modal-cockpit-content" onClick={(e) => e.stopPropagation()}>
+            <button 
+              className="modal-close-btn"
+              onClick={() => setActivePhaseIndex(null)}
+            >
+              <X className="size-5" />
+            </button>
+
+            <div className="modal-header-block">
+              <span className="modal-phase-number-badge">PHASE {activePhaseIndex + 1}</span>
+              <h2 className="modal-phase-title">{phases[activePhaseIndex].title}</h2>
+              <p className="modal-phase-subtitle">{phases[activePhaseIndex].subtitle}</p>
+              <div className="modal-phase-date">{phases[activePhaseIndex].dates}</div>
+            </div>
+
+            <div className="divider" style={{ margin: '24px 0' }} />
+
+            <div className="modal-body-block">
+              <h4 className="modal-section-title">Objectifs Clés</h4>
+              <ul className="modal-checklist">
+                {phases[activePhaseIndex].objectives.map((obj, i) => (
+                  <li key={i} className="modal-check-item">
+                    <div className="modal-bullet"><Check className="size-3 text-white" /></div>
+                    <span>{obj}</span>
+                  </li>
+                ))}
+              </ul>
+
+              {phases[activePhaseIndex].financial && (
+                <div className="modal-financial-target-box">
+                  <strong>Objectif Financier :</strong> {phases[activePhaseIndex].financial}
+                </div>
+              )}
+
+              <div className="modal-takeaway-card">
+                <Star className="size-4 text-violet" />
+                <p className="modal-takeaway-text">« {phases[activePhaseIndex].takeaway} »</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Styled JSX for the Timeless UX Cockpit */}
       <style>{`
-        .lock-screen-wrapper {
-          display: grid;
-          grid-template-columns: 1fr 450px;
-          min-height: 100vh;
-          width: 100vw;
-          background-color: var(--bg-primary);
+        /* Global Cockpit Styling */
+        .cockpit-container {
           position: fixed;
           top: 0;
           left: 0;
+          width: 100vw;
+          height: 100vh;
+          background-color: #FAFAFA;
+          /* Apple blueprint grid lines */
+          background-image: 
+            linear-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 0, 0, 0.02) 1px, transparent 1px);
+          background-size: 80px 80px;
           z-index: 1000;
           overflow: hidden;
-        }
-
-        @media (max-width: 1024px) {
-          .lock-screen-wrapper {
-            grid-template-columns: 1fr;
-          }
-        }
-
-        /* LEFT COLUMN: Vision Board */
-        .vision-board-column {
-          padding: 40px;
-          overflow-y: auto;
-          height: 100vh;
+          font-family: var(--font-body);
           display: flex;
           flex-direction: column;
-          gap: 24px;
-          border-right: 1px solid var(--border-color);
-          background-color: #FFFFFF;
-          background-image: 
-            radial-gradient(rgba(0, 102, 204, 0.015) 1px, transparent 0),
-            radial-gradient(circle at 100% 0%, rgba(99, 91, 255, 0.02) 0%, rgba(99, 91, 255, 0) 50%);
-          background-size: 24px 24px, 100% 100%;
-        }
-
-        @media (max-width: 1024px) {
-          .vision-board-column {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: 1010;
-          }
-          
-          .vision-board-column.show-mobile {
-            display: flex !important;
-          }
-        }
-
-        .vision-header {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-
-        .vision-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 11px;
-          font-weight: 700;
-          background-color: rgba(0, 102, 204, 0.08);
-          color: var(--accent-blue);
-          padding: 4px 10px;
-          border-radius: 9999px;
-          width: fit-content;
-          letter-spacing: 0.05em;
-        }
-
-        .vision-title {
-          font-size: 32px;
-          font-weight: 800;
-          letter-spacing: -0.03em;
           color: var(--text-primary);
         }
 
-        .vision-subtitle {
-          font-size: 14px;
-          color: var(--text-secondary);
-        }
-
-        .vision-tags-row {
-          display: flex;
-          gap: 8px;
-          flex-wrap: wrap;
-          margin-top: 8px;
-        }
-
-        .info-tag {
-          font-size: 11px;
-          font-weight: 600;
-          background-color: var(--bg-primary);
-          border: 1px solid var(--border-color);
-          color: var(--text-secondary);
-          padding: 3px 8px;
-          border-radius: var(--radius-sm);
-        }
-
-        /* Quote Banner */
-        .vision-quote-card {
-          display: flex;
-          align-items: flex-start;
-          gap: 12px;
-          background-color: rgba(0, 102, 204, 0.02);
-          border: 1px solid rgba(0, 102, 204, 0.06);
-          border-radius: var(--radius-md);
-          padding: 16px 20px;
-          position: relative;
-        }
-
-        .quote-icon {
-          color: var(--accent-blue);
-          opacity: 0.25;
-          width: 24px;
-          height: 24px;
-          flex-shrink: 0;
-        }
-
-        .quote-text {
-          font-size: 13.5px;
-          font-style: italic;
-          color: var(--accent-blue);
-          font-weight: 600;
-          line-height: 1.5;
-        }
-
-        /* Timeline Roadmap */
-        .timeline-section {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-
-        .section-title {
-          font-size: 12px;
-          font-weight: 700;
-          color: var(--text-secondary);
-          letter-spacing: 0.08em;
-          border-bottom: 1px solid var(--border-color);
-          padding-bottom: 8px;
-        }
-
-        .timeline-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-          gap: 16px;
-        }
-
-        .timeline-phase-card {
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
-          overflow: hidden;
-          background-color: #FFFFFF;
-          box-shadow: var(--shadow-sm);
-          display: flex;
-          flex-direction: column;
-          transition: transform 0.2s ease;
-        }
-
-        .timeline-phase-card:hover {
-          transform: translateY(-2px);
-          border-color: rgba(0, 102, 204, 0.15);
-        }
-
-        .phase-header {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 12px 16px;
-          color: #FFFFFF;
-        }
-
-        .bg-phase-1 { background: linear-gradient(135deg, #0066CC 0%, #1E82E6 100%); }
-        .bg-phase-2 { background: linear-gradient(135deg, #10B981 0%, #059669 100%); }
-        .bg-phase-3 { background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%); }
-        .bg-phase-4 { background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); }
-        .bg-phase-5 { background: linear-gradient(135deg, #06B6D4 0%, #0891B2 100%); }
-        .bg-phase-6 { background: linear-gradient(135deg, #EC4899 0%, #DB2777 100%); }
-
-        .phase-number {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 24px;
-          height: 24px;
+        /* Mouse light glow overlay */
+        .mouse-glow {
+          position: fixed;
+          width: 700px;
+          height: 700px;
+          background: radial-gradient(circle, rgba(0, 102, 204, 0.035) 0%, rgba(99, 91, 255, 0.015) 35%, rgba(0,0,0,0) 70%);
           border-radius: 50%;
-          background-color: rgba(255, 255, 255, 0.2);
-          color: #FFFFFF;
-          font-weight: 800;
-          font-size: 12px;
-          border: 1px solid rgba(255, 255, 255, 0.4);
+          transform: translate(-50%, -50%);
+          pointer-events: none;
+          z-index: 1;
         }
 
-        .phase-title {
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: 0.02em;
-        }
-
-        .phase-subtitle {
-          font-size: 9px;
-          font-weight: 700;
-          text-transform: uppercase;
-          opacity: 0.9;
-          letter-spacing: 0.05em;
-        }
-
-        .phase-body {
-          padding: 16px;
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-          flex: 1;
-        }
-
-        .phase-objectives {
-          list-style: none;
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-
-        .phase-objectives li {
-          font-size: 12px;
-          color: var(--text-primary);
-          line-height: 1.4;
+        /* Cockpit Scroll Container */
+        .cockpit-content {
           position: relative;
-          padding-left: 14px;
-        }
-
-        .phase-objectives li::before {
-          content: "•";
-          color: var(--text-muted);
-          position: absolute;
-          left: 0;
-          top: 0;
-          font-weight: bold;
-        }
-
-        .phase-financial {
-          font-size: 11px;
-          background-color: var(--bg-primary);
-          padding: 6px 10px;
-          border-radius: var(--radius-sm);
-          color: var(--text-primary);
-          border: 1px solid var(--border-color);
-        }
-
-        .phase-footer {
-          margin-top: auto;
-          padding-top: 8px;
-          border-top: 1px dashed var(--border-color);
-          font-size: 10px;
-          font-style: italic;
-          color: var(--text-secondary);
+          z-index: 2;
+          width: 100%;
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 80px 40px 100px 40px;
+          height: 100vh;
+          overflow-y: auto;
           display: flex;
-          align-items: center;
-        }
-
-        /* Split Details Grid */
-        .vision-details-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 16px;
+          flex-direction: column;
+          gap: 40px;
         }
 
         @media (max-width: 768px) {
-          .vision-details-grid {
-            grid-template-columns: 1fr;
+          .cockpit-content {
+            padding: 100px 20px 60px 20px;
+            gap: 32px;
           }
         }
 
-        .details-subcard {
-          padding: 20px;
-          background-color: #FFFFFF;
-        }
-
-        .section-title-small {
-          font-size: 11px;
-          font-weight: 700;
-          color: var(--text-secondary);
-          letter-spacing: 0.05em;
-          margin-bottom: 12px;
-        }
-
-        .rules-list {
-          list-style: none;
+        /* Raycast style command bar passcode input */
+        .command-bar-wrapper {
+          position: fixed;
+          top: 32px;
+          right: 40px;
+          z-index: 1000;
           display: flex;
           flex-direction: column;
-          gap: 8px;
-        }
-
-        .rules-list li {
-          font-size: 12px;
-          color: var(--text-primary);
-          display: flex;
-          align-items: flex-start;
-          gap: 8px;
-          line-height: 1.4;
-        }
-
-        .rule-dot {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 16px;
-          height: 16px;
-          border-radius: 50%;
-          background-color: var(--accent-blue);
-          flex-shrink: 0;
-          margin-top: 1px;
-        }
-
-        .tags-container {
-          display: flex;
-          flex-wrap: wrap;
+          align-items: flex-end;
           gap: 6px;
         }
 
-        .vision-tag {
-          font-size: 10px;
-          font-weight: 700;
-          padding: 4px 10px;
-          border-radius: var(--radius-sm);
-          color: var(--text-primary);
-          letter-spacing: 0.02em;
+        @media (max-width: 1024px) {
+          .command-bar-wrapper {
+            right: 50%;
+            transform: translateX(50%);
+            top: 24px;
+            width: 90%;
+            max-width: 320px;
+          }
         }
 
-        .vision-quote-footer {
-          margin-top: 14px;
-          font-size: 11px;
-          font-style: italic;
-          color: var(--text-secondary);
-          border-top: 1px dashed var(--border-color);
-          padding-top: 10px;
-        }
-
-        /* Bottom banner */
-        .bottom-system-banner {
+        .command-bar {
           display: flex;
-          flex-direction: column;
-          gap: 10px;
-          background-color: var(--bg-primary);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-lg);
-          padding: 16px;
-        }
-
-        .bottom-tip-box, .bottom-advice-box {
-          display: flex;
-          align-items: flex-start;
-          gap: 10px;
-          font-size: 12px;
-          color: var(--text-primary);
-          line-height: 1.4;
-        }
-
-        .vision-brand-footer {
-          display: flex;
-          justify-content: center;
-          gap: 8px;
-          font-size: 11px;
-          font-weight: 600;
-          color: var(--text-muted);
-          margin-top: auto;
-          padding-top: 20px;
-        }
-
-        .dot-divider {
-          color: var(--border-color);
-        }
-
-        /* RIGHT COLUMN: PASSCODE */
-        .security-portal-column {
-          display: flex;
-          flex-direction: column;
           align-items: center;
-          justify-content: center;
-          padding: 40px;
-          height: 100vh;
-          position: relative;
-        }
-
-        .keypad-card {
-          width: 100%;
-          max-width: 320px;
-          padding: 32px 24px;
-          background: rgba(255, 255, 255, 0.85);
+          gap: 16px;
+          padding: 8px 16px;
+          background: rgba(255, 255, 255, 0.7);
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
-          border: 1px solid rgba(255, 255, 255, 0.6);
-          border-radius: var(--radius-lg);
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          box-shadow: var(--shadow-premium);
+          border: 1px solid rgba(255, 255, 255, 0.5);
+          border-radius: 9999px;
+          box-shadow: 
+            0 1px 2px rgba(0, 0, 0, 0.005), 
+            0 4px 14px rgba(0, 0, 0, 0.015);
+          width: fit-content;
         }
 
-        .keypad-header {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 6px;
-          margin-bottom: 24px;
+        @media (max-width: 1024px) {
+          .command-bar {
+            width: 100%;
+            justify-content: space-between;
+          }
         }
 
-        .lock-icon-container {
-          width: 48px;
-          height: 48px;
-          border-radius: 50%;
-          background-color: var(--bg-primary);
-          border: 1px solid var(--border-color);
+        .command-bar-left {
           display: flex;
           align-items: center;
-          justify-content: center;
-          margin-bottom: 6px;
+          gap: 8px;
         }
 
-        .lock-icon {
-          width: 20px;
-          height: 20px;
-        }
-
-        .keypad-title {
-          font-size: 18px;
-          font-weight: 700;
-          color: var(--text-primary);
-        }
-
-        .keypad-subtitle {
+        .command-text {
           font-size: 11px;
-          font-weight: 600;
-          color: var(--text-muted);
-          text-transform: uppercase;
+          font-weight: 700;
           letter-spacing: 0.05em;
+          text-transform: uppercase;
+          color: var(--text-secondary);
         }
 
-        /* PIN DOTS */
-        .pin-indicator-row {
+        .pin-slots-container {
           display: flex;
-          gap: 16px;
-          margin-bottom: 16px;
-          height: 14px;
+          gap: 8px;
           align-items: center;
         }
 
-        .pin-dot {
-          width: 10px;
-          height: 10px;
+        .pin-slot-dot {
+          width: 8px;
+          height: 8px;
           border-radius: 50%;
           background-color: #E2E8F0;
           border: 1px solid var(--border-color);
           transition: all 0.15s ease;
         }
 
-        .dot-active {
+        .pin-slot-dot.active {
           background-color: var(--accent-blue);
           border-color: var(--accent-blue);
           transform: scale(1.1);
         }
 
-        .dot-error {
+        .pin-slot-dot.error {
           background-color: var(--status-error) !important;
           border-color: var(--status-error) !important;
         }
 
-        .error-message {
-          font-size: 11px;
+        .command-hint {
+          font-size: 10px;
+          font-weight: 600;
+          background-color: var(--bg-primary);
+          color: var(--text-muted);
+          padding: 2px 6px;
+          border-radius: 4px;
+          border: 1px solid var(--border-color);
+        }
+
+        .command-error-text {
+          font-size: 10px;
           font-weight: 600;
           color: var(--status-error);
-          margin-bottom: 12px;
+          margin-right: 12px;
           animation: fadeIn 0.1s ease;
         }
 
-        /* KEYPAD BUTTONS */
-        .numeric-keypad-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 12px;
-          width: 100%;
-        }
-
-        .keypad-btn {
-          border: 1px solid var(--border-color);
-          background-color: #FFFFFF;
-          color: var(--text-primary);
-          height: 52px;
-          border-radius: 12px;
-          font-size: 18px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all var(--transition-fast);
+        /* HERO SECTION */
+        .hero-section {
           display: flex;
-          align-items: center;
-          justify-content: center;
-          user-select: none;
+          flex-direction: column;
+          gap: 6px;
+          margin-top: 10px;
         }
 
-        .keypad-btn:hover {
-          background-color: var(--bg-primary);
-          border-color: var(--border-hover);
-        }
-
-        .keypad-btn:active {
-          transform: scale(0.95);
-        }
-
-        .btn-utility {
+        .hero-meta {
           font-size: 11px;
           font-weight: 700;
+          letter-spacing: 0.15em;
+          color: var(--text-muted);
+        }
+
+        .hero-title {
+          font-size: 52px;
+          font-weight: 800;
+          letter-spacing: -0.04em;
+          color: var(--text-primary);
+          line-height: 1.05;
+        }
+
+        .hero-subtitle {
+          font-size: 18px;
           color: var(--text-secondary);
-          background-color: var(--bg-primary);
+          max-width: 600px;
+          line-height: 1.4;
+          font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+          .hero-title { font-size: 40px; }
+          .hero-subtitle { font-size: 15px; }
+        }
+
+        /* PROGRESSION SECTION */
+        .progress-section {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          border-bottom: 1px solid var(--border-color);
+          padding-bottom: 24px;
+        }
+
+        .progress-label-row {
+          display: flex;
+          align-items: baseline;
+          gap: 8px;
+        }
+
+        .progress-count {
+          font-size: 28px;
+          font-weight: 800;
+          letter-spacing: -0.02em;
+          color: var(--accent-blue);
+          font-variant-numeric: tabular-nums;
+        }
+
+        .progress-text {
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--text-secondary);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .progress-bar-track {
+          width: 100%;
+          height: 4px;
+          background-color: #E2E8F0;
+          border-radius: 9999px;
+          overflow: hidden;
+        }
+
+        .progress-bar-fill {
+          height: 100%;
+          background-color: var(--accent-blue);
+          border-radius: 9999px;
+          transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* CORE GRID */
+        .cockpit-core-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 24px;
+          align-items: start;
+        }
+
+        @media (max-width: 1024px) {
+          .cockpit-core-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        .mission-column {
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+        }
+
+        .rules-vision-column {
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+        }
+
+        /* Cards general styling */
+        .card {
+          background-color: #FFFFFF;
+          border: 1px solid rgba(0, 0, 0, 0.04);
+          border-radius: 24px;
+          box-shadow: 
+            0 1px 2px rgba(0, 0, 0, 0.003),
+            0 8px 32px rgba(0, 0, 0, 0.015);
+          transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.25s ease;
+        }
+
+        .card:hover {
+          transform: translateY(-2px);
+          border-color: rgba(0, 102, 204, 0.15);
+          box-shadow: 
+            0 1px 2px rgba(0, 0, 0, 0.003),
+            0 12px 48px rgba(0, 0, 0, 0.025);
+        }
+
+        /* Mission Card */
+        .mission-card {
+          padding: 32px;
+          background: linear-gradient(180deg, #FFFFFF 0%, rgba(245, 158, 11, 0.005) 100%);
+        }
+
+        .mission-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 12px;
+          margin-bottom: 20px;
+        }
+
+        .mission-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 10px;
+          font-weight: 700;
+          color: #D97706;
+          background-color: rgba(245, 158, 11, 0.08);
+          padding: 4px 10px;
+          border-radius: 9999px;
+          letter-spacing: 0.05em;
           text-transform: uppercase;
         }
 
-        .passcode-hint-box {
+        .mission-days-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 11px;
+          font-weight: 700;
+          color: #D97706;
+          font-variant-numeric: tabular-nums;
+        }
+
+        .mission-title {
+          font-size: 32px;
+          font-weight: 800;
+          letter-spacing: -0.03em;
+          color: var(--text-primary);
+          line-height: 1.1;
+          margin-bottom: 12px;
+        }
+
+        .mission-why {
+          font-size: 13.5px;
+          line-height: 1.5;
+          color: var(--text-secondary);
+        }
+
+        .checklist-container {
+          list-style: none;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          margin-top: 14px;
+        }
+
+        .checklist-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+        }
+
+        .check-box {
+          width: 18px;
+          height: 18px;
+          border-radius: 4px;
+          border: 1px solid var(--border-color);
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 6px;
+          flex-shrink: 0;
+          margin-top: 1px;
+          transition: all 0.15s ease;
+        }
+
+        .check-box.checked {
+          background-color: var(--accent-blue);
+          border-color: var(--accent-blue);
+          color: #FFFFFF;
+        }
+
+        .item-text {
+          font-size: 13px;
+          color: var(--text-primary);
+          font-weight: 500;
+          line-height: 1.4;
+        }
+
+        .mission-card-footer {
           margin-top: 24px;
-          font-size: 10.5px;
+          padding-top: 18px;
+          border-top: 1px dashed var(--border-color);
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 11.5px;
+          color: var(--text-secondary);
+        }
+
+        /* Quote Card */
+        .quote-card {
+          padding: 24px;
+          background: rgba(255, 255, 255, 0.5);
+          backdrop-filter: blur(10px);
+          position: relative;
+        }
+
+        .quote-icon {
+          position: absolute;
+          top: 16px;
+          right: 20px;
+          opacity: 0.1;
+          width: 24px;
+          height: 24px;
+        }
+
+        .quote-text {
+          font-size: 13.5px;
+          font-style: italic;
+          color: var(--text-secondary);
+          font-weight: 500;
+          line-height: 1.5;
+        }
+
+        .quote-author {
+          display: block;
+          font-size: 10px;
+          font-weight: 700;
+          color: var(--text-muted);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          margin-top: 8px;
+        }
+
+        /* Rules Card */
+        .rules-card {
+          padding: 32px;
+        }
+
+        .section-title-small {
+          font-size: 11px;
+          font-weight: 700;
+          color: var(--text-muted);
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          margin-bottom: 20px;
+          border-bottom: 1px solid var(--border-color);
+          padding-bottom: 8px;
+        }
+
+        .rules-list {
+          list-style: none;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .rule-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+        }
+
+        .rule-bullet {
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          background-color: var(--accent-blue);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          margin-top: 1px;
+        }
+
+        .rule-text {
+          font-size: 13px;
+          font-weight: 500;
+          color: var(--text-primary);
+          line-height: 1.4;
+        }
+
+        /* Vision 2031 Poster */
+        .vision-card {
+          padding: 32px;
+        }
+
+        .vision-poster-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 16px;
+        }
+
+        @media (max-width: 480px) {
+          .vision-poster-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        .vision-poster-item {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px;
+          border-radius: 12px;
+          border: 1px solid rgba(0, 0, 0, 0.02);
+          background-color: #FAFAFA;
+          transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .vision-poster-item:hover {
+          transform: scale(1.02);
+          border-color: rgba(99, 91, 255, 0.15);
+        }
+
+        .vision-emoji {
+          font-size: 24px;
+        }
+
+        .vision-item-meta {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .vision-item-title {
+          font-size: 13px;
+          font-weight: 700;
+          color: var(--text-primary);
+        }
+
+        .vision-item-desc {
+          font-size: 10px;
           color: var(--text-muted);
           font-weight: 500;
+        }
+
+        /* Timeline Section */
+        .timeline-axis-section {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+          margin-top: 20px;
+        }
+
+        .section-title-timeline {
+          font-size: 11px;
+          font-weight: 700;
+          color: var(--text-muted);
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+        }
+
+        .timeline-axis-container {
+          position: relative;
+          padding: 40px 0;
+          width: 100%;
+          overflow-x: auto;
+        }
+
+        .timeline-axis-line {
+          position: absolute;
+          top: 50%;
+          left: 0;
+          right: 0;
+          height: 1px;
+          background-color: var(--border-color);
+          z-index: 1;
+        }
+
+        .timeline-axis-nodes {
+          position: relative;
+          z-index: 2;
+          display: flex;
+          justify-content: space-between;
+          width: 100%;
+          min-width: 800px;
+        }
+
+        .timeline-axis-node-wrapper {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 12px;
+          cursor: pointer;
+          transition: transform 0.2s ease;
+          width: 120px;
+        }
+
+        .timeline-axis-node-wrapper:hover {
+          transform: translateY(-4px);
+        }
+
+        .node-year {
+          font-size: 12px;
+          font-weight: 700;
+          color: var(--text-muted);
+          transition: color 0.2s ease;
+        }
+
+        .node-circle {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          background-color: #FFFFFF;
+          border: 1px solid var(--border-color);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12px;
+          font-weight: 700;
+          color: var(--text-secondary);
+          box-shadow: var(--shadow-sm);
+          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .node-title {
+          font-size: 11px;
+          font-weight: 600;
+          color: var(--text-secondary);
           text-align: center;
+          line-height: 1.3;
+          transition: color 0.2s ease;
+        }
+
+        /* Active Timeline node styling */
+        .active-node .node-circle {
+          background-color: var(--accent-blue);
+          border-color: var(--accent-blue);
+          color: #FFFFFF;
+          box-shadow: 0 4px 12px rgba(0, 102, 204, 0.2);
+          transform: scale(1.1);
+        }
+
+        .active-node .node-year {
+          color: var(--accent-blue);
+        }
+
+        .active-node .node-title {
+          color: var(--text-primary);
+          font-weight: 700;
+        }
+
+        /* Popups Modals (Glassmorphism UI) */
+        .modal-backdrop {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: rgba(250, 250, 250, 0.4);
+          backdrop-filter: blur(14px);
+          -webkit-backdrop-filter: blur(14px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 2000;
+          animation: modalFadeIn 0.2s ease;
+        }
+
+        .modal-cockpit-content {
+          background: rgba(255, 255, 255, 0.85);
+          border: 1px solid rgba(0, 0, 0, 0.05);
+          border-radius: 32px;
+          box-shadow: 
+            0 1px 2px rgba(0, 0, 0, 0.003),
+            0 24px 64px rgba(0, 0, 0, 0.04);
+          width: 100%;
+          max-width: 500px;
+          padding: 32px;
+          position: relative;
+          animation: modalScaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes modalScaleUp {
+          from { opacity: 0; transform: scale(0.96) translateY(10px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .modal-close-btn {
+          position: absolute;
+          top: 24px;
+          right: 24px;
+          background: none;
+          border: none;
+          color: var(--text-muted);
+          cursor: pointer;
+          padding: 4px;
+          border-radius: 50%;
+          transition: all 0.2s ease;
+        }
+
+        .modal-close-btn:hover {
+          color: var(--text-primary);
+          background-color: var(--bg-primary);
+        }
+
+        .modal-header-block {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .modal-phase-number-badge {
+          font-size: 9px;
+          font-weight: 700;
+          color: var(--accent-blue);
+          background-color: rgba(0, 102, 204, 0.06);
+          padding: 3px 8px;
+          border-radius: 9999px;
+          width: fit-content;
+          letter-spacing: 0.05em;
+        }
+
+        .modal-phase-title {
+          font-size: 24px;
+          font-weight: 800;
+          letter-spacing: -0.02em;
+          color: var(--text-primary);
+        }
+
+        .modal-phase-subtitle {
+          font-size: 13px;
+          color: var(--text-secondary);
+          font-weight: 500;
+        }
+
+        .modal-phase-date {
+          font-size: 11px;
+          font-weight: 600;
+          color: var(--text-muted);
+          margin-top: 4px;
+        }
+
+        .modal-section-title {
+          font-size: 11px;
+          font-weight: 700;
+          color: var(--text-muted);
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          margin-bottom: 12px;
+        }
+
+        .modal-checklist {
+          list-style: none;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .modal-check-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          font-size: 12.5px;
+          line-height: 1.4;
+          color: var(--text-primary);
+        }
+
+        .modal-bullet {
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          background-color: var(--accent-blue);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          margin-top: 2px;
+        }
+
+        .modal-financial-target-box {
+          font-size: 11px;
+          background-color: var(--bg-primary);
+          border: 1px solid var(--border-color);
+          border-radius: 8px;
+          padding: 8px 12px;
+          margin-top: 16px;
+          color: var(--text-primary);
+        }
+
+        .modal-takeaway-card {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          background-color: rgba(99, 91, 255, 0.02);
+          border: 1px solid rgba(99, 91, 255, 0.06);
+          padding: 12px;
+          border-radius: 12px;
+          margin-top: 16px;
+        }
+
+        .modal-takeaway-text {
+          font-size: 11.5px;
+          font-style: italic;
+          color: #635BFF;
+          font-weight: 600;
         }
 
         /* SHAKE ANIMATION */
@@ -938,48 +1288,8 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           30%, 60%, 90% { transform: translateX(6px); }
         }
 
-        /* MOBILE SWITCHER BUTTONS */
-        .btn-view-plan-mobile {
-          display: none;
-          position: absolute;
-          top: 20px;
-          left: 20px;
-          padding: 8px 14px;
-          background-color: #FFFFFF;
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
-          font-size: 12px;
-          font-weight: 600;
-          color: var(--text-secondary);
-          cursor: pointer;
-          align-items: center;
-        }
-
-        .btn-view-passcode-mobile {
-          display: none;
-          width: 100%;
-          padding: 12px;
-          background-color: var(--accent-blue);
-          color: #FFFFFF;
-          border: none;
-          border-radius: var(--radius-md);
-          font-size: 13px;
-          font-weight: 600;
-          cursor: pointer;
-          align-items: center;
-          justify-content: center;
-          margin-top: 16px;
-        }
-
-        @media (max-width: 1024px) {
-          .btn-view-plan-mobile {
-            display: flex !important;
-          }
-          
-          .btn-view-passcode-mobile {
-            display: flex !important;
-          }
-        }
+        /* Mobile specific layout button to switch (no needed since grid is vertical on mobile) */
+        .btn-view-plan-mobile { display: none; }
       `}</style>
 
     </div>
