@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StoreProvider } from './context/StoreContext';
-import { Sidebar } from './components/Sidebar';
+import { FloatingNav } from './components/FloatingNav';
 import { HomeScreen } from './components/screens/HomeScreen';
 import { TodayScreen } from './components/screens/TodayScreen';
 import { ContentScreen } from './components/screens/ContentScreen';
@@ -11,11 +11,9 @@ import { ExpensesScreen } from './components/screens/ExpensesScreen';
 import { DashboardScreen } from './components/screens/DashboardScreen';
 import { SimulationScreen } from './components/screens/SimulationScreen';
 import { LockScreen } from './components/LockScreen';
-import { Home, Calendar, Users, Send, PieChart } from 'lucide-react';
 
 const AppContent: React.FC = () => {
   const [activeScreen, setActiveScreen] = useState('home');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState<boolean>(() => {
     return sessionStorage.getItem('nexia_cockpit_unlocked') === 'true';
   });
@@ -55,52 +53,21 @@ const AppContent: React.FC = () => {
     }
   };
 
-  const mobileNavItems = [
-    { id: 'home', name: 'Accueil', icon: Home },
-    { id: 'today', name: "Auj.", icon: Calendar },
-    { id: 'prospects', name: 'Prosp.', icon: Users },
-    { id: 'launch', name: 'Lanc.', icon: Send },
-    { id: 'dashboard', name: 'Stats', icon: PieChart },
-  ];
-
   if (!isUnlocked) {
     return <LockScreen onUnlock={handleUnlock} />;
   }
 
   return (
     <div className="app-container">
-      <Sidebar 
+      <FloatingNav 
         activeScreen={activeScreen} 
         setActiveScreen={setActiveScreen} 
-        isOpen={isSidebarOpen}
-        setIsOpen={setIsSidebarOpen}
         onLock={handleLock}
       />
       
-      <main className="main-content">
+      <main className="main-content" style={{ paddingBottom: '120px' }}>
         {renderActiveScreen()}
       </main>
-
-      {/* Bottom Navigation for Mobile */}
-      <div className="mobile-nav-bar">
-        {mobileNavItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = activeScreen === item.id;
-          return (
-            <button
-              key={item.id}
-              className={`mobile-nav-item ${isActive ? 'active' : ''}`}
-              onClick={() => {
-                setActiveScreen(item.id);
-                setIsSidebarOpen(false);
-              }}
-            >
-              <Icon />
-              <span>{item.name}</span>
-            </button>
-          );
-        })}
-      </div>
     </div>
   );
 };
