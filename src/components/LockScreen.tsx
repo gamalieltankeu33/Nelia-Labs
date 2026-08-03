@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Star, 
   Quote, 
@@ -40,9 +40,55 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
   // Spotlight rule index
   const [selectedRuleIdx, setSelectedRuleIdx] = useState<number>(0);
 
+  // Dynamic Scroll State for Z-travel road effect
+  const [scrollTop, setScrollTop] = useState<number>(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Intro Count-up Animation state
+  const [displayedPercent, setDisplayedPercent] = useState<number>(0);
+
   const correctPasscode = localStorage.getItem('nexia_passcode') || '2026';
 
-  // Synth tactile iOS click sound using Web Audio API
+  // Calculate dynamic 5-year progression percentage
+  const calculateProgression = () => {
+    const startDate = new Date(2026, 0, 1);
+    const endDate = new Date(2031, 11, 31);
+    const today = new Date();
+    const totalDuration = endDate.getTime() - startDate.getTime();
+    const elapsedDuration = today.getTime() - startDate.getTime();
+    return Number(Math.min(100, Math.max(0, (elapsedDuration / totalDuration) * 100)).toFixed(1));
+  };
+
+  const progressPercent = calculateProgression();
+
+  // Trigger Apple Fitness style count-up animation on mount
+  useEffect(() => {
+    let startTime: number | null = null;
+    const duration = 1600; // ms
+    const endVal = progressPercent;
+
+    const animate = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const elapsed = timestamp - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      
+      // Cubic ease-out deceleration curve
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      const currentVal = easeOut * endVal;
+      
+      setDisplayedPercent(Number(currentVal.toFixed(1)));
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        setDisplayedPercent(endVal);
+      }
+    };
+
+    requestAnimationFrame(animate);
+  }, [progressPercent]);
+
+  // Audio synthesizer clicks via Web Audio API
   const playTactileClick = () => {
     try {
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
@@ -53,10 +99,10 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
       const gain = ctx.createGain();
       
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(850, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.04);
+      osc.frequency.setValueAtTime(800, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.04);
       
-      gain.gain.setValueAtTime(0.05, ctx.currentTime);
+      gain.gain.setValueAtTime(0.04, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
       
       osc.connect(gain);
@@ -64,7 +110,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
       osc.start();
       osc.stop(ctx.currentTime + 0.06);
     } catch (e) {
-      console.warn("Web Audio is blocked or not supported on this device:", e);
+      console.warn("Audio Context blocked:", e);
     }
   };
 
@@ -74,7 +120,6 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
       setPin(prev => prev + num);
       setError(false);
       
-      // Briefly highlight button
       setActiveKey(num);
       setTimeout(() => setActiveKey(null), 150);
     }
@@ -98,20 +143,18 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
     setTimeout(() => setActiveKey(null), 150);
   };
 
-  // Keyboard listener for code entry with visual feedback
+  // Keyboard events listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') {
         return;
       }
-      
       const key = e.key;
       if (/^[0-9]$/.test(key)) {
         if (pin.length < 4) {
           playTactileClick();
           setPin(prev => prev + key);
           setError(false);
-          
           setActiveKey(key);
           setTimeout(() => setActiveKey(null), 150);
         }
@@ -119,14 +162,12 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         playTactileClick();
         setPin(prev => prev.slice(0, -1));
         setError(false);
-        
         setActiveKey('backspace');
         setTimeout(() => setActiveKey(null), 150);
       } else if (key === 'Escape') {
         playTactileClick();
         setPin('');
         setError(false);
-        
         setActiveKey('clear');
         setTimeout(() => setActiveKey(null), 150);
       }
@@ -138,11 +179,10 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
     };
   }, [pin]);
 
-  // Auto-validate PIN
+  // PIN validation checks
   useEffect(() => {
     if (pin.length === 4) {
       if (pin === correctPasscode) {
-        // Play success tone
         try {
           const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
           if (AudioContextClass) {
@@ -151,19 +191,19 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
             const gain = ctx.createGain();
             osc.type = 'sine';
             osc.frequency.setValueAtTime(520, ctx.currentTime);
-            osc.frequency.setValueAtTime(680, ctx.currentTime + 0.07);
-            gain.gain.setValueAtTime(0.04, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+            osc.frequency.setValueAtTime(680, ctx.currentTime + 0.08);
+            gain.gain.setValueAtTime(0.03, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
             osc.connect(gain);
             gain.connect(ctx.destination);
             osc.start();
-            osc.stop(ctx.currentTime + 0.2);
+            osc.stop(ctx.currentTime + 0.22);
           }
         } catch(err) {}
 
         setTimeout(() => {
           onUnlock();
-        }, 350);
+        }, 300);
       } else {
         setShake(true);
         setError(true);
@@ -175,12 +215,15 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
     }
   }, [pin, correctPasscode, onUnlock]);
 
-  // Mouse moves for backdrop radial lighting
+  // Track left pane scroll to update 3D timeline
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    setScrollTop(e.currentTarget.scrollTop);
+  };
+
   const handleMouseMove = (e: React.MouseEvent) => {
     setMousePos({ x: e.clientX, y: e.clientY });
   };
 
-  // Glare positions for the card glare reflect
   const handleCardMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const card = e.currentTarget;
     const rect = card.getBoundingClientRect();
@@ -189,18 +232,6 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
     setGlarePos({ x, y });
   };
 
-  // Progression count calculation
-  const calculateProgression = () => {
-    const startDate = new Date(2026, 0, 1);
-    const endDate = new Date(2031, 11, 31);
-    const today = new Date();
-    const totalDuration = endDate.getTime() - startDate.getTime();
-    const elapsedDuration = today.getTime() - startDate.getTime();
-    return Number(Math.min(100, Math.max(0, (elapsedDuration / totalDuration) * 100)).toFixed(1));
-  };
-
-  const progressPercent = calculateProgression();
-
   const calculateDaysRemainingInPhase1 = () => {
     const today = new Date();
     const phase1End = new Date(2026, 11, 31);
@@ -208,6 +239,14 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
   };
 
   const daysRemaining = calculateDaysRemainingInPhase1();
+
+  const toggleObjective = (key: string) => {
+    playTactileClick();
+    setCheckedObjectives(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
 
   const rulesOfLife = [
     "Je ne compare pas mon chapitre 1 au chapitre 20 des autres.",
@@ -220,18 +259,6 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
     "Je ne poursuis pas l'argent ; je construis un système qui le génère."
   ];
 
-  // Auto-init selected rule
-  useEffect(() => {
-    const day = new Date().getDay();
-    setSelectedRuleIdx(day % rulesOfLife.length);
-  }, []);
-
-  const toggleObjective = (key: string) => {
-    playTactileClick();
-    setCheckedObjectives(prev => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  // Custom structure for key configuration matching iPhone
   const keyConfig = [
     { num: '1', letters: '' },
     { num: '2', letters: 'A B C' },
@@ -348,97 +375,187 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
       <div className="life-os-dual-layout">
         
         {/* LEFT COLUMN: THE LIFE OS COCKPIT VIEW */}
-        <div className={`cockpit-left-pane ${showPlanMobile ? 'show-mobile' : ''}`}>
+        <div 
+          className={`cockpit-left-pane ${showPlanMobile ? 'show-mobile' : ''}`}
+          ref={scrollContainerRef}
+          onScroll={handleScroll}
+        >
           
-          <header className="life-os-hero">
-            <span className="hero-eyebrow">MON COMPTE À REBOURS</span>
-            <h1 className="hero-headline">My Life.</h1>
-            <p className="hero-subheadline">
-              Chaque décision construit la personne que je deviendrai.
-            </p>
-          </header>
-
-          {/* LIQUID MAGSAFE PROGRESSION BAR */}
-          <section className="magsafe-progress-section">
-            <div className="progress-labels">
-              <span className="progress-value">{progressPercent}%</span>
-              <span className="progress-legend">du plan global accompli</span>
+          {/* SECTION 1: THE DEPARTURE (Intro & Apple Fitness circular progress) */}
+          <section className="story-section entrance-hero-section">
+            <div className="life-os-hero">
+              <span className="hero-eyebrow">LIFE OS SYSTEM</span>
+              <h1 className="hero-headline">My Life.</h1>
+              <p className="hero-subheadline">2031</p>
             </div>
-            <div className="magsafe-progress-track">
-              <div className="liquid-progress-fill" style={{ width: `${progressPercent}%` }}>
-                <div className="liquid-shimmer" />
+
+            {/* Apple Fitness Circular Ring widget */}
+            <div className="fitness-ring-widget-card card">
+              <div className="fitness-ring-container">
+                <svg className="fitness-ring-svg" viewBox="0 0 100 100">
+                  {/* Track ring */}
+                  <circle className="ring-track" cx="50" cy="50" r="40" />
+                  {/* Progress ring fill */}
+                  <circle 
+                    className="ring-fill" 
+                    cx="50" 
+                    cy="50" 
+                    r="40" 
+                    style={{
+                      strokeDasharray: '251.3',
+                      strokeDashoffset: `${251.3 * (1 - displayedPercent / 100)}`
+                    }}
+                  />
+                </svg>
+                <div className="fitness-ring-label">
+                  <span className="fitness-percent">{displayedPercent}%</span>
+                  <span className="fitness-sub">ACCOMPLI</span>
+                </div>
+              </div>
+              <div className="fitness-ring-text">
+                <h3 className="fitness-title-text">Activité globale de Vie</h3>
+                <p className="fitness-desc-text">Incrémentation temporelle calculée depuis le 1er janvier 2026.</p>
+              </div>
+            </div>
+            
+            <div className="scroll-indicator-arrow">
+              <span>Faire défiler pour voyager</span>
+              <div className="indicator-dot animate-bounce" />
+            </div>
+          </section>
+
+          {/* SECTION 2: THE CURRENT MISSION (Apple Wallet Card & Capsules) */}
+          <section className="story-section">
+            <div className="section-narrative-header">
+              <span className="narrative-num">01 / 04</span>
+              <h2 className="narrative-title">La Mission du Moment</h2>
+              <p className="narrative-desc">Ce qui demande toute votre attention aujourd'hui. Tout le reste est secondaire.</p>
+            </div>
+
+            <div 
+              className="card premium-mission-card"
+              onMouseMove={handleCardMouseMove}
+              style={{
+                '--glare-x': `${glarePos.x}%`,
+                '--glare-y': `${glarePos.y}%`
+              } as React.CSSProperties}
+            >
+              <div className="card-glare-reflection" />
+              
+              <div className="mission-header-row">
+                <div className="badge-apple">
+                  <Target className="size-3.5 text-blue-apple mr-1" />
+                  <span>MISSION DE LA PHASE EN COURS</span>
+                </div>
+                <div className="days-counter">
+                  <span className="days-number">{daysRemaining}</span>
+                  <span className="days-text">jours restants</span>
+                </div>
+              </div>
+
+              <h2 className="mission-title">Stabiliser l'activité de freelance</h2>
+              <p className="mission-rationale">
+                <strong>Pourquoi c'est vital :</strong> Consolider le cash-flow récurrent et basculer en société pour sécuriser vos fondations juridiques et administratives avant la phase d'accumulation active de 2027.
+              </p>
+
+              <div className="capsules-list">
+                {phases[0].objectives.map((obj, idx) => {
+                  const key = `p1-obj-${idx}`;
+                  const isChecked = !!checkedObjectives[key];
+                  return (
+                    <div 
+                      key={idx}
+                      className={`capsule-objective-item ${isChecked ? 'completed' : ''}`}
+                      onClick={() => toggleObjective(key)}
+                    >
+                      <div className={`capsule-checkbox ${isChecked ? 'checked' : ''}`}>
+                        {isChecked && <Check className="size-3 text-white" />}
+                      </div>
+                      <span className="capsule-text">{obj}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="mission-card-footer">
+                <div className="system-bullet-indicator" />
+                <span><strong>Prochaine action :</strong> Finaliser la rédaction des statuts de la société.</span>
               </div>
             </div>
           </section>
 
-          <div className="life-os-grid-sublayout">
-            
-            {/* Mission Panel */}
-            <div className="workspace-flex flex-column gap-32">
-              <div 
-                className="card premium-mission-card"
-                onMouseMove={handleCardMouseMove}
-                style={{
-                  '--glare-x': `${glarePos.x}%`,
-                  '--glare-y': `${glarePos.y}%`
-                } as React.CSSProperties}
-              >
-                <div className="card-glare-reflection" />
-                
-                <div className="mission-header-row">
-                  <div className="badge-apple">
-                    <Target className="size-3.5 text-blue-apple mr-1" />
-                    <span>MISSION ACTUELLE</span>
-                  </div>
-                  <div className="days-counter">
-                    <span className="days-number">{daysRemaining}</span>
-                    <span className="days-text">jours restants</span>
-                  </div>
-                </div>
-
-                <h2 className="mission-title">Stabiliser l'activité de freelance</h2>
-                <p className="mission-rationale">
-                  Consolider le cash-flow et basculer administrativement en société de prestation pour sécuriser le socle de départ.
-                </p>
-
-                <div className="capsules-list">
-                  {phases[0].objectives.map((obj, idx) => {
-                    const key = `p1-obj-${idx}`;
-                    const isChecked = !!checkedObjectives[key];
-                    return (
-                      <div 
-                        key={idx}
-                        className={`capsule-objective-item ${isChecked ? 'completed' : ''}`}
-                        onClick={() => toggleObjective(key)}
-                      >
-                        <div className={`capsule-checkbox ${isChecked ? 'checked' : ''}`}>
-                          {isChecked && <Check className="size-3 text-white" />}
-                        </div>
-                        <span className="capsule-text">{obj}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="mission-card-footer">
-                  <div className="system-bullet-indicator" />
-                  <span><strong>Prochaine action critique :</strong> Finaliser la rédaction des statuts de la société.</span>
-                </div>
-              </div>
-
-              {/* Spotlight Quote */}
-              <div className="card spotlight-quote-card">
-                <Quote className="quote-icon" />
-                <p className="quote-text">« {rulesOfLife[selectedRuleIdx]} »</p>
-                <div className="quote-sublabel">PRINCIPE DE VIE ACTIF</div>
-              </div>
+          {/* SECTION 3: THE VISION (iOS App Icon Gallery) */}
+          <section className="story-section">
+            <div className="section-narrative-header">
+              <span className="narrative-num">02 / 04</span>
+              <h2 className="narrative-title">La Vision Future</h2>
+              <p className="narrative-desc">La constellation d'actifs et de vie que vous construisez avec discipline.</p>
             </div>
 
-            {/* Vision Panel */}
-            <div className="workspace-flex flex-column gap-32">
-              
+            <div className="card vision-gallery-card">
+              <div className="vision-gallery-grid">
+                <div className="gallery-icon-card icon-residence">
+                  <div className="icon-overlay" />
+                  <span className="gallery-emoji">🏡</span>
+                  <div className="gallery-meta">
+                    <span className="gallery-title">Résidence</span>
+                    <span className="gallery-detail">Socle principal</span>
+                  </div>
+                </div>
+                <div className="gallery-icon-card icon-immeuble">
+                  <div className="icon-overlay" />
+                  <span className="gallery-emoji">🏢</span>
+                  <div className="gallery-meta">
+                    <span className="gallery-title">Immeuble</span>
+                    <span className="gallery-detail">Actifs au pays</span>
+                  </div>
+                </div>
+                <div className="gallery-icon-card icon-marriage">
+                  <div className="icon-overlay" />
+                  <span className="gallery-emoji">💍</span>
+                  <div className="gallery-meta">
+                    <span className="gallery-title">Famille</span>
+                    <span className="gallery-detail">Me marier & bâtir</span>
+                  </div>
+                </div>
+                <div className="gallery-icon-card icon-voiture">
+                  <div className="icon-overlay" />
+                  <span className="gallery-emoji">🚘</span>
+                  <div className="gallery-meta">
+                    <span className="gallery-title">Voiture</span>
+                    <span className="gallery-detail">Mouvement libre</span>
+                  </div>
+                </div>
+                <div className="gallery-icon-card icon-company">
+                  <div className="icon-overlay" />
+                  <span className="gallery-emoji">📈</span>
+                  <div className="gallery-meta">
+                    <span className="gallery-title">Entreprise</span>
+                    <span className="gallery-detail">Systèmes IA</span>
+                  </div>
+                </div>
+                <div className="gallery-icon-card icon-peace">
+                  <div className="icon-overlay" />
+                  <span className="gallery-emoji">🧘</span>
+                  <div className="gallery-meta">
+                    <span className="gallery-title">Vie Paisible</span>
+                    <span className="gallery-detail">Esprit & Discipline</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* SECTION 4: PRINCIPLES SELECTOR */}
+          <section className="story-section">
+            <div className="section-narrative-header">
+              <span className="narrative-num">03 / 04</span>
+              <h2 className="narrative-title">Les Règles du Jeu</h2>
+              <p className="narrative-desc">Vos principes de vie. Sélectionnez-en un pour le mettre au centre du cockpit.</p>
+            </div>
+
+            <div className="life-os-grid-sublayout" style={{ gridTemplateColumns: '1fr' }}>
               <div className="card rules-selector-card">
-                <h3 className="card-mini-title">Principes de Vie</h3>
                 <div className="rules-selector-list">
                   {rulesOfLife.map((rule, idx) => {
                     const isActive = idx === selectedRuleIdx;
@@ -459,86 +576,69 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
                 </div>
               </div>
 
-              {/* Vision Gallery */}
-              <div className="card vision-gallery-card">
-                <h3 className="card-mini-title">Cibles Vision 2031</h3>
-                <div className="vision-gallery-grid">
-                  <div className="gallery-icon-card icon-residence">
-                    <div className="icon-overlay" />
-                    <span className="gallery-emoji">🏡</span>
-                    <div className="gallery-meta">
-                      <span className="gallery-title">Résidence</span>
-                      <span className="gallery-detail">Socle principal</span>
-                    </div>
-                  </div>
-                  <div className="gallery-icon-card icon-immeuble">
-                    <div className="icon-overlay" />
-                    <span className="gallery-emoji">🏢</span>
-                    <div className="gallery-meta">
-                      <span className="gallery-title">Immeuble</span>
-                      <span className="gallery-detail">Actifs au pays</span>
-                    </div>
-                  </div>
-                  <div className="gallery-icon-card icon-marriage">
-                    <div className="icon-overlay" />
-                    <span className="gallery-emoji">💍</span>
-                    <div className="gallery-meta">
-                      <span className="gallery-title">Famille</span>
-                      <span className="gallery-detail">Me marier & bâtir</span>
-                    </div>
-                  </div>
-                  <div className="gallery-icon-card icon-voiture">
-                    <div className="icon-overlay" />
-                    <span className="gallery-emoji">🚘</span>
-                    <div className="gallery-meta">
-                      <span className="gallery-title">Voiture</span>
-                      <span className="gallery-detail">Mouvement libre</span>
-                    </div>
-                  </div>
-                  <div className="gallery-icon-card icon-company">
-                    <div className="icon-overlay" />
-                    <span className="gallery-emoji">📈</span>
-                    <div className="gallery-meta">
-                      <span className="gallery-title">Entreprise</span>
-                      <span className="gallery-detail">Systèmes IA</span>
-                    </div>
-                  </div>
-                  <div className="gallery-icon-card icon-peace">
-                    <div className="icon-overlay" />
-                    <span className="gallery-emoji">🧘</span>
-                    <div className="gallery-meta">
-                      <span className="gallery-title">Vie Paisible</span>
-                      <span className="gallery-detail">Esprit & Discipline</span>
-                    </div>
-                  </div>
-                </div>
+              <div className="card spotlight-quote-card">
+                <Quote className="quote-icon" />
+                <p className="quote-text">« {rulesOfLife[selectedRuleIdx]} »</p>
+                <div className="quote-sublabel">PRINCIPE DE VIE ACTIF</div>
               </div>
+            </div>
+          </section>
 
+          {/* SECTION 5: 3D PERSPECTIVE SCROLL ROAD TIMELINE */}
+          <section className="story-section timeline-3d-section">
+            <div className="section-narrative-header">
+              <span className="narrative-num">04 / 04</span>
+              <h2 className="narrative-title">La Route du Temps</h2>
+              <p className="narrative-desc">Votre voyage vers 2031. Défilez vers le bas pour avancer physiquement sur la route.</p>
             </div>
 
-          </div>
-
-          {/* Timeline tube */}
-          <section className="glass-timeline-section">
-            <h3 className="card-mini-title">Plan Temporel Interactif</h3>
-            
-            <div className="timeline-tube-container">
-              <div className="glass-tube-cylinder" />
-              <div className="timeline-nodes-track">
+            <div className="road-3d-scene-container">
+              {/* Perspective 3D path container */}
+              <div className="road-3d-perspective-track">
                 {phases.map((phase, idx) => {
-                  const isCurrentPhase = idx === 0;
+                  // Z-axis positioning dynamically shifting forward with scroll
+                  // Starts spaced at -400px intervals, gets pulled forward as user scrolls
+                  const baseZ = -400 * idx;
+                  const currentZ = baseZ + (scrollTop * 0.9);
+                  
+                  // Calculate opacity based on Z position
+                  // Fade out if it passes the camera (Z > 50) or is too far back (Z < -1000)
+                  let opacity = 1;
+                  if (currentZ > 100) {
+                    opacity = 0; // Passed camera
+                  } else if (currentZ > 0) {
+                    opacity = 1 - (currentZ / 100); // Fading out as it passes
+                  } else if (currentZ < -800) {
+                    opacity = Math.max(0, 1 - (Math.abs(currentZ + 800) / 400)); // Fading in distance
+                  }
+
+                  // Calculate size scaling
+                  const scale = Math.max(0.1, 1 + (currentZ / 1200));
+
+                  // Alternating X offset for winding road feel
+                  const xOffset = idx % 2 === 0 ? -120 : 120;
+
                   return (
                     <div 
                       key={idx}
-                      className={`timeline-bead-wrapper ${isCurrentPhase ? 'current' : ''}`}
+                      className="road-3d-sphere-node"
+                      style={{
+                        transform: `translate3d(${xOffset}px, 0px, ${currentZ}px) scale(${scale})`,
+                        opacity: opacity,
+                        pointerEvents: opacity > 0.1 ? 'auto' : 'none'
+                      }}
                       onClick={() => {
                         playTactileClick();
                         setActivePhaseIndex(idx);
                       }}
                     >
-                      <span className="bead-year">{phase.dates.replace("Année ", "")}</span>
-                      <div className="bead-circle" />
-                      <span className="bead-label">{phase.title.split(" : ")[1]}</span>
+                      <div className="sphere-element-wrapper">
+                        <div className="sphere-bead-circle" />
+                        <div className="sphere-meta">
+                          <span className="sphere-year">{phase.dates.replace("Année ", "")}</span>
+                          <span className="sphere-label">{phase.title.split(" : ")[1]}</span>
+                        </div>
+                      </div>
                     </div>
                   );
                 })}
@@ -561,7 +661,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
 
         </div>
 
-        {/* RIGHT COLUMN: THE IPHONE LOCK PANEL WIDGET */}
+        {/* RIGHT COLUMN: THE FIXED IPHONE PASSCODE KEYPAD CARD */}
         <div className="lockscreen-right-pane">
           
           <button 
@@ -571,7 +671,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
             <Compass className="size-4 mr-2" /> Mon Plan de Vie
           </button>
 
-          {/* iPhone style passcode visual widget container */}
+          {/* iPhone style passcode visual card */}
           <div className={`iphone-lock-card ${shake ? 'shake-iphone' : ''}`}>
             
             <div className="iphone-lock-header">
@@ -595,7 +695,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
               ))}
             </div>
 
-            {error && <span className="iphone-error-text">Code incorrect. Veuillez réessayer.</span>}
+            {error && <span className="iphone-error-text">Code incorrect. Réessayez.</span>}
 
             {/* Apple iPhone Keypad Grid layout */}
             <div className="iphone-keypad-grid">
@@ -649,7 +749,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
 
       </div>
 
-      {/* APPLE VISION PRO MORPHING MODAL PANEL */}
+      {/* DETAILED PHASE MODAL POPUP */}
       {activePhaseIndex !== null && (
         <div className="os-modal-backdrop" onClick={() => setActivePhaseIndex(null)}>
           <div className="os-modal-card" onClick={(e) => e.stopPropagation()}>
@@ -701,7 +801,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         </div>
       )}
 
-      {/* Stylesheet supporting iPhone visual cockpit */}
+      {/* Premium Apple Materials Stylesheet */}
       <style>{`
         /* Global structure */
         .life-os-container {
@@ -792,8 +892,9 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           height: 100vh;
           display: flex;
           flex-direction: column;
-          gap: 40px;
+          gap: 72px;
           border-right: 1px solid rgba(0, 0, 0, 0.04);
+          scroll-snap-type: y proximity;
         }
 
         @media (max-width: 1024px) {
@@ -812,21 +913,56 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           }
         }
 
-        .life-os-grid-sublayout {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 28px;
-        }
-
-        @media (max-width: 768px) {
-          .life-os-grid-sublayout {
-            grid-template-columns: 1fr;
-          }
-        }
-
-        .workspace-flex {
+        /* Section narrative wrapper */
+        .story-section {
+          scroll-snap-align: start;
           display: flex;
           flex-direction: column;
+          gap: 28px;
+          min-height: calc(100vh - 120px);
+          justify-content: center;
+          padding: 40px 0;
+        }
+
+        .entrance-hero-section {
+          min-height: calc(100vh - 120px);
+          justify-content: space-between;
+          padding-top: 20px;
+        }
+
+        .section-narrative-header {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .narrative-num {
+          font-size: 11px;
+          font-weight: 700;
+          color: #0066CC;
+          letter-spacing: 0.15em;
+        }
+
+        .narrative-title {
+          font-size: 36px;
+          font-weight: 800;
+          letter-spacing: -0.04em;
+          color: #0F172A;
+          line-height: 1.1;
+        }
+
+        .narrative-desc {
+          font-size: 14px;
+          color: #64748B;
+          font-weight: 500;
+          max-width: 480px;
+          line-height: 1.45;
+        }
+
+        .life-os-grid-sublayout {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 28px;
         }
 
         /* Hero text styles */
@@ -844,7 +980,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         }
 
         .hero-headline {
-          font-size: 56px;
+          font-size: 72px;
           font-weight: 800;
           letter-spacing: -0.04em;
           color: #0F172A;
@@ -852,12 +988,11 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         }
 
         .hero-subheadline {
-          font-size: 18px;
-          color: #475569;
-          font-weight: 500;
-          line-height: 1.45;
-          letter-spacing: -0.01em;
-          max-width: 580px;
+          font-size: 32px;
+          color: #94A3B8;
+          font-weight: 800;
+          line-height: 1.1;
+          letter-spacing: -0.02em;
         }
 
         /* MagSafe progression tracker */
@@ -916,10 +1051,127 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           background-size: 200px 100%;
         }
 
+        /* Apple Fitness circular progress widget */
+        .fitness-ring-widget-card {
+          display: flex;
+          align-items: center;
+          gap: 28px;
+          padding: 24px 32px;
+          background: rgba(255, 255, 255, 0.75);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          max-width: 480px;
+        }
+
+        @media (max-width: 480px) {
+          .fitness-ring-widget-card {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 20px 24px;
+          }
+        }
+
+        .fitness-ring-container {
+          position: relative;
+          width: 90px;
+          height: 90px;
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .fitness-ring-svg {
+          width: 100%;
+          height: 100%;
+          transform: rotate(-90deg);
+        }
+
+        .ring-track {
+          fill: none;
+          stroke: rgba(0, 102, 204, 0.05);
+          stroke-width: 9;
+        }
+
+        .ring-fill {
+          fill: none;
+          stroke: url(#fitnessGradient);
+          /* Fallback in case gradient isn't bound: apple blue */
+          stroke: #0066CC; 
+          stroke-width: 9;
+          stroke-linecap: round;
+          transition: stroke-dashoffset 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .fitness-ring-label {
+          position: absolute;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          line-height: 1;
+        }
+
+        .fitness-percent {
+          font-size: 16px;
+          font-weight: 800;
+          color: #0066CC;
+        }
+
+        .fitness-sub {
+          font-size: 7px;
+          font-weight: 700;
+          color: #94A3B8;
+          letter-spacing: 0.05em;
+          margin-top: 1px;
+        }
+
+        .fitness-ring-text {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .fitness-title-text {
+          font-size: 15px;
+          font-weight: 800;
+          color: #0F172A;
+        }
+
+        .fitness-desc-text {
+          font-size: 11.5px;
+          color: #64748B;
+          line-height: 1.4;
+          font-weight: 500;
+        }
+
+        /* Scroll indicators */
+        .scroll-indicator-arrow {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 6px;
+          align-self: center;
+          font-size: 10px;
+          font-weight: 700;
+          color: #94A3B8;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          margin-bottom: 10px;
+        }
+
+        .indicator-dot {
+          width: 5px;
+          height: 5px;
+          border-radius: 50%;
+          background-color: #0066CC;
+        }
+
         /* Cards general aesthetics */
         .card {
           background-color: #FFFFFF;
-          border: 1px solid rgba(0, 0, 0, 0.03);
+          border: 1px solid rgba(0, 0, 0, 0.035);
           border-radius: 28px;
           box-shadow: 
             0 1px 3px rgba(0, 0, 0, 0.005),
@@ -1271,106 +1523,103 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           font-weight: 600;
         }
 
-        /* Timeline Glass tube */
-        .glass-timeline-section {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
+        /* 3D SCROLL TRAVEL ROAD TIMELINE */
+        .timeline-3d-section {
+          min-height: 90vh;
         }
 
-        .timeline-tube-container {
+        .road-3d-scene-container {
           position: relative;
-          padding: 36px 0;
           width: 100%;
-          overflow-x: auto;
-          display: flex;
-          align-items: center;
+          height: 480px;
+          background-color: rgba(255, 255, 255, 0.15);
+          border: 1px solid rgba(0, 0, 0, 0.02);
+          border-radius: 32px;
+          overflow: hidden;
+          /* Essential 3D context attributes */
+          perspective: 600px;
+          -webkit-perspective: 600px;
+          transform-style: preserve-3d;
+          box-shadow: inset 0 20px 40px rgba(0,0,0,0.01);
         }
 
-        .glass-tube-cylinder {
+        .road-3d-perspective-track {
           position: absolute;
-          top: 50%;
-          left: 0;
-          right: 0;
-          height: 8px;
-          background: linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0%, rgba(200, 200, 200, 0.3) 50%, rgba(150, 150, 150, 0.1) 100%);
-          border: 1px solid rgba(255, 255, 255, 0.7);
-          backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
-          border-radius: 99px;
-          z-index: 1;
-        }
-
-        .timeline-nodes-track {
-          position: relative;
-          z-index: 2;
-          display: flex;
-          justify-content: space-between;
           width: 100%;
-          min-width: 780px;
-          padding: 0 16px;
+          height: 100%;
+          top: 0;
+          left: 0;
+          transform-style: preserve-3d;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
-        .timeline-bead-wrapper {
+        .road-3d-sphere-node {
+          position: absolute;
+          width: 220px;
+          transform-style: preserve-3d;
+          cursor: pointer;
+          transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+        }
+
+        .sphere-element-wrapper {
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 10px;
-          cursor: pointer;
-          width: 100px;
-          transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          gap: 12px;
+          position: relative;
         }
 
-        .timeline-bead-wrapper:hover {
-          transform: translateY(-4px);
-        }
-
-        .bead-year {
-          font-size: 11px;
-          font-weight: 700;
-          color: #94A3B8;
-        }
-
-        .bead-circle {
-          width: 18px;
-          height: 18px;
+        /* High fidelity chrome spheres */
+        .sphere-bead-circle {
+          width: 48px;
+          height: 48px;
           border-radius: 50%;
-          background: radial-gradient(circle at 35% 35%, #FFFFFF 0%, #E2E8F0 60%, #CBD5E1 100%);
-          border: 1px solid rgba(255, 255, 255, 0.8);
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
-          transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+          background: radial-gradient(circle at 35% 35%, #FFFFFF 0%, #CBD5E1 50%, #94A3B8 85%, #64748B 100%);
+          box-shadow: 
+            0 10px 24px rgba(0, 0, 0, 0.15),
+            inset 0 -2px 6px rgba(0,0,0,0.2),
+            inset 0 2px 6px rgba(255,255,255,0.8);
+          border: 1.5px solid rgba(255, 255, 255, 0.9);
+          transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        .timeline-bead-wrapper:hover .bead-circle {
+        .road-3d-sphere-node:hover .sphere-bead-circle {
           transform: scale(1.15);
-          background: radial-gradient(circle at 35% 35%, #FFFFFF 0%, #D8E6F8 60%, #90B8EB 100%);
+          background: radial-gradient(circle at 35% 35%, #FFFFFF 0%, #90B8EB 50%, #0066CC 85%, #004488 100%);
+          box-shadow: 
+            0 12px 30px rgba(0, 102, 204, 0.3),
+            inset 0 -2px 6px rgba(0,0,0,0.3);
         }
 
-        .bead-label {
-          font-size: 10px;
-          font-weight: 700;
-          color: #64748B;
+        .sphere-meta {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
           text-align: center;
           line-height: 1.3;
         }
 
-        .timeline-bead-wrapper.current .bead-circle {
-          background: radial-gradient(circle at 35% 35%, #FFFFFF 0%, #3b82f6 60%, #0066CC 100%);
-          box-shadow: 
-            0 4px 8px rgba(0, 102, 204, 0.2),
-            0 0 0 3px rgba(0, 102, 204, 0.06);
-          transform: scale(1.2);
+        .sphere-year {
+          font-size: 13px;
+          font-weight: 800;
+          color: #0F172A;
+          letter-spacing: -0.01em;
         }
 
-        .timeline-bead-wrapper.current .bead-year {
+        .sphere-label {
+          font-size: 11px;
+          font-weight: 700;
+          color: #64748B;
+          max-width: 140px;
+        }
+
+        .road-3d-sphere-node:hover .sphere-label {
           color: #0066CC;
         }
 
-        .timeline-bead-wrapper.current .bead-label {
-          color: #0F172A;
-          font-weight: 800;
-        }
-
+        /* Scrollbar styles matching Apple minimalist look */
         .life-os-footer {
           display: flex;
           justify-content: center;
@@ -1650,11 +1899,6 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           animation: modalScaleUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
-        @keyframes modalFadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-
         @keyframes modalScaleUp {
           from { opacity: 0; transform: scale(0.95) translateY(12px); }
           to { opacity: 1; transform: scale(1) translateY(0); }
@@ -1813,6 +2057,17 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           line-height: 1.5;
         }
       `}</style>
+
+      {/* SVG Linear Gradient definitions for Fitness Circular Ring track */}
+      <svg width="0" height="0">
+        <defs>
+          <linearGradient id="fitnessGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#0066CC" />
+            <stop offset="50%" stopColor="#3b82f6" />
+            <stop offset="100%" stopColor="#10B981" />
+          </linearGradient>
+        </defs>
+      </svg>
 
     </div>
   );
