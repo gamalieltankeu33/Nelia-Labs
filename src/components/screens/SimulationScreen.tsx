@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useStore } from '../../context/StoreContext';
 import { 
   Sparkles, 
   Sliders, 
@@ -12,7 +13,8 @@ import {
   Info, 
   Award,
   Flame,
-  CheckCircle2
+  CheckCircle2,
+  Database
 } from 'lucide-react';
 
 interface SimulationParams {
@@ -56,6 +58,8 @@ const DEFAULT_PARAMS: SimulationParams = {
 };
 
 export const SimulationScreen: React.FC = () => {
+  const { launches } = useStore();
+
   // Main simulator inputs state
   const [params, setParams] = useState<SimulationParams>(DEFAULT_PARAMS);
   const [simName, setSimName] = useState('');
@@ -126,6 +130,64 @@ export const SimulationScreen: React.FC = () => {
     }));
   };
 
+  // Get list of real launches available in the store
+  const getRealLaunchOptions = () => {
+    return Object.entries(launches)
+      .filter(([_, l]) => l.registered > 0 || l.adsSpent > 0 || l.adsBudget > 0)
+      .map(([monthKey, launch]) => {
+        const [year, month] = monthKey.split('-').map(Number);
+        const date = new Date(year, month - 1, 15);
+        const label = date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+        const capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1);
+        return {
+          value: monthKey,
+          label: `${capitalizedLabel} (Real: ${launch.adsBudget || launch.adsSpent}€ Pub, ${launch.registered} Inscrits)`
+        };
+      })
+      .sort((a, b) => b.value.localeCompare(a.value));
+  };
+
+  const realLaunchOptions = getRealLaunchOptions();
+  const hasRealLaunches = realLaunchOptions.length > 0;
+
+  // Handle importing data from a real launch
+  const handleImportRealLaunch = (monthKey: string) => {
+    const launch = launches[monthKey];
+    if (!launch) return;
+
+    const budget = launch.adsBudget || launch.adsSpent || 2000;
+    const registered = launch.registered || 1;
+    const live = launch.live || 0;
+    
+    // Estimate CPR based on spent and registered
+    const spent = launch.adsSpent || launch.adsBudget || 0;
+    const cpr = registered > 0 ? spent / registered : 4.5;
+    
+    // Calculate turn up rate
+    const showUpRate = registered > 0 ? Math.min(100, Math.round((live / registered) * 100)) : 25;
+    
+    // Calculate direct offer price based on sales count and amount
+    const offerPrice = launch.daySalesCount > 0 ? Math.round(launch.daySalesAmount / launch.daySalesCount) : 997;
+    
+    // Strategy determination
+    const salesStrategy = launch.launchType === 'Organique' ? 'direct' : 'calls';
+    const callClosingRate = live > 0 ? Math.min(100, Math.round((launch.daySalesCount / live) * 100)) : 20;
+    const directConversionRate = live > 0 ? Math.min(100, Number(((launch.daySalesCount / live) * 100).toFixed(1))) : 1.5;
+
+    setParams({
+      name: `Projection basée sur ${monthKey}`,
+      budget,
+      cpr: Number(cpr.toFixed(2)),
+      showUpRate,
+      offerPrice,
+      salesStrategy,
+      callBookingRate: 10, // default placeholder
+      callClosingRate: callClosingRate || 20,
+      directConversionRate: directConversionRate || 1.5
+    });
+    setActivePreset('');
+  };
+
   // Core calculations logic
   const calculateResult = (p: SimulationParams, modifierType: 'realistic' | 'pessimistic' | 'optimistic'): SimulationResults => {
     let effectiveCpr = p.cpr;
@@ -135,14 +197,12 @@ export const SimulationScreen: React.FC = () => {
     let effectiveDirectConversion = p.directConversionRate;
 
     if (modifierType === 'pessimistic') {
-      // Pessimistic: higher ad cost, lower turn-up, lower conversion
       effectiveCpr = p.cpr * 1.35; // +35% CPR
       effectiveShowUp = Math.max(10, p.showUpRate * 0.75); // -25% attendance
       effectiveBooking = Math.max(2, p.callBookingRate * 0.8); // -20% bookings
       effectiveClosing = Math.max(5, p.callClosingRate * 0.7); // -30% closing
       effectiveDirectConversion = Math.max(0.2, p.directConversionRate * 0.65); // -35% direct conversion
     } else if (modifierType === 'optimistic') {
-      // Optimistic: lower ad cost, higher turn-up, higher conversion
       effectiveCpr = Math.max(1.0, p.cpr * 0.75); // -25% CPR
       effectiveShowUp = Math.min(80, p.showUpRate * 1.2); // +20% attendance
       effectiveBooking = Math.min(40, p.callBookingRate * 1.15); // +15% bookings
@@ -252,7 +312,7 @@ export const SimulationScreen: React.FC = () => {
           <div>
             <h1 className="sim-title">Simulateur de Lancements Publicitaires</h1>
             <p className="sim-subtitle">
-              Simulez vos lancements sur Meta Ads et projetez vos gains d'acquisition pour vos offres d'Accompagnement & Business IA.
+              Configurez vos prévisions de lancements Meta Ads en entrant vos propres objectifs ou en important vos données réelles.
             </p>
           </div>
         </div>
@@ -266,9 +326,9 @@ export const SimulationScreen: React.FC = () => {
           
           {/* Preset Buttons */}
           <div className="card preset-card">
-            <h3 className="sim-section-title">Presets & Benchmarks Marché (Niche IA)</h3>
+            <h3 className="sim-section-title">Presets & Données Réelles</h3>
             <p className="sim-section-desc">
-              Sélectionnez un modèle de base issu des données actuelles du marché pour calibrer vos calculs.
+              Utilisez des données moyennes du marché ou importez les métriques réelles d'un mois précédent.
             </p>
             <div className="preset-buttons-row">
               <button 
@@ -293,12 +353,33 @@ export const SimulationScreen: React.FC = () => {
                 IA Initiation (€297) - Direct
               </button>
             </div>
+
+            {/* Real Launches Import */}
+            {hasRealLaunches && (
+              <div className="real-launches-import-box">
+                <label className="import-label" htmlFor="import-real-launch">
+                  <Database className="size-3.5 text-blue" style={{ display: 'inline', marginRight: '6px', verticalAlign: 'text-bottom' }} />
+                  Importer d'un lancement réel :
+                </label>
+                <select 
+                  id="import-real-launch"
+                  onChange={(e) => handleImportRealLaunch(e.target.value)}
+                  defaultValue=""
+                  className="import-dropdown"
+                >
+                  <option value="" disabled>-- Sélectionner un mois --</option>
+                  {realLaunchOptions.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Core Configuration Form */}
           <div className="card form-card">
             <h3 className="sim-section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Sliders className="size-4 text-blue" /> Paramètres de Campagne
+              <Sliders className="size-4 text-blue" /> Configurer les Métriques
             </h3>
             
             <div className="form-fields-container">
@@ -306,95 +387,114 @@ export const SimulationScreen: React.FC = () => {
               <div className="form-group">
                 <div className="label-row">
                   <label htmlFor="sim-budget">Budget de Campagne Meta</label>
-                  <span className="value-badge">{params.budget.toLocaleString('fr-FR')} €</span>
                 </div>
-                <input 
-                  type="range" 
-                  id="sim-budget" 
-                  min="200" 
-                  max="15000" 
-                  step="100" 
-                  value={params.budget} 
-                  onChange={(e) => handleParamChange('budget', Number(e.target.value))}
-                  className="sim-slider"
-                />
-                <input 
-                  type="number" 
-                  value={params.budget} 
-                  onChange={(e) => handleParamChange('budget', Math.max(0, Number(e.target.value)))}
-                  className="sim-number-input"
-                />
+                <div className="slider-input-row">
+                  <input 
+                    type="range" 
+                    id="sim-budget" 
+                    min="100" 
+                    max="30000" 
+                    step="100" 
+                    value={params.budget} 
+                    onChange={(e) => handleParamChange('budget', Number(e.target.value))}
+                    className="sim-slider"
+                  />
+                  <div className="input-suffix-wrapper" style={{ width: '100px' }}>
+                    <input 
+                      type="number" 
+                      min="0"
+                      value={params.budget} 
+                      onChange={(e) => handleParamChange('budget', Math.max(0, Number(e.target.value)))}
+                      className="sim-inline-number-input"
+                    />
+                    <span className="input-suffix">€</span>
+                  </div>
+                </div>
               </div>
 
               {/* CPR (Cost per Registration) */}
               <div className="form-group">
                 <div className="label-row">
-                  <label htmlFor="sim-cpr">
-                    Coût par Inscrit (CPR) 
-                    <span className="help-tooltip" title="Dans la thématique business IA sur Meta, le coût par inscrit moyen se situe entre 3.5€ et 7€ en fonction de la qualité de l'audience.">
-                      <Info className="size-3 text-muted inline ml-1 cursor-pointer" />
-                    </span>
-                  </label>
-                  <span className="value-badge badge-violet">{params.cpr.toFixed(2)} €</span>
+                  <label htmlFor="sim-cpr">Coût par Inscrit (CPR)</label>
                 </div>
-                <input 
-                  type="range" 
-                  id="sim-cpr" 
-                  min="1.0" 
-                  max="15.0" 
-                  step="0.1" 
-                  value={params.cpr} 
-                  onChange={(e) => handleParamChange('cpr', Number(e.target.value))}
-                  className="sim-slider"
-                />
+                <div className="slider-input-row">
+                  <input 
+                    type="range" 
+                    id="sim-cpr" 
+                    min="0.5" 
+                    max="25.0" 
+                    step="0.05" 
+                    value={params.cpr} 
+                    onChange={(e) => handleParamChange('cpr', Number(e.target.value))}
+                    className="sim-slider"
+                  />
+                  <div className="input-suffix-wrapper" style={{ width: '90px' }}>
+                    <input 
+                      type="number" 
+                      step="0.01"
+                      min="0.1"
+                      value={params.cpr} 
+                      onChange={(e) => handleParamChange('cpr', Math.max(0.1, Number(e.target.value)))}
+                      className="sim-inline-number-input"
+                    />
+                    <span className="input-suffix">€</span>
+                  </div>
+                </div>
                 <div className="benchmark-range-text">Standard marché : 3.00 € - 7.00 €</div>
               </div>
 
               {/* Show Up Rate */}
               <div className="form-group">
                 <div className="label-row">
-                  <label htmlFor="sim-showup">
-                    Taux de présence au Live
-                    <span className="help-tooltip" title="Pourcentage des inscrits qui se connectent au webinaire en direct. Les relances SMS/WhatsApp aident à augmenter ce taux.">
-                      <Info className="size-3 text-muted inline ml-1 cursor-pointer" />
-                    </span>
-                  </label>
-                  <span className="value-badge badge-blue">{params.showUpRate} %</span>
+                  <label htmlFor="sim-showup">Taux de présence au Live</label>
                 </div>
-                <input 
-                  type="range" 
-                  id="sim-showup" 
-                  min="10" 
-                  max="70" 
-                  step="1" 
-                  value={params.showUpRate} 
-                  onChange={(e) => handleParamChange('showUpRate', Number(e.target.value))}
-                  className="sim-slider"
-                />
+                <div className="slider-input-row">
+                  <input 
+                    type="range" 
+                    id="sim-showup" 
+                    min="5" 
+                    max="90" 
+                    step="1" 
+                    value={params.showUpRate} 
+                    onChange={(e) => handleParamChange('showUpRate', Number(e.target.value))}
+                    className="sim-slider"
+                  />
+                  <div className="input-suffix-wrapper" style={{ width: '90px' }}>
+                    <input 
+                      type="number" 
+                      min="0"
+                      max="100"
+                      value={params.showUpRate} 
+                      onChange={(e) => handleParamChange('showUpRate', Math.min(100, Math.max(0, Number(e.target.value))))}
+                      className="sim-inline-number-input"
+                    />
+                    <span className="input-suffix">%</span>
+                  </div>
+                </div>
                 <div className="benchmark-range-text">Standard marché : 20% - 35%</div>
               </div>
 
               {/* Offer Price */}
               <div className="form-group">
-                <label htmlFor="sim-price">Prix de votre offre (€)</label>
+                <label htmlFor="sim-price">Prix de l'offre vendue</label>
                 <div style={{ position: 'relative' }}>
                   <input 
                     type="number" 
                     id="sim-price"
-                    min="50" 
-                    max="10000" 
+                    min="1" 
+                    max="50000" 
                     value={params.offerPrice} 
                     onChange={(e) => handleParamChange('offerPrice', Math.max(0, Number(e.target.value)))}
                     className="sim-text-input"
                     style={{ paddingLeft: '32px' }}
                   />
-                  <DollarSign className="price-input-icon size-4 text-muted" />
+                  <DollarSign className="price-input-icon size-4 text-muted" style={{ left: '12px' }} />
                 </div>
               </div>
 
               {/* Sales Strategy Selector */}
               <div className="form-group">
-                <label>Méthode de conversion (Vente)</label>
+                <label>Méthode de conversion</label>
                 <div className="strategy-toggle-container">
                   <button 
                     type="button"
@@ -420,18 +520,31 @@ export const SimulationScreen: React.FC = () => {
                   <div className="form-group sub-group bg-soft-blue">
                     <div className="label-row">
                       <label htmlFor="sim-booking">Taux d'appels réservés (sur le live)</label>
-                      <span className="value-badge badge-blue">{params.callBookingRate} %</span>
                     </div>
-                    <input 
-                      type="range" 
-                      id="sim-booking" 
-                      min="2" 
-                      max="30" 
-                      step="0.5" 
-                      value={params.callBookingRate} 
-                      onChange={(e) => handleParamChange('callBookingRate', Number(e.target.value))}
-                      className="sim-slider"
-                    />
+                    <div className="slider-input-row">
+                      <input 
+                        type="range" 
+                        id="sim-booking" 
+                        min="1" 
+                        max="50" 
+                        step="0.5" 
+                        value={params.callBookingRate} 
+                        onChange={(e) => handleParamChange('callBookingRate', Number(e.target.value))}
+                        className="sim-slider"
+                      />
+                      <div className="input-suffix-wrapper" style={{ width: '90px' }}>
+                        <input 
+                          type="number" 
+                          step="0.1"
+                          min="0"
+                          max="100"
+                          value={params.callBookingRate} 
+                          onChange={(e) => handleParamChange('callBookingRate', Math.min(100, Math.max(0, Number(e.target.value))))}
+                          className="sim-inline-number-input"
+                        />
+                        <span className="input-suffix">%</span>
+                      </div>
+                    </div>
                     <div className="benchmark-range-text">Standard marché : 5% - 15%</div>
                   </div>
 
@@ -439,18 +552,31 @@ export const SimulationScreen: React.FC = () => {
                   <div className="form-group sub-group bg-soft-blue">
                     <div className="label-row">
                       <label htmlFor="sim-closing">Taux de closing des appels</label>
-                      <span className="value-badge badge-emerald">{params.callClosingRate} %</span>
                     </div>
-                    <input 
-                      type="range" 
-                      id="sim-closing" 
-                      min="5" 
-                      max="50" 
-                      step="1" 
-                      value={params.callClosingRate} 
-                      onChange={(e) => handleParamChange('callClosingRate', Number(e.target.value))}
-                      className="sim-slider"
-                    />
+                    <div className="slider-input-row">
+                      <input 
+                        type="range" 
+                        id="sim-closing" 
+                        min="2" 
+                        max="80" 
+                        step="0.5" 
+                        value={params.callClosingRate} 
+                        onChange={(e) => handleParamChange('callClosingRate', Number(e.target.value))}
+                        className="sim-slider"
+                      />
+                      <div className="input-suffix-wrapper" style={{ width: '90px' }}>
+                        <input 
+                          type="number" 
+                          step="0.1"
+                          min="0"
+                          max="100"
+                          value={params.callClosingRate} 
+                          onChange={(e) => handleParamChange('callClosingRate', Math.min(100, Math.max(0, Number(e.target.value))))}
+                          className="sim-inline-number-input"
+                        />
+                        <span className="input-suffix">%</span>
+                      </div>
+                    </div>
                     <div className="benchmark-range-text">Standard marché : 18% - 30%</div>
                   </div>
                 </>
@@ -459,18 +585,31 @@ export const SimulationScreen: React.FC = () => {
                 <div className="form-group sub-group bg-soft-emerald">
                   <div className="label-row">
                     <label htmlFor="sim-direct">Taux de conversion direct (sur le live)</label>
-                    <span className="value-badge badge-emerald">{params.directConversionRate} %</span>
                   </div>
-                  <input 
-                    type="range" 
-                    id="sim-direct" 
-                    min="0.2" 
-                    max="8.0" 
-                    step="0.1" 
-                    value={params.directConversionRate} 
-                    onChange={(e) => handleParamChange('directConversionRate', Number(e.target.value))}
-                    className="sim-slider"
-                  />
+                  <div className="slider-input-row">
+                    <input 
+                      type="range" 
+                      id="sim-direct" 
+                      min="0.1" 
+                      max="20.0" 
+                      step="0.1" 
+                      value={params.directConversionRate} 
+                      onChange={(e) => handleParamChange('directConversionRate', Number(e.target.value))}
+                      className="sim-slider"
+                    />
+                    <div className="input-suffix-wrapper" style={{ width: '90px' }}>
+                      <input 
+                        type="number" 
+                        step="0.1"
+                        min="0"
+                        max="100"
+                        value={params.directConversionRate} 
+                        onChange={(e) => handleParamChange('directConversionRate', Math.min(100, Math.max(0, Number(e.target.value))))}
+                        className="sim-inline-number-input"
+                      />
+                      <span className="input-suffix">%</span>
+                    </div>
+                  </div>
                   <div className="benchmark-range-text">Standard marché : 1.0% - 3.0%</div>
                 </div>
               )}
@@ -982,6 +1121,37 @@ export const SimulationScreen: React.FC = () => {
           box-shadow: 0 2px 8px rgba(0, 102, 204, 0.05);
         }
 
+        /* Real Launches Box */
+        .real-launches-import-box {
+          margin-top: 16px;
+          padding-top: 16px;
+          border-top: 1px solid var(--border-color);
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .import-label {
+          font-size: 11px;
+          font-weight: 600;
+          color: var(--text-secondary);
+          text-transform: uppercase;
+          letter-spacing: 0.03em;
+        }
+
+        .import-dropdown {
+          background-color: var(--bg-primary);
+          border: 1px solid var(--border-color);
+          color: var(--text-primary);
+          font-size: 12.5px;
+          font-weight: 500;
+          border-radius: var(--radius-md);
+          padding: 8px 12px;
+          cursor: pointer;
+          height: 38px;
+          outline: none;
+        }
+
         .text-orange { color: #F59E0B; }
         .text-indigo { color: #6366F1; }
         .text-emerald { color: #10B981; }
@@ -1026,41 +1196,22 @@ export const SimulationScreen: React.FC = () => {
           align-items: center;
         }
 
-        .value-badge {
-          font-size: 11px;
-          font-weight: 700;
-          background-color: #E2E8F0;
-          color: var(--text-primary);
-          padding: 2px 8px;
-          border-radius: 9999px;
-          font-variant-numeric: tabular-nums;
-        }
-
-        .badge-violet {
-          background-color: rgba(99, 91, 255, 0.08);
-          color: #635BFF;
-        }
-
-        .badge-blue {
-          background-color: rgba(0, 102, 204, 0.08);
-          color: var(--accent-blue);
-        }
-
-        .badge-emerald {
-          background-color: rgba(16, 185, 129, 0.08);
-          color: #10B981;
+        .slider-input-row {
+          display: flex;
+          align-items: center;
+          gap: 12px;
         }
 
         .sim-slider {
           -webkit-appearance: none;
           appearance: none;
-          width: 100%;
+          flex: 1;
           height: 6px;
           border-radius: 9999px;
           background: #E2E8F0;
           outline: none;
           padding: 0;
-          margin: 8px 0;
+          margin: 0;
           box-shadow: none;
         }
 
@@ -1081,15 +1232,39 @@ export const SimulationScreen: React.FC = () => {
           transform: scale(1.15);
         }
 
-        .sim-number-input {
+        .input-suffix-wrapper {
+          position: relative;
+          flex-shrink: 0;
+        }
+
+        .sim-inline-number-input {
           font-variant-numeric: tabular-nums;
           font-size: 13px;
-          padding: 6px 12px;
+          padding: 6px 20px 6px 8px;
           border-radius: var(--radius-sm);
           height: 32px;
-          width: 100px;
-          align-self: flex-end;
+          width: 100%;
           text-align: right;
+          border: 1px solid var(--border-color);
+          background-color: var(--bg-input);
+          outline: none;
+          box-shadow: var(--shadow-sm);
+        }
+
+        .sim-inline-number-input:focus {
+          border-color: var(--border-focus);
+          box-shadow: 0 0 0 2px var(--accent-blue-glow);
+        }
+
+        .input-suffix {
+          position: absolute;
+          right: 8px;
+          top: 50%;
+          transform: translateY(-50%);
+          font-size: 11px;
+          font-weight: 700;
+          color: var(--text-muted);
+          pointer-events: none;
         }
 
         .sim-text-input {
