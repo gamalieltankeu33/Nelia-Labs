@@ -14,7 +14,8 @@ import {
   AlertTriangle,
   Menu,
   X,
-  Sparkles
+  Sparkles,
+  Lock
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { supabase } from '../supabaseClient';
@@ -33,13 +34,15 @@ interface SidebarProps {
   setActiveScreen: (screen: string) => void;
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
+  onLock?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
   activeScreen, 
   setActiveScreen, 
   isOpen, 
-  setIsOpen 
+  setIsOpen,
+  onLock
 }) => {
   const { 
     savingStatus, 
@@ -240,8 +243,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Sidebar Footer with Saving Status */}
-        <div className="sidebar-footer">
+        <div className="sidebar-footer" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {renderSavingStatus()}
+          {onLock && (
+            <button 
+              onClick={onLock}
+              className="btn btn-secondary btn-sm"
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                padding: '8px 12px',
+                fontSize: '12px',
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color)',
+                backgroundColor: 'transparent',
+                cursor: 'pointer'
+              }}
+            >
+              <Lock className="size-3.5" style={{ color: 'var(--text-muted)' }} />
+              <span>Verrouiller</span>
+            </button>
+          )}
         </div>
       </div>
 

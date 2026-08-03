@@ -10,11 +10,25 @@ import { CollabsScreen } from './components/screens/CollabsScreen';
 import { ExpensesScreen } from './components/screens/ExpensesScreen';
 import { DashboardScreen } from './components/screens/DashboardScreen';
 import { SimulationScreen } from './components/screens/SimulationScreen';
+import { LockScreen } from './components/LockScreen';
 import { Home, Calendar, Users, Send, PieChart } from 'lucide-react';
 
 const AppContent: React.FC = () => {
   const [activeScreen, setActiveScreen] = useState('home');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isUnlocked, setIsUnlocked] = useState<boolean>(() => {
+    return sessionStorage.getItem('nexia_cockpit_unlocked') === 'true';
+  });
+
+  const handleUnlock = () => {
+    setIsUnlocked(true);
+    sessionStorage.setItem('nexia_cockpit_unlocked', 'true');
+  };
+
+  const handleLock = () => {
+    setIsUnlocked(false);
+    sessionStorage.removeItem('nexia_cockpit_unlocked');
+  };
 
   const renderActiveScreen = () => {
     switch (activeScreen) {
@@ -49,6 +63,10 @@ const AppContent: React.FC = () => {
     { id: 'dashboard', name: 'Stats', icon: PieChart },
   ];
 
+  if (!isUnlocked) {
+    return <LockScreen onUnlock={handleUnlock} />;
+  }
+
   return (
     <div className="app-container">
       <Sidebar 
@@ -56,6 +74,7 @@ const AppContent: React.FC = () => {
         setActiveScreen={setActiveScreen} 
         isOpen={isSidebarOpen}
         setIsOpen={setIsSidebarOpen}
+        onLock={handleLock}
       />
       
       <main className="main-content">
