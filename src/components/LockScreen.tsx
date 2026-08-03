@@ -14,7 +14,6 @@ interface LockScreenProps {
 
 interface OrbitPlanet {
   label: string;
-  emoji: string;
   year: string;
   color: string;
   desc: string;
@@ -22,8 +21,74 @@ interface OrbitPlanet {
   steps: string[];
 }
 
+// ----------------------------------------------------
+// UNIFIED VECTOR OUTLINE ICONS (Apple Design Language)
+// ----------------------------------------------------
+
+const HomeIcon: React.FC<{ className?: string }> = ({ className = "size-6" }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    <polyline points="9 22 9 12 15 12 15 22" />
+  </svg>
+);
+
+const CarIcon: React.FC<{ className?: string }> = ({ className = "size-6" }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9C2 11.3 2 11.6 2 12v4c0 .6.4 1 1 1h2" />
+    <circle cx="7" cy="17" r="2" />
+    <path d="M9 17h6" />
+    <circle cx="17" cy="17" r="2" />
+  </svg>
+);
+
+const RingIcon: React.FC<{ className?: string }> = ({ className = "size-6" }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="14" r="6" />
+    <path d="M12 2v6" />
+    <path d="M9 4h6" />
+  </svg>
+);
+
+const BusinessIcon: React.FC<{ className?: string }> = ({ className = "size-6" }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="20" x2="18" y2="10" />
+    <line x1="12" y1="20" x2="12" y2="4" />
+    <line x1="6" y1="20" x2="6" y2="14" />
+  </svg>
+);
+
+const BuildingIcon: React.FC<{ className?: string }> = ({ className = "size-6" }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="4" y="2" width="16" height="20" rx="2" ry="2" />
+    <line x1="9" y1="22" x2="9" y2="16" />
+    <line x1="15" y1="22" x2="15" y2="16" />
+    <line x1="9" y1="16" x2="15" y2="16" />
+    <path d="M8 6h2v2H8V6zm6 0h2v2h-2V6zm-6 5h2v2H8v-2zm6 0h2v2h-2v-2z" />
+  </svg>
+);
+
+const PeaceIcon: React.FC<{ className?: string }> = ({ className = "size-6" }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+    <path d="M2 12h20" />
+  </svg>
+);
+
+// Switch helper to render the corresponding custom SVG icon dynamically
+const renderVectorIcon = (label: string, className = "size-6") => {
+  const norm = label.toLowerCase();
+  if (norm.includes("entreprise")) return <BusinessIcon className={className} />;
+  if (norm.includes("résidence") || norm.includes("residence")) return <HomeIcon className={className} />;
+  if (norm.includes("voiture") || norm.includes("véhicule")) return <CarIcon className={className} />;
+  if (norm.includes("immeuble")) return <BuildingIcon className={className} />;
+  if (norm.includes("famille") || norm.includes("foyer")) return <RingIcon className={className} />;
+  if (norm.includes("vie") || norm.includes("peace")) return <PeaceIcon className={className} />;
+  return <Compass className={className} />;
+};
+
 export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
-  // Passcode entry state
+  // PIN and security states
   const [pin, setPin] = useState<string>('');
   const [error, setError] = useState<boolean>(false);
   const [shake, setShake] = useState<boolean>(false);
@@ -44,8 +109,6 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
   // Dynamic state calculations
   const [displayedPercent, setDisplayedPercent] = useState<number>(0);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [showPlanMobile, setShowPlanMobile] = useState<boolean>(false);
-  const [activePhaseIndex, setActivePhaseIndex] = useState<number | null>(null);
 
   const correctPasscode = localStorage.getItem('nexia_passcode') || '2026';
 
@@ -87,37 +150,6 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
 
   const progressPercent = calculateProgression();
 
-  const calculateDaysRemainingInPhase1 = () => {
-    const today = new Date();
-    const phase1End = new Date(2026, 11, 31);
-    return Math.max(0, Math.ceil((phase1End.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
-  };
-
-  const daysRemaining = calculateDaysRemainingInPhase1();
-
-  const rulesOfLife = [
-    "Je ne compare pas mon chapitre 1 au chapitre 20 des autres.",
-    "Je construis une richesse durable.",
-    "Les actifs avant le confort.",
-    "Chaque euro doit avoir une mission.",
-    "Je pense en années, pas en semaines.",
-    "La santé est un actif.",
-    "Le bonheur n'est pas une destination, c'est la vie que je construis.",
-    "Je ne poursuis pas l'argent ; je construis un système qui le génère."
-  ];
-
-  const keyConfig = [
-    { num: '1', letters: '' },
-    { num: '2', letters: 'A B C' },
-    { num: '3', letters: 'D E F' },
-    { num: '4', letters: 'G H I' },
-    { num: '5', letters: 'J K L' },
-    { num: '6', letters: 'M N O' },
-    { num: '7', letters: 'P Q R S' },
-    { num: '8', letters: 'T U V' },
-    { num: '9', letters: 'W X Y Z' }
-  ];
-
   // Auto-validate PIN code
   useEffect(() => {
     if (pin.length === 4) {
@@ -130,9 +162,9 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
             osc.type = 'sine';
-            osc.frequency.setValueAtTime(550, ctx.currentTime);
-            osc.frequency.setValueAtTime(700, ctx.currentTime + 0.08);
-            gain.gain.setValueAtTime(0.03, ctx.currentTime);
+            osc.frequency.setValueAtTime(520, ctx.currentTime);
+            osc.frequency.setValueAtTime(680, ctx.currentTime + 0.08);
+            gain.gain.setValueAtTime(0.02, ctx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
             osc.connect(gain);
             gain.connect(ctx.destination);
@@ -194,7 +226,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
   // Apple Fitness Ring count-up animate
   useEffect(() => {
     let startTime: number | null = null;
-    const duration = 1500;
+    const duration = 1400;
     const animate = (timestamp: number) => {
       if (!startTime) startTime = timestamp;
       const elapsed = timestamp - startTime;
@@ -219,7 +251,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(800, ctx.currentTime);
+      osc.frequency.setValueAtTime(820, ctx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.04);
       gain.gain.setValueAtTime(0.04, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
@@ -291,7 +323,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         y: cy,
         dx,
         dy,
-        color: i % 2 === 0 ? '#0066CC' : '#10B981'
+        color: '#0071E3' // Clean Apple Blue particles only
       };
     });
 
@@ -305,6 +337,25 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
     setMousePos({ x: e.clientX, y: e.clientY });
   };
 
+  const calculateDaysRemainingInPhase1 = () => {
+    const today = new Date();
+    const phase1End = new Date(2026, 11, 31);
+    return Math.max(0, Math.ceil((phase1End.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
+  };
+
+  const daysRemaining = calculateDaysRemainingInPhase1();
+
+  const rulesOfLife = [
+    "Je ne compare pas mon chapitre 1 au chapitre 20 des autres.",
+    "Je construis une richesse durable.",
+    "Les actifs avant le confort.",
+    "Chaque euro doit avoir une mission.",
+    "Je pense en années, pas en semaines.",
+    "La santé est un actif.",
+    "Le bonheur n'est pas une destination, c'est la vie que je construis.",
+    "Je ne poursuis pas l'argent ; je construis un système qui le génère."
+  ];
+
   // Dynamic Rule of the Day Selector
   const getRuleOfTheDay = () => {
     const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 1).getTime()) / (1000 * 60 * 60 * 24));
@@ -313,58 +364,64 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
 
   const activeRule = getRuleOfTheDay();
 
-  // Planètes orbitales configuration
+  const keyConfig = [
+    { num: '1', letters: '' },
+    { num: '2', letters: 'A B C' },
+    { num: '3', letters: 'D E F' },
+    { num: '4', letters: 'G H I' },
+    { num: '5', letters: 'J K L' },
+    { num: '6', letters: 'M N O' },
+    { num: '7', letters: 'P Q R S' },
+    { num: '8', letters: 'T U V' },
+    { num: '9', letters: 'W X Y Z' }
+  ];
+
+  // Planètes orbitales configuration (No emojis, using custom SVGs now)
   const planets: OrbitPlanet[] = [
     {
       label: "Entreprise",
-      emoji: "📈",
       year: "2026",
-      color: "#8B5CF6",
+      color: "#0071E3",
       desc: "Créer un système automatisé d'intelligence artificielle générant de la valeur et des solutions.",
       inspiration: "Un bureau épuré, des graphiques qui montent et des serveurs automatisés.",
       steps: ["Migrer freelance en SAS", "Automatiser les prestations récurrentes", "Lancer des outils propriétaires"]
     },
     {
       label: "Résidence",
-      emoji: "🏡",
       year: "2028",
-      color: "#3B82F6",
+      color: "#0071E3",
       desc: "Acquérir la résidence principale idéale, socle absolu de ma stabilité personnelle.",
       inspiration: "Une maison d'architecte contemporaine baignée de lumière naturelle.",
       steps: ["Atteindre 150 000€ d'apport", "Trouver le bien avec terrain", "Obtenir le financement bancaire"]
     },
     {
       label: "Voiture",
-      emoji: "🚗",
       year: "2028",
-      color: "#F59E0B",
+      color: "#0071E3",
       desc: "Acquérir le véhicule idéal pour les déplacements libres, alliant performance et silence.",
       inspiration: "Une berline moderne, épurée et technologique.",
       steps: ["Sélectionner le modèle", "Financer hors de la trésorerie de secours", "Profiter des trajets"]
     },
     {
       label: "Immeuble",
-      emoji: "🏢",
       year: "2029",
-      color: "#10B981",
+      color: "#0071E3",
       desc: "Financer un immeuble locatif de rapport au pays, diversifiant les actifs à l'international.",
       inspiration: "Des briques modernes, des loyers réguliers, la transmission de patrimoine.",
       steps: ["Identifier la zone géographique", "Mobiliser le réseau local", "Financer la construction"]
     },
     {
       label: "Famille",
-      emoji: "💍",
       year: "2030",
-      color: "#EC4899",
+      color: "#0071E3",
       desc: "Me marier et construire un foyer uni, serein et durable.",
       inspiration: "Un repas partagé, des rires d'enfants, un jardin fleuri.",
       steps: ["Préparer le projet de vie commun", "Organiser la cérémonie", "Accueillir le futur"]
     },
     {
       label: "Vie Paisible",
-      emoji: "🧘",
       year: "2031",
-      color: "#14B8A6",
+      color: "#0071E3",
       desc: "Atteindre un état de liberté financière et mentale complète, vivant sans stress budgétaire.",
       inspiration: "Un réveil sans alarme, une session de méditation face à la nature.",
       steps: ["Assurer les revenus multiples", "Préserver le capital santé", "Cultiver l'esprit tranquille"]
@@ -382,14 +439,16 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
 
   // Visual gallery assets mapping for Screen 4
   const galleryAssets = [
-    { title: "Résidence Principale", year: "2028", desc: "Le socle de ma stabilité.", emoji: "🏡", color: "#3B82F6", sub: "Maison contemporaine épurée" },
-    { title: "Entreprise IA", year: "2026", desc: "Mon système automatisé créant de la valeur.", emoji: "📈", color: "#8B5CF6", sub: "SAS & Technologies" },
-    { title: "Véhicule Privé", year: "2028", desc: "La liberté de mouvement silencieuse.", emoji: "🚗", color: "#F59E0B", sub: "Mobilité moderne" },
-    { title: "Immeuble au Pays", year: "2029", desc: "Revenus locatifs internationaux durables.", emoji: "🏢", color: "#10B981", sub: "Patrimoine mondial" },
-    { title: "Foyer & Mariage", year: "2030", desc: "Bâtir ma famille et transmettre.", emoji: "💍", color: "#EC4899", sub: "Vie apaisée" }
+    { title: "Résidence Principale", year: "2028", desc: "Le socle de ma stabilité.", color: "#0071E3", sub: "Maison contemporaine épurée" },
+    { title: "Entreprise IA", year: "2026", desc: "Mon système automatisé créant de la valeur.", color: "#0071E3", sub: "SAS & Technologies" },
+    { title: "Véhicule Privé", year: "2028", desc: "La liberté de mouvement silencieuse.", color: "#0071E3", sub: "Mobilité moderne" },
+    { title: "Immeuble au Pays", year: "2029", desc: "Revenus locatifs internationaux durables.", color: "#0071E3", sub: "Patrimoine mondial" },
+    { title: "Foyer & Mariage", year: "2030", desc: "Bâtir ma famille et transmettre.", color: "#0071E3", sub: "Vie apaisée" }
   ];
 
   const [activeGalleryIdx, setActiveGalleryIdx] = useState<number>(0);
+  const [showPlanMobile, setShowPlanMobile] = useState<boolean>(false);
+  const [activePhaseIndex, setActivePhaseIndex] = useState<number | null>(null);
 
   return (
     <div 
@@ -398,7 +457,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
       onWheel={handleWheel}
     >
       
-      {/* Particle explosion elements */}
+      {/* Particle lights */}
       {particles.map(p => (
         <div 
           key={p.id}
@@ -425,7 +484,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         }} 
       />
 
-      {/* Soft atmospheric colors */}
+      {/* Ambient glowing orbs */}
       <div className="ambient-orb-top" />
       <div className="ambient-orb-bottom" />
 
@@ -433,7 +492,9 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
       <div className="life-os-dual-layout">
         
         {/* LEFT COLUMN: THE CAMERA SLIDING WORKSPACE */}
-        <div className={`cockpit-left-pane ${showPlanMobile ? 'show-mobile' : ''}`}>
+        <div 
+          className={`cockpit-left-pane ${showPlanMobile ? 'show-mobile' : ''}`}
+        >
           
           {/* CAMERA SHIFT CONTROLLER */}
           <div 
@@ -540,7 +601,6 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
                 </div>
               </div>
 
-              {/* Back action */}
               <div className="slide-footer-controls">
                 <button className="btn-slide-nav" onClick={() => setActiveSlide(0)}>↑ Retour</button>
                 <button className="btn-slide-nav" onClick={() => setActiveSlide(2)}>Suivant ↓</button>
@@ -571,7 +631,6 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
 
                 {/* Orbit tracks and planets */}
                 {planets.map((planet, idx) => {
-                  // Alternating rotation speeds
                   const speed = 15 + idx * 7;
                   const radius = 65 + idx * 30; // Orbit width
                   
@@ -594,7 +653,9 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
                           setFocusedPlanet(planet);
                         }}
                       >
-                        <span className="planet-emoji-badge">{planet.emoji}</span>
+                        <span className="planet-vector-wrapper">
+                          {renderVectorIcon(planet.label, "size-3.5")}
+                        </span>
                         <div className="planet-tooltip">{planet.label}</div>
                       </div>
                     </div>
@@ -659,7 +720,9 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
 
               <div className="gallery-narrative-layout">
                 <div className="gallery-slide-card card">
-                  <div className="gallery-emoji-large">{galleryAssets[activeGalleryIdx].emoji}</div>
+                  <div className="gallery-icon-large">
+                    {renderVectorIcon(galleryAssets[activeGalleryIdx].title, "size-12 text-blue-apple")}
+                  </div>
                   <div className="gallery-card-content">
                     <span className="gallery-card-year">{galleryAssets[activeGalleryIdx].year}</span>
                     <h3 className="gallery-card-title">{galleryAssets[activeGalleryIdx].title}</h3>
@@ -679,7 +742,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
                         setActiveGalleryIdx(i);
                       }}
                     >
-                      {asset.emoji} {asset.title.split(" ")[0]}
+                      {renderVectorIcon(asset.title, "size-3.5 inline mr-1")} {asset.title.split(" ")[0]}
                     </button>
                   ))}
                 </div>
@@ -716,12 +779,12 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
                 
                 {/* 6 targets lighting up green */}
                 <div className="final-green-planets-row">
-                  <div className="final-planet-green">🏡</div>
-                  <div className="final-planet-green">🏢</div>
-                  <div className="final-planet-green">💍</div>
-                  <div className="final-planet-green">🚘</div>
-                  <div className="final-planet-green">📈</div>
-                  <div className="final-planet-green">🧘</div>
+                  <div className="final-planet-green"><HomeIcon className="size-8" /></div>
+                  <div className="final-planet-green"><BuildingIcon className="size-8" /></div>
+                  <div className="final-planet-green"><RingIcon className="size-8" /></div>
+                  <div className="final-planet-green"><CarIcon className="size-8" /></div>
+                  <div className="final-planet-green"><BusinessIcon className="size-8" /></div>
+                  <div className="final-planet-green"><PeaceIcon className="size-8" /></div>
                 </div>
 
                 <div className="final-quote-box">
@@ -856,7 +919,9 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
               <span className="phase-pill-badge" style={{ backgroundColor: `${focusedPlanet.color}20`, color: focusedPlanet.color }}>
                 {focusedPlanet.year}
               </span>
-              <h2 className="os-modal-title">{focusedPlanet.emoji} {focusedPlanet.label}</h2>
+              <h2 className="os-modal-title">
+                {renderVectorIcon(focusedPlanet.label, "size-7 inline mr-2 text-blue-apple")} {focusedPlanet.label}
+              </h2>
               <p className="os-modal-subtitle">Objectif Planétaire</p>
             </div>
 
@@ -946,49 +1011,49 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           transition: background-color 1.5s cubic-bezier(0.16, 1, 0.3, 1), color 1.5s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        /* Ambient Lighting Themes */
+        /* Ambient Lighting Themes (Apple Design Award Refinements) */
         .ambient-morning {
-          background-color: #FAFAFA;
-          --ambient-1: rgba(0, 102, 204, 0.04);
-          --ambient-2: rgba(56, 189, 248, 0.02);
-          --text-primary: #0F172A;
-          --text-secondary: #475569;
-          --text-muted: #94A3B8;
-          --border-color: rgba(0, 0, 0, 0.035);
+          background-color: #F4F4F6;
+          --ambient-1: rgba(0, 113, 227, 0.03);
+          --ambient-2: rgba(56, 189, 248, 0.015);
+          --text-primary: #1D1D1F;
+          --text-secondary: #515154;
+          --text-muted: #86868B;
+          --border-color: rgba(0, 0, 0, 0.04);
           --card-bg: #FFFFFF;
         }
 
         .ambient-afternoon {
-          background-color: #FAFAFA;
-          --ambient-1: rgba(245, 158, 11, 0.02);
-          --ambient-2: rgba(255, 255, 255, 0.9);
-          --text-primary: #0F172A;
-          --text-secondary: #475569;
-          --text-muted: #94A3B8;
-          --border-color: rgba(0, 0, 0, 0.035);
+          background-color: #F4F4F6;
+          --ambient-1: rgba(0, 113, 227, 0.025);
+          --ambient-2: rgba(255, 255, 255, 0.95);
+          --text-primary: #1D1D1F;
+          --text-secondary: #515154;
+          --text-muted: #86868B;
+          --border-color: rgba(0, 0, 0, 0.04);
           --card-bg: #FFFFFF;
         }
 
         .ambient-evening {
-          background-color: #FAF8F5;
-          --ambient-1: rgba(236, 72, 153, 0.035);
-          --ambient-2: rgba(245, 158, 11, 0.03);
-          --text-primary: #1E293B;
-          --text-secondary: #475569;
-          --text-muted: #94A3B8;
-          --border-color: rgba(0, 0, 0, 0.035);
+          background-color: #FAFAFC;
+          --ambient-1: rgba(236, 72, 153, 0.02);
+          --ambient-2: rgba(245, 158, 11, 0.02);
+          --text-primary: #1D1D1F;
+          --text-secondary: #515154;
+          --text-muted: #86868B;
+          --border-color: rgba(0, 0, 0, 0.04);
           --card-bg: #FFFFFF;
         }
 
         .ambient-night {
-          background-color: #07080D;
-          --ambient-1: rgba(99, 91, 255, 0.06);
-          --ambient-2: rgba(30, 27, 75, 0.2);
-          --text-primary: #F8FAFC;
-          --text-secondary: #CBD5E1;
-          --text-muted: #64748B;
-          --border-color: rgba(255, 255, 255, 0.06);
-          --card-bg: rgba(255, 255, 255, 0.02);
+          background-color: #090A0E;
+          --ambient-1: rgba(99, 91, 255, 0.05);
+          --ambient-2: rgba(30, 27, 75, 0.15);
+          --text-primary: #F5F5F7;
+          --text-secondary: #A1A1A6;
+          --text-muted: #6E6E73;
+          --border-color: rgba(255, 255, 255, 0.05);
+          --card-bg: rgba(255, 255, 255, 0.015);
         }
 
         /* Final slide extreme dark override */
@@ -1010,7 +1075,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           bottom: 0;
           pointer-events: none;
           z-index: 10;
-          opacity: 0.12;
+          opacity: 0.1;
           mix-blend-mode: multiply;
           background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.15 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
         }
@@ -1083,7 +1148,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
             right: 0;
             bottom: 0;
             z-index: 20;
-            background-color: #FAFAFA;
+            background-color: #F4F4F6;
           }
           .cockpit-left-pane.show-mobile {
             display: flex !important;
@@ -1094,7 +1159,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         .camera-film-strip {
           display: flex;
           flex-direction: column;
-          height: 700vh; /* 7 slides */
+          height: 700vh;
           width: 100%;
           transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
@@ -1103,7 +1168,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         .keynote-slide {
           height: 100vh;
           width: 100%;
-          padding: 60px 80px;
+          padding: 80px 100px;
           display: flex;
           flex-direction: column;
           justify-content: center;
@@ -1125,7 +1190,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           letter-spacing: 0.15em;
           position: absolute;
           top: 60px;
-          left: 80px;
+          left: 100px;
         }
 
         @media (max-width: 768px) {
@@ -1142,7 +1207,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           gap: 4px;
           position: absolute;
           top: 60px;
-          left: 80px;
+          left: 100px;
         }
 
         @media (max-width: 768px) {
@@ -1153,40 +1218,40 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         }
 
         .greet-title {
-          font-size: 18px;
+          font-size: 19px;
           font-weight: 800;
           color: var(--text-primary);
           letter-spacing: -0.02em;
         }
 
         .greet-sub {
-          font-size: 12px;
+          font-size: 12.5px;
           font-weight: 500;
           color: var(--text-secondary);
         }
 
         .highlight-num {
           font-weight: 700;
-          color: #0066CC;
+          color: #0071E3;
         }
 
         .life-os-hero {
           display: flex;
           flex-direction: column;
-          gap: 6px;
-          margin-bottom: 24px;
+          gap: 8px;
+          margin-bottom: 32px;
         }
 
         .hero-headline {
-          font-size: 80px;
+          font-size: 88px;
           font-weight: 800;
           letter-spacing: -0.05em;
           color: var(--text-primary);
-          line-height: 1;
+          line-height: 0.95;
         }
 
         .hero-subheadline {
-          font-size: 32px;
+          font-size: 36px;
           font-weight: 800;
           color: var(--text-muted);
           letter-spacing: -0.03em;
@@ -1221,12 +1286,12 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         }
 
         .planet-glowing-sphere {
-          width: 160px;
-          height: 160px;
+          width: 170px;
+          height: 170px;
           border-radius: 50%;
-          background: radial-gradient(circle at 35% 35%, #FFFFFF 0%, #0066CC 70%, #0D1E36 100%);
+          background: radial-gradient(circle at 35% 35%, #FFFFFF 0%, #0071E3 70%, #0D1E36 100%);
           box-shadow: 
-            0 16px 40px rgba(0, 102, 204, 0.3),
+            0 20px 48px rgba(0, 113, 227, 0.25),
             inset 0 -4px 12px rgba(0,0,0,0.35),
             inset 0 4px 12px rgba(255,255,255,0.7);
           position: relative;
@@ -1260,7 +1325,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         }
 
         .planet-percent {
-          font-size: 26px;
+          font-size: 28px;
           font-weight: 800;
           letter-spacing: -0.02em;
         }
@@ -1298,14 +1363,14 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           width: 5px;
           height: 5px;
           border-radius: 50%;
-          background-color: #0066CC;
+          background-color: #0071E3;
         }
 
         /* SLIDE 1: MISSION */
         .mission-massive-grid {
           display: grid;
           grid-template-columns: 1fr 200px;
-          gap: 40px;
+          gap: 56px;
           align-items: center;
           width: 100%;
         }
@@ -1313,19 +1378,19 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         @media (max-width: 768px) {
           .mission-massive-grid {
             grid-template-columns: 1fr;
-            gap: 20px;
+            gap: 24px;
           }
         }
 
         .massive-title-tag {
           font-size: 11px;
           font-weight: 700;
-          color: #EC4899;
+          color: #0071E3;
           letter-spacing: 0.12em;
         }
 
         .massive-mission-headline {
-          font-size: 52px;
+          font-size: 58px;
           font-weight: 800;
           color: var(--text-primary);
           letter-spacing: -0.04em;
@@ -1334,10 +1399,10 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         }
 
         .massive-mission-why {
-          font-size: 15px;
+          font-size: 16px;
           color: var(--text-secondary);
           line-height: 1.5;
-          max-width: 520px;
+          max-width: 540px;
           font-weight: 500;
         }
 
@@ -1355,7 +1420,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         }
 
         .massive-days-number {
-          font-size: 96px;
+          font-size: 110px;
           font-weight: 800;
           color: var(--text-primary);
           letter-spacing: -0.05em;
@@ -1375,28 +1440,30 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           display: flex;
           gap: 16px;
           flex-wrap: wrap;
-          margin-top: 24px;
+          margin-top: 32px;
         }
 
         .exploding-capsule-btn {
           display: inline-flex;
           align-items: center;
           gap: 12px;
-          padding: 14px 26px;
+          padding: 16px 28px;
           background: var(--card-bg);
-          border: 1px solid var(--border-color);
+          border: 0.5px solid var(--border-color);
           border-radius: 99px;
-          font-size: 13.5px;
+          font-size: 14px;
           font-weight: 700;
           color: var(--text-primary);
           cursor: pointer;
-          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          box-shadow: 0 1px 3px rgba(0,0,0,0.005);
         }
 
         .exploding-capsule-btn:hover {
-          background-color: rgba(0, 102, 204, 0.04);
-          border-color: rgba(0, 102, 204, 0.15);
+          background-color: rgba(0, 113, 227, 0.04);
+          border-color: rgba(0, 113, 227, 0.15);
           transform: translateY(-2px);
+          box-shadow: 0 8px 16px rgba(0,0,0,0.015);
         }
 
         .exploding-capsule-btn.exploded {
@@ -1409,14 +1476,14 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
 
         .capsule-circle-icon {
           font-size: 13px;
-          color: #0066CC;
+          color: #0071E3;
         }
 
         /* Particle explosion lights */
         .particle-light {
           position: fixed;
-          width: 8px;
-          height: 8px;
+          width: 6px;
+          height: 6px;
           border-radius: 50%;
           pointer-events: none;
           z-index: 9999;
@@ -1436,18 +1503,18 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           display: flex;
           flex-direction: column;
           gap: 4px;
-          margin-bottom: 12px;
+          margin-bottom: 24px;
         }
 
         .galaxy-title {
-          font-size: 24px;
+          font-size: 26px;
           font-weight: 800;
           color: var(--text-primary);
           letter-spacing: -0.02em;
         }
 
         .galaxy-subtitle {
-          font-size: 12.5px;
+          font-size: 13px;
           color: var(--text-secondary);
           font-weight: 500;
           max-width: 520px;
@@ -1467,7 +1534,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           width: 56px;
           height: 56px;
           border-radius: 50%;
-          background-color: #0066CC;
+          background-color: #0071E3;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -1475,7 +1542,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           font-size: 11px;
           font-weight: 800;
           z-index: 20;
-          box-shadow: 0 4px 16px rgba(0, 102, 204, 0.4);
+          box-shadow: 0 4px 16px rgba(0, 113, 227, 0.4);
           position: relative;
         }
 
@@ -1486,7 +1553,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           right: -10px;
           bottom: -10px;
           border-radius: 50%;
-          background-color: rgba(0, 102, 204, 0.15);
+          background-color: rgba(0, 113, 227, 0.15);
           filter: blur(8px);
           animation: corePulse 3s ease-in-out infinite;
         }
@@ -1512,49 +1579,54 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         }
 
         .orbit-ring-track:hover {
-          border-color: rgba(0, 102, 204, 0.15);
+          border-color: rgba(0, 113, 227, 0.15);
         }
 
         .orbiting-planet-sphere {
           position: absolute;
-          top: -12px; /* Position on track */
-          width: 24px;
-          height: 24px;
+          top: -14px;
+          width: 28px;
+          height: 28px;
           border-radius: 50%;
           background: #FFFFFF;
-          border: 2px solid rgba(0,0,0,0.05);
+          border: 0.5px solid rgba(0,0,0,0.05);
           box-shadow: var(--shadow-sm);
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
-          transition: transform 0.2s ease;
+          transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+          color: #1D1D1F;
         }
 
         .orbiting-planet-sphere:hover {
-          transform: scale(1.3);
-          box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+          transform: scale(1.25);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+          color: #0071E3;
         }
 
-        .planet-emoji-badge {
-          font-size: 12px;
+        .planet-vector-wrapper {
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
         /* Tooltip display */
         .planet-tooltip {
           position: absolute;
-          bottom: 28px;
+          bottom: 32px;
           background: rgba(255,255,255,0.9);
-          border: 1px solid var(--border-color);
-          padding: 2px 8px;
-          border-radius: 4px;
+          border: 0.5px solid var(--border-color);
+          padding: 3px 10px;
+          border-radius: 6px;
           font-size: 9px;
           font-weight: 700;
-          color: #0F172A;
+          color: #1D1D1F;
           white-space: nowrap;
           pointer-events: none;
           opacity: 0;
           transition: opacity 0.2s ease;
+          box-shadow: var(--shadow-sm);
         }
 
         .orbiting-planet-sphere:hover .planet-tooltip {
@@ -1572,8 +1644,8 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           width: 100%;
           height: 380px;
           background-color: rgba(255, 255, 255, 0.15);
-          border: 1px solid var(--border-color);
-          border-radius: 28px;
+          border: 0.5px solid var(--border-color);
+          border-radius: 32px;
           overflow: hidden;
           perspective: 350px;
           -webkit-perspective: 350px;
@@ -1629,10 +1701,10 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         }
 
         .tesla-highway-phares.lit .phares-glowing-bead {
-          background: #0066CC;
+          background: #0071E3;
           box-shadow: 
-            0 0 12px #3b82f6,
-            0 0 20px rgba(59, 130, 246, 0.5);
+            0 0 12px #0071E3,
+            0 0 20px rgba(0, 113, 227, 0.5);
           transform: scale(1.15);
         }
 
@@ -1641,7 +1713,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           flex-direction: column;
           line-height: 1.2;
           background-color: var(--card-bg);
-          border: 1px solid var(--border-color);
+          border: 0.5px solid var(--border-color);
           padding: 8px 12px;
           border-radius: 12px;
           box-shadow: var(--shadow-sm);
@@ -1663,7 +1735,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         .gallery-narrative-layout {
           display: flex;
           flex-direction: column;
-          gap: 20px;
+          gap: 32px;
           width: 100%;
           align-items: center;
         }
@@ -1671,7 +1743,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         .gallery-slide-card {
           width: 100%;
           max-width: 440px;
-          padding: 32px;
+          padding: 40px 32px;
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -1679,12 +1751,14 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           background: rgba(255, 255, 255, 0.75);
           backdrop-filter: blur(25px);
           -webkit-backdrop-filter: blur(25px);
+          border-radius: 36px;
+          border: 0.5px solid var(--border-color);
         }
 
-        .gallery-emoji-large {
-          font-size: 56px;
-          margin-bottom: 12px;
+        .gallery-icon-large {
+          margin-bottom: 16px;
           animation: finalPlanetFloat 5s ease-in-out infinite;
+          color: #0071E3;
         }
 
         .gallery-card-content {
@@ -1696,25 +1770,25 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         .gallery-card-year {
           font-size: 11px;
           font-weight: 800;
-          color: #0066CC;
+          color: #0071E3;
           letter-spacing: 0.1em;
         }
 
         .gallery-card-title {
-          font-size: 24px;
+          font-size: 28px;
           font-weight: 800;
           color: var(--text-primary);
           letter-spacing: -0.02em;
         }
 
         .gallery-card-sub {
-          font-size: 12.5px;
+          font-size: 13px;
           font-weight: 700;
           color: var(--text-muted);
         }
 
         .gallery-card-desc {
-          font-size: 13.5px;
+          font-size: 14px;
           color: var(--text-secondary);
           line-height: 1.5;
           margin-top: 8px;
@@ -1723,33 +1797,33 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
 
         .gallery-navigation-pills {
           display: flex;
-          gap: 10px;
+          gap: 12px;
           flex-wrap: wrap;
           justify-content: center;
         }
 
         .gallery-nav-pill-btn {
-          border: 1px solid var(--border-color);
+          border: 0.5px solid var(--border-color);
           background-color: var(--card-bg);
           color: var(--text-secondary);
-          padding: 8px 16px;
+          padding: 10px 20px;
           border-radius: 99px;
-          font-size: 11.5px;
+          font-size: 12px;
           font-weight: 700;
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .gallery-nav-pill-btn:hover {
-          background-color: rgba(0,102,204,0.02);
-          border-color: rgba(0,102,204,0.15);
+          background-color: rgba(0, 113, 227, 0.02);
+          border-color: rgba(0, 113, 227, 0.15);
         }
 
         .gallery-nav-pill-btn.active {
-          background-color: #0066CC;
-          border-color: #0066CC;
+          background-color: #0071E3;
+          border-color: #0071E3;
           color: #FFFFFF;
-          box-shadow: 0 4px 10px rgba(0,102,204,0.15);
+          box-shadow: 0 4px 10px rgba(0, 113, 227, 0.15);
         }
 
         /* SLIDE 5: HUGE QUOTE Focus */
@@ -1760,7 +1834,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 16px;
+          gap: 20px;
         }
 
         .huge-quote-icon {
@@ -1770,7 +1844,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         }
 
         .huge-focus-quote-text {
-          font-size: 40px;
+          font-size: 44px;
           font-weight: 800;
           letter-spacing: -0.03em;
           color: var(--text-primary);
@@ -1796,7 +1870,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          gap: 24px;
+          gap: 32px;
         }
 
         .final-year-headline {
@@ -1808,7 +1882,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         }
 
         .final-greeting {
-          font-size: 72px;
+          font-size: 80px;
           font-weight: 800;
           letter-spacing: -0.05em;
           color: #FFFFFF;
@@ -1820,15 +1894,15 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
 
         .final-green-planets-row {
           display: flex;
-          gap: 16px;
+          gap: 20px;
           justify-content: center;
           margin: 12px 0;
           animation: finalFadeIn 3s ease 1s forwards;
           opacity: 0;
+          color: #10B981;
         }
 
         .final-planet-green {
-          font-size: 28px;
           filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.4));
           animation: finalPlanetFloat 4s ease-in-out infinite;
         }
@@ -1880,7 +1954,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
 
         .slide-indicator-dot.active {
           opacity: 1;
-          background-color: #0066CC;
+          background-color: #0071E3;
           transform: scale(1.2);
         }
 
@@ -1888,8 +1962,8 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         .slide-footer-controls {
           position: absolute;
           bottom: 40px;
-          left: 80px;
-          right: 80px;
+          left: 100px;
+          right: 100px;
           display: flex;
           justify-content: space-between;
           z-index: 40;
@@ -1945,8 +2019,8 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           background: rgba(255, 255, 255, 0.4);
           backdrop-filter: blur(40px) saturate(210%);
           -webkit-backdrop-filter: blur(40px) saturate(210%);
-          border: 1px solid rgba(255, 255, 255, 0.65);
-          border-radius: 36px;
+          border: 0.5px solid rgba(0, 0, 0, 0.04);
+          border-radius: 40px;
           box-shadow: 
             0 1px 2px rgba(0, 0, 0, 0.005), 
             0 12px 36px rgba(0, 0, 0, 0.02);
@@ -2042,15 +2116,15 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         .iphone-keypad-grid {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
-          gap: 20px 24px;
+          gap: 20px 28px;
           justify-items: center;
           width: 100%;
-          max-width: 250px;
+          max-width: 260px;
         }
 
         .key-circle-btn {
-          width: 62px;
-          height: 62px;
+          width: 68px;
+          height: 68px;
           border-radius: 50%;
           background: rgba(255, 255, 255, 0.4);
           border: 1px solid rgba(255, 255, 255, 0.6);
@@ -2065,6 +2139,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           line-height: 1.1;
         }
 
+        /* Tap / Key down active state */
         .key-circle-btn.active, .key-circle-btn:active {
           background-color: #FFFFFF;
           border-color: #FFFFFF;
@@ -2073,16 +2148,16 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         }
 
         .key-num-label {
-          font-size: 24px;
+          font-size: 26px;
           font-weight: 400;
           font-variant-numeric: tabular-nums;
         }
 
         .key-letter-label {
-          font-size: 8px;
-          font-weight: 700;
+          font-size: 9px;
+          font-weight: 600;
           color: #64748B;
-          letter-spacing: 0.08em;
+          letter-spacing: 0.06em;
           text-transform: uppercase;
           margin-top: 1px;
         }
@@ -2182,14 +2257,14 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
 
         .os-modal-card {
           background: rgba(255, 255, 255, 0.85);
-          border: 1px solid rgba(255, 255, 255, 0.5);
-          border-radius: 36px;
+          border: 0.5px solid rgba(255, 255, 255, 0.5);
+          border-radius: 40px;
           box-shadow: 
             0 1px 3px rgba(0, 0, 0, 0.005),
             0 30px 80px rgba(0, 0, 0, 0.035);
           width: 100%;
           max-width: 480px;
-          padding: 36px;
+          padding: 40px;
           position: relative;
           animation: modalScaleUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
           color: #0F172A;
@@ -2241,8 +2316,8 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         .phase-pill-badge {
           font-size: 9px;
           font-weight: 800;
-          color: #0066CC;
-          background-color: rgba(0, 102, 204, 0.06);
+          color: #0071E3;
+          background-color: rgba(0, 113, 227, 0.06);
           padding: 3px 8px;
           border-radius: 99px;
           width: fit-content;
@@ -2335,7 +2410,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           width: 8px;
           height: 8px;
           border-radius: 50%;
-          background-color: #0066CC;
+          background-color: #0071E3;
           flex-shrink: 0;
         }
 
@@ -2381,8 +2456,8 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           display: flex;
           align-items: flex-start;
           gap: 10px;
-          background-color: rgba(0, 102, 204, 0.02);
-          border: 1px solid rgba(0, 102, 204, 0.05);
+          background-color: rgba(0, 113, 227, 0.02);
+          border: 1px solid rgba(0, 113, 227, 0.05);
           padding: 14px;
           border-radius: 14px;
         }
@@ -2390,11 +2465,21 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         .os-modal-philosophy-quote {
           font-size: 12px;
           font-style: italic;
-          color: #0066CC;
+          color: #0071E3;
           font-weight: 600;
           line-height: 1.5;
         }
       `}</style>
+
+      {/* SVG Linear Gradient definitions for Fitness Circular Ring track */}
+      <svg width="0" height="0">
+        <defs>
+          <linearGradient id="fitnessGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#0071E3" />
+            <stop offset="100%" stopColor="#10B981" />
+          </linearGradient>
+        </defs>
+      </svg>
 
     </div>
   );
