@@ -8,7 +8,6 @@ import {
   Briefcase, 
   DollarSign, 
   PieChart, 
-  Sparkles, 
   Loader2,
   CheckCircle,
   AlertTriangle,
@@ -86,7 +85,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'collabs', name: 'Collabs', icon: Briefcase },
     { id: 'expenses', name: 'Charges', icon: DollarSign },
     { id: 'dashboard', name: 'Tableau de bord', icon: PieChart },
-    { id: 'simulation', name: 'Simulateur', icon: Sparkles },
   ];
 
   const renderSavingStatus = () => {

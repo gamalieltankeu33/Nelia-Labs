@@ -12,10 +12,6 @@ import {
   DollarSign,
   Users,
   FileText,
-  Settings,
-  Calendar,
-  Briefcase,
-  FileSpreadsheet,
   ArrowUpRight
 } from 'lucide-react';
 
@@ -286,16 +282,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setActiveScreen }) => {
               <button className="reminder-check-dot" onClick={() => toggleTask('sim')}>
                 {checkedTasks['sim'] && <Check className="size-3 text-white" />}
               </button>
-              <div className="reminder-meta-info" onClick={() => setActiveScreen('simulation')}>
-                <span className="reminder-title-text">Simulations financières</span>
-                <p className="reminder-sub-text">Ajuster les KPI prévisionnels du simulateur.</p>
+              <div className="reminder-meta-info" onClick={() => setActiveScreen('dashboard')}>
+                <span className="reminder-title-text">Revue des indicateurs</span>
+                <p className="reminder-sub-text">Analyser les courbes de croissance et valider les KPIs.</p>
               </div>
             </div>
 
           </div>
         </div>
 
-        {/* Column 2: Monthly circular objective & Apps Grid */}
+        {/* Column 2: Monthly circular objective */}
         <div className="cockpit-right-widgets-col">
           
           {/* Card: Objectif du mois (Circular progression) */}
@@ -343,62 +339,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setActiveScreen }) => {
               </button>
             </div>
 
-          </div>
-
-          {/* Apps shortcuts section */}
-          <div className="cockpit-apps-shortcuts-card">
-            <h3 className="section-small-title">APPLICATIONS</h3>
-            
-            <div className="apps-shortcuts-grid">
-              <div className="app-icon-shortcut-card" onClick={() => setActiveScreen('dashboard')}>
-                <div className="app-icon-badge color-blue">
-                  <TrendingUp className="size-5" />
-                </div>
-                <span className="app-shortcut-name">Finances</span>
-              </div>
-
-              <div className="app-icon-shortcut-card" onClick={() => setActiveScreen('prospects')}>
-                <div className="app-icon-badge color-purple">
-                  <Users className="size-5" />
-                </div>
-                <span className="app-shortcut-name">Prospection</span>
-              </div>
-
-              <div className="app-icon-shortcut-card" onClick={() => setActiveScreen('content')}>
-                <div className="app-icon-badge color-orange">
-                  <FileText className="size-5" />
-                </div>
-                <span className="app-shortcut-name">Contenu</span>
-              </div>
-
-              <div className="app-icon-shortcut-card" onClick={() => setActiveScreen('launch')}>
-                <div className="app-icon-badge color-emerald">
-                  <Briefcase className="size-5" />
-                </div>
-                <span className="app-shortcut-name">CRM</span>
-              </div>
-
-              <div className="app-icon-shortcut-card" onClick={() => setActiveScreen('simulation')}>
-                <div className="app-icon-badge color-teal">
-                  <Settings className="size-5" />
-                </div>
-                <span className="app-shortcut-name">Automatisation</span>
-              </div>
-
-              <div className="app-icon-shortcut-card" onClick={() => setActiveScreen('content')}>
-                <div className="app-icon-badge color-gray">
-                  <FileSpreadsheet className="size-5" />
-                </div>
-                <span className="app-shortcut-name">Documents</span>
-              </div>
-
-              <div className="app-icon-shortcut-card" onClick={() => setActiveScreen('today')}>
-                <div className="app-icon-badge color-indigo">
-                  <Calendar className="size-5" />
-                </div>
-                <span className="app-shortcut-name">Planning</span>
-              </div>
-            </div>
           </div>
 
         </div>

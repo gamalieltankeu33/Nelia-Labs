@@ -9,7 +9,6 @@ import { LaunchScreen } from './components/screens/LaunchScreen';
 import { CollabsScreen } from './components/screens/CollabsScreen';
 import { ExpensesScreen } from './components/screens/ExpensesScreen';
 import { DashboardScreen } from './components/screens/DashboardScreen';
-import { SimulationScreen } from './components/screens/SimulationScreen';
 import { LockScreen } from './components/LockScreen';
 
 const AppContent: React.FC = () => {
@@ -47,8 +46,6 @@ const AppContent: React.FC = () => {
         return <ExpensesScreen />;
       case 'dashboard':
         return <DashboardScreen />;
-      case 'simulation':
-        return <SimulationScreen />;
       default:
         return <HomeScreen setActiveScreen={setActiveScreen} />;
     }
