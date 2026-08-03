@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { 
   Star, 
   Quote, 
-  Check,
-  X,
-  Target,
-  LockKeyhole
+  Check, 
+  X, 
+  Target, 
+  Lock,
+  Unlock,
+  Compass
 } from 'lucide-react';
 
 interface LockScreenProps {
@@ -22,19 +24,20 @@ interface PhaseDetail {
 }
 
 export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
-
   // PIN and security states
   const [pin, setPin] = useState<string>('');
   const [error, setError] = useState<boolean>(false);
   const [shake, setShake] = useState<boolean>(false);
+  const [activeKey, setActiveKey] = useState<string | null>(null);
   
   // Interactive UI states
   const [activePhaseIndex, setActivePhaseIndex] = useState<number | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [glarePos, setGlarePos] = useState({ x: 50, y: 50 });
   const [checkedObjectives, setCheckedObjectives] = useState<Record<string, boolean>>({});
+  const [showPlanMobile, setShowPlanMobile] = useState<boolean>(false);
   
-  // Daily Quote spotlight state (users can click a rule to highlight it)
+  // Spotlight rule index
   const [selectedRuleIdx, setSelectedRuleIdx] = useState<number>(0);
 
   const correctPasscode = localStorage.getItem('nexia_passcode') || '2026';
@@ -50,11 +53,10 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
       const gain = ctx.createGain();
       
       osc.type = 'sine';
-      // High-quality Apple watch/iOS tap sound: frequency slides rapidly down
-      osc.frequency.setValueAtTime(900, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(120, ctx.currentTime + 0.04);
+      osc.frequency.setValueAtTime(850, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.04);
       
-      gain.gain.setValueAtTime(0.06, ctx.currentTime);
+      gain.gain.setValueAtTime(0.05, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
       
       osc.connect(gain);
@@ -66,21 +68,37 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
     }
   };
 
-  // Handle global mouse moves for background radial halo
-  const handleMouseMove = (e: React.MouseEvent) => {
-    setMousePos({ x: e.clientX, y: e.clientY });
+  const handleKeyPress = (num: string) => {
+    if (pin.length < 4) {
+      playTactileClick();
+      setPin(prev => prev + num);
+      setError(false);
+      
+      // Briefly highlight button
+      setActiveKey(num);
+      setTimeout(() => setActiveKey(null), 150);
+    }
   };
 
-  // Card glare effect calculation
-  const handleCardMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const card = e.currentTarget;
-    const rect = card.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setGlarePos({ x, y });
+  const handleBackspace = () => {
+    playTactileClick();
+    setPin(prev => prev.slice(0, -1));
+    setError(false);
+    
+    setActiveKey('backspace');
+    setTimeout(() => setActiveKey(null), 150);
   };
 
-  // Keyboard listener for code entry
+  const handleClear = () => {
+    playTactileClick();
+    setPin('');
+    setError(false);
+    
+    setActiveKey('clear');
+    setTimeout(() => setActiveKey(null), 150);
+  };
+
+  // Keyboard listener for code entry with visual feedback
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') {
@@ -90,15 +108,27 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
       const key = e.key;
       if (/^[0-9]$/.test(key)) {
         if (pin.length < 4) {
+          playTactileClick();
           setPin(prev => prev + key);
           setError(false);
+          
+          setActiveKey(key);
+          setTimeout(() => setActiveKey(null), 150);
         }
       } else if (key === 'Backspace') {
+        playTactileClick();
         setPin(prev => prev.slice(0, -1));
         setError(false);
+        
+        setActiveKey('backspace');
+        setTimeout(() => setActiveKey(null), 150);
       } else if (key === 'Escape') {
+        playTactileClick();
         setPin('');
         setError(false);
+        
+        setActiveKey('clear');
+        setTimeout(() => setActiveKey(null), 150);
       }
     };
 
@@ -121,19 +151,19 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
             const gain = ctx.createGain();
             osc.type = 'sine';
             osc.frequency.setValueAtTime(520, ctx.currentTime);
-            osc.frequency.setValueAtTime(660, ctx.currentTime + 0.08);
+            osc.frequency.setValueAtTime(680, ctx.currentTime + 0.07);
             gain.gain.setValueAtTime(0.04, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
             osc.connect(gain);
             gain.connect(ctx.destination);
             osc.start();
-            osc.stop(ctx.currentTime + 0.22);
+            osc.stop(ctx.currentTime + 0.2);
           }
         } catch(err) {}
 
         setTimeout(() => {
           onUnlock();
-        }, 300);
+        }, 350);
       } else {
         setShake(true);
         setError(true);
@@ -145,28 +175,36 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
     }
   }, [pin, correctPasscode, onUnlock]);
 
-  // Dynamic 5-year progression calculation
+  // Mouse moves for backdrop radial lighting
+  const handleMouseMove = (e: React.MouseEvent) => {
+    setMousePos({ x: e.clientX, y: e.clientY });
+  };
+
+  // Glare positions for the card glare reflect
+  const handleCardMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = e.currentTarget;
+    const rect = card.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setGlarePos({ x, y });
+  };
+
+  // Progression count calculation
   const calculateProgression = () => {
     const startDate = new Date(2026, 0, 1);
     const endDate = new Date(2031, 11, 31);
     const today = new Date();
-    
     const totalDuration = endDate.getTime() - startDate.getTime();
     const elapsedDuration = today.getTime() - startDate.getTime();
-    
-    const percentage = Math.min(100, Math.max(0, (elapsedDuration / totalDuration) * 100));
-    return Number(percentage.toFixed(1));
+    return Number(Math.min(100, Math.max(0, (elapsedDuration / totalDuration) * 100)).toFixed(1));
   };
 
   const progressPercent = calculateProgression();
 
-  // Days remaining in Phase 1
   const calculateDaysRemainingInPhase1 = () => {
     const today = new Date();
     const phase1End = new Date(2026, 11, 31);
-    const difference = phase1End.getTime() - today.getTime();
-    const days = Math.ceil(difference / (1000 * 60 * 60 * 24));
-    return Math.max(0, days);
+    return Math.max(0, Math.ceil((phase1End.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
   };
 
   const daysRemaining = calculateDaysRemainingInPhase1();
@@ -182,7 +220,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
     "Je ne poursuis pas l'argent ; je construis un système qui le génère."
   ];
 
-  // Auto-change rule daily but allow manual select
+  // Auto-init selected rule
   useEffect(() => {
     const day = new Date().getDay();
     setSelectedRuleIdx(day % rulesOfLife.length);
@@ -190,11 +228,21 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
 
   const toggleObjective = (key: string) => {
     playTactileClick();
-    setCheckedObjectives(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }));
+    setCheckedObjectives(prev => ({ ...prev, [key]: !prev[key] }));
   };
+
+  // Custom structure for key configuration matching iPhone
+  const keyConfig = [
+    { num: '1', letters: '' },
+    { num: '2', letters: 'A B C' },
+    { num: '3', letters: 'D E F' },
+    { num: '4', letters: 'G H I' },
+    { num: '5', letters: 'J K L' },
+    { num: '6', letters: 'M N O' },
+    { num: '7', letters: 'P Q R S' },
+    { num: '8', letters: 'T U V' },
+    { num: '9', letters: 'W X Y Z' }
+  ];
 
   const phases: PhaseDetail[] = [
     {
@@ -280,10 +328,10 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
   return (
     <div className="life-os-container" onMouseMove={handleMouseMove}>
       
-      {/* Organic texture SVG grain overlay */}
+      {/* SVG noise texture */}
       <div className="paper-grain-overlay" />
 
-      {/* Dynamic Cursor-following Halo */}
+      {/* Dynamic Cursor Light tracking */}
       <div 
         className="cursor-halo" 
         style={{ 
@@ -292,253 +340,312 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         }} 
       />
 
-      {/* Static soft ambient glowing orbs */}
+      {/* Soft atmospheric colors */}
       <div className="ambient-orb-top" />
       <div className="ambient-orb-bottom" />
 
-      {/* Command Access Panel (Raycast Command bar style) */}
-      <div className={`raycast-console-wrapper ${shake ? 'shake-console' : ''}`}>
-        <div className="raycast-console">
-          <div className="console-brand">
-            <LockKeyhole className="size-3.5 text-blue-apple animate-pulse" />
-            <span className="console-title">LIFE SYSTEM OS</span>
-          </div>
-          <div className="console-divider" />
-          <div className="pin-slots">
-            {[0, 1, 2, 3].map((idx) => (
-              <div 
-                key={idx} 
-                className={`pin-dot-slot ${pin.length > idx ? 'filled' : ''} ${error ? 'error' : ''}`}
-              />
-            ))}
-          </div>
-          <div className="console-divider" />
-          <span className="console-instruction">Saisir le code d'accès</span>
-        </div>
-        {error && <span className="console-error-msg">Code incorrect. L'année de départ.</span>}
-      </div>
-
-      {/* Scrollable Layout Content */}
-      <div className="life-os-content">
+      {/* DUAL COLUMN LAYOUT */}
+      <div className="life-os-dual-layout">
         
-        {/* HERO HEADER */}
-        <header className="life-os-hero">
-          <span className="hero-eyebrow">MON FEUILLE DE ROUTE</span>
-          <h1 className="hero-headline">My Life.</h1>
-          <p className="hero-subheadline">
-            Chaque décision construit la personne que je deviendrai.
-          </p>
-        </header>
-
-        {/* LIQUID MAGSAFE PROGRESSION BAR */}
-        <section className="magsafe-progress-section">
-          <div className="progress-labels">
-            <span className="progress-value">{progressPercent}%</span>
-            <span className="progress-legend">du plan global accompli</span>
-          </div>
-          <div className="magsafe-progress-track">
-            <div className="liquid-progress-fill" style={{ width: `${progressPercent}%` }}>
-              <div className="liquid-shimmer" />
-            </div>
-          </div>
-        </section>
-
-        {/* CORE WORKSPACE GRID */}
-        <div className="life-os-workspace-grid">
+        {/* LEFT COLUMN: THE LIFE OS COCKPIT VIEW */}
+        <div className={`cockpit-left-pane ${showPlanMobile ? 'show-mobile' : ''}`}>
           
-          {/* LEFT: Central 3D Mission Object */}
-          <div className="workspace-column flex-column gap-32">
+          <header className="life-os-hero">
+            <span className="hero-eyebrow">MON COMPTE À REBOURS</span>
+            <h1 className="hero-headline">My Life.</h1>
+            <p className="hero-subheadline">
+              Chaque décision construit la personne que je deviendrai.
+            </p>
+          </header>
+
+          {/* LIQUID MAGSAFE PROGRESSION BAR */}
+          <section className="magsafe-progress-section">
+            <div className="progress-labels">
+              <span className="progress-value">{progressPercent}%</span>
+              <span className="progress-legend">du plan global accompli</span>
+            </div>
+            <div className="magsafe-progress-track">
+              <div className="liquid-progress-fill" style={{ width: `${progressPercent}%` }}>
+                <div className="liquid-shimmer" />
+              </div>
+            </div>
+          </section>
+
+          <div className="life-os-grid-sublayout">
             
-            {/* The 3D Floating Mission Card */}
-            <div 
-              className="card premium-mission-card"
-              onMouseMove={handleCardMouseMove}
-              style={{
-                '--glare-x': `${glarePos.x}%`,
-                '--glare-y': `${glarePos.y}%`
-              } as React.CSSProperties}
-            >
-              {/* Internal card light reflection */}
-              <div className="card-glare-reflection" />
-              
-              <div className="mission-header-row">
-                <div className="badge-apple">
-                  <Target className="size-3.5 text-blue-apple mr-1" />
-                  <span>MISSION ACTUELLE</span>
+            {/* Mission Panel */}
+            <div className="workspace-flex flex-column gap-32">
+              <div 
+                className="card premium-mission-card"
+                onMouseMove={handleCardMouseMove}
+                style={{
+                  '--glare-x': `${glarePos.x}%`,
+                  '--glare-y': `${glarePos.y}%`
+                } as React.CSSProperties}
+              >
+                <div className="card-glare-reflection" />
+                
+                <div className="mission-header-row">
+                  <div className="badge-apple">
+                    <Target className="size-3.5 text-blue-apple mr-1" />
+                    <span>MISSION ACTUELLE</span>
+                  </div>
+                  <div className="days-counter">
+                    <span className="days-number">{daysRemaining}</span>
+                    <span className="days-text">jours restants</span>
+                  </div>
                 </div>
-                <div className="days-counter">
-                  <span className="days-number">{daysRemaining}</span>
-                  <span className="days-text">jours restants</span>
+
+                <h2 className="mission-title">Stabiliser l'activité de freelance</h2>
+                <p className="mission-rationale">
+                  Consolider le cash-flow et basculer administrativement en société de prestation pour sécuriser le socle de départ.
+                </p>
+
+                <div className="capsules-list">
+                  {phases[0].objectives.map((obj, idx) => {
+                    const key = `p1-obj-${idx}`;
+                    const isChecked = !!checkedObjectives[key];
+                    return (
+                      <div 
+                        key={idx}
+                        className={`capsule-objective-item ${isChecked ? 'completed' : ''}`}
+                        onClick={() => toggleObjective(key)}
+                      >
+                        <div className={`capsule-checkbox ${isChecked ? 'checked' : ''}`}>
+                          {isChecked && <Check className="size-3 text-white" />}
+                        </div>
+                        <span className="capsule-text">{obj}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="mission-card-footer">
+                  <div className="system-bullet-indicator" />
+                  <span><strong>Prochaine action critique :</strong> Finaliser la rédaction des statuts de la société.</span>
                 </div>
               </div>
 
-              <h2 className="mission-title">Stabiliser l'activité de freelance</h2>
-              <p className="mission-rationale">
-                Consolider le cash-flow et basculer administrativement en société de prestation pour sécuriser le socle de départ.
-              </p>
+              {/* Spotlight Quote */}
+              <div className="card spotlight-quote-card">
+                <Quote className="quote-icon" />
+                <p className="quote-text">« {rulesOfLife[selectedRuleIdx]} »</p>
+                <div className="quote-sublabel">PRINCIPE DE VIE ACTIF</div>
+              </div>
+            </div>
 
-              <div className="capsules-list">
-                {phases[0].objectives.map((obj, idx) => {
-                  const key = `p1-obj-${idx}`;
-                  const isChecked = !!checkedObjectives[key];
+            {/* Vision Panel */}
+            <div className="workspace-flex flex-column gap-32">
+              
+              <div className="card rules-selector-card">
+                <h3 className="card-mini-title">Principes de Vie</h3>
+                <div className="rules-selector-list">
+                  {rulesOfLife.map((rule, idx) => {
+                    const isActive = idx === selectedRuleIdx;
+                    return (
+                      <div 
+                        key={idx} 
+                        className={`rule-select-row ${isActive ? 'active' : ''}`}
+                        onClick={() => {
+                          playTactileClick();
+                          setSelectedRuleIdx(idx);
+                        }}
+                      >
+                        <span className="rule-num">{idx + 1}</span>
+                        <span className="rule-title-text">{rule}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Vision Gallery */}
+              <div className="card vision-gallery-card">
+                <h3 className="card-mini-title">Cibles Vision 2031</h3>
+                <div className="vision-gallery-grid">
+                  <div className="gallery-icon-card icon-residence">
+                    <div className="icon-overlay" />
+                    <span className="gallery-emoji">🏡</span>
+                    <div className="gallery-meta">
+                      <span className="gallery-title">Résidence</span>
+                      <span className="gallery-detail">Socle principal</span>
+                    </div>
+                  </div>
+                  <div className="gallery-icon-card icon-immeuble">
+                    <div className="icon-overlay" />
+                    <span className="gallery-emoji">🏢</span>
+                    <div className="gallery-meta">
+                      <span className="gallery-title">Immeuble</span>
+                      <span className="gallery-detail">Actifs au pays</span>
+                    </div>
+                  </div>
+                  <div className="gallery-icon-card icon-marriage">
+                    <div className="icon-overlay" />
+                    <span className="gallery-emoji">💍</span>
+                    <div className="gallery-meta">
+                      <span className="gallery-title">Famille</span>
+                      <span className="gallery-detail">Me marier & bâtir</span>
+                    </div>
+                  </div>
+                  <div className="gallery-icon-card icon-voiture">
+                    <div className="icon-overlay" />
+                    <span className="gallery-emoji">🚘</span>
+                    <div className="gallery-meta">
+                      <span className="gallery-title">Voiture</span>
+                      <span className="gallery-detail">Mouvement libre</span>
+                    </div>
+                  </div>
+                  <div className="gallery-icon-card icon-company">
+                    <div className="icon-overlay" />
+                    <span className="gallery-emoji">📈</span>
+                    <div className="gallery-meta">
+                      <span className="gallery-title">Entreprise</span>
+                      <span className="gallery-detail">Systèmes IA</span>
+                    </div>
+                  </div>
+                  <div className="gallery-icon-card icon-peace">
+                    <div className="icon-overlay" />
+                    <span className="gallery-emoji">🧘</span>
+                    <div className="gallery-meta">
+                      <span className="gallery-title">Vie Paisible</span>
+                      <span className="gallery-detail">Esprit & Discipline</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+          {/* Timeline tube */}
+          <section className="glass-timeline-section">
+            <h3 className="card-mini-title">Plan Temporel Interactif</h3>
+            
+            <div className="timeline-tube-container">
+              <div className="glass-tube-cylinder" />
+              <div className="timeline-nodes-track">
+                {phases.map((phase, idx) => {
+                  const isCurrentPhase = idx === 0;
                   return (
                     <div 
                       key={idx}
-                      className={`capsule-objective-item ${isChecked ? 'completed' : ''}`}
-                      onClick={() => toggleObjective(key)}
-                    >
-                      <div className={`capsule-checkbox ${isChecked ? 'checked' : ''}`}>
-                        {isChecked && <Check className="size-3 text-white" />}
-                      </div>
-                      <span className="capsule-text">{obj}</span>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="mission-card-footer">
-                <div className="system-bullet-indicator" />
-                <span><strong>Prochaine action critique :</strong> Finaliser la rédaction des statuts de la société.</span>
-              </div>
-            </div>
-
-            {/* Rules of Life Spotlight Quote Card */}
-            <div className="card spotlight-quote-card">
-              <Quote className="quote-icon" />
-              <p className="quote-text">« {rulesOfLife[selectedRuleIdx]} »</p>
-              <div className="quote-sublabel">RÈGLE DE VIE VÉDICATE</div>
-            </div>
-
-          </div>
-
-          {/* RIGHT: Interactive Vision Board and rules list */}
-          <div className="workspace-column flex-column gap-32">
-            
-            {/* Rules of life interactive select list */}
-            <div className="card rules-selector-card">
-              <h3 className="card-mini-title">Principes Actifs</h3>
-              <div className="rules-selector-list">
-                {rulesOfLife.map((rule, idx) => {
-                  const isActive = idx === selectedRuleIdx;
-                  return (
-                    <div 
-                      key={idx} 
-                      className={`rule-select-row ${isActive ? 'active' : ''}`}
+                      className={`timeline-bead-wrapper ${isCurrentPhase ? 'current' : ''}`}
                       onClick={() => {
                         playTactileClick();
-                        setSelectedRuleIdx(idx);
+                        setActivePhaseIndex(idx);
                       }}
                     >
-                      <span className="rule-num">{idx + 1}</span>
-                      <span className="rule-title-text">{rule}</span>
+                      <span className="bead-year">{phase.dates.replace("Année ", "")}</span>
+                      <div className="bead-circle" />
+                      <span className="bead-label">{phase.title.split(" : ")[1]}</span>
                     </div>
                   );
                 })}
               </div>
             </div>
+          </section>
 
-            {/* Apple Icon Gallery: Vision 2031 */}
-            <div className="card vision-gallery-card">
-              <h3 className="card-mini-title">Vision Board 2031</h3>
-              <div className="vision-gallery-grid">
-                
-                <div className="gallery-icon-card icon-residence">
-                  <div className="icon-overlay" />
-                  <span className="gallery-emoji">🏡</span>
-                  <div className="gallery-meta">
-                    <span className="gallery-title">Résidence</span>
-                    <span className="gallery-detail">Socle principal</span>
-                  </div>
-                </div>
+          <footer className="life-os-footer">
+            <span>Le Club IA</span>
+            <span className="footer-dot">•</span>
+            <span>Gamaliel Tankeu</span>
+          </footer>
 
-                <div className="gallery-icon-card icon-immeuble">
-                  <div className="icon-overlay" />
-                  <span className="gallery-emoji">🏢</span>
-                  <div className="gallery-meta">
-                    <span className="gallery-title">Immeuble</span>
-                    <span className="gallery-detail">Actifs au pays</span>
-                  </div>
-                </div>
+          <button 
+            className="btn-view-passcode-mobile"
+            onClick={() => setShowPlanMobile(false)}
+          >
+            Saisir le Code d'Accès <Check className="size-4 ml-2" />
+          </button>
 
-                <div className="gallery-icon-card icon-marriage">
-                  <div className="icon-overlay" />
-                  <span className="gallery-emoji">💍</span>
-                  <div className="gallery-meta">
-                    <span className="gallery-title">Famille</span>
-                    <span className="gallery-detail">Me marier & bâtir</span>
-                  </div>
-                </div>
+        </div>
 
-                <div className="gallery-icon-card icon-voiture">
-                  <div className="icon-overlay" />
-                  <span className="gallery-emoji">🚘</span>
-                  <div className="gallery-meta">
-                    <span className="gallery-title">Voiture</span>
-                    <span className="gallery-detail">Mouvement libre</span>
-                  </div>
-                </div>
+        {/* RIGHT COLUMN: THE IPHONE LOCK PANEL WIDGET */}
+        <div className="lockscreen-right-pane">
+          
+          <button 
+            className="btn-view-plan-mobile"
+            onClick={() => setShowPlanMobile(true)}
+          >
+            <Compass className="size-4 mr-2" /> Mon Plan de Vie
+          </button>
 
-                <div className="gallery-icon-card icon-company">
-                  <div className="icon-overlay" />
-                  <span className="gallery-emoji">📈</span>
-                  <div className="gallery-meta">
-                    <span className="gallery-title">Entreprise</span>
-                    <span className="gallery-detail">Systèmes IA</span>
-                  </div>
-                </div>
-
-                <div className="gallery-icon-card icon-peace">
-                  <div className="icon-overlay" />
-                  <span className="gallery-emoji">🧘</span>
-                  <div className="gallery-meta">
-                    <span className="gallery-title">Vie Paisible</span>
-                    <span className="gallery-detail">Esprit & Discipline</span>
-                  </div>
-                </div>
-
+          {/* iPhone style passcode visual widget container */}
+          <div className={`iphone-lock-card ${shake ? 'shake-iphone' : ''}`}>
+            
+            <div className="iphone-lock-header">
+              <div className="padlock-badge">
+                {pin.length === 4 && pin === correctPasscode ? (
+                  <Unlock className="iphone-lock-icon text-blue-apple animate-bounce" />
+                ) : (
+                  <Lock className="iphone-lock-icon" />
+                )}
               </div>
+              <h2 className="iphone-lock-prompt">Entrer le code</h2>
+            </div>
+
+            {/* Pascode Dot Placeholders */}
+            <div className="iphone-pin-indicators">
+              {[0, 1, 2, 3].map((idx) => (
+                <div 
+                  key={idx} 
+                  className={`iphone-pin-dot ${pin.length > idx ? 'active' : ''} ${error ? 'error' : ''}`}
+                />
+              ))}
+            </div>
+
+            {error && <span className="iphone-error-text">Code incorrect. Veuillez réessayer.</span>}
+
+            {/* Apple iPhone Keypad Grid layout */}
+            <div className="iphone-keypad-grid">
+              {keyConfig.map((key) => {
+                const isActive = activeKey === key.num;
+                return (
+                  <button 
+                    key={key.num} 
+                    onClick={() => handleKeyPress(key.num)}
+                    className={`key-circle-btn ${isActive ? 'active' : ''}`}
+                  >
+                    <span className="key-num-label">{key.num}</span>
+                    {key.letters && <span className="key-letter-label">{key.letters}</span>}
+                  </button>
+                );
+              })}
+              
+              {/* Utility keys row */}
+              <button 
+                onClick={handleClear} 
+                className={`key-circle-btn text-utility ${activeKey === 'clear' ? 'active' : ''}`}
+                style={{ fontSize: '11px', fontWeight: 600 }}
+              >
+                Effacer
+              </button>
+              
+              <button 
+                onClick={() => handleKeyPress('0')} 
+                className={`key-circle-btn ${activeKey === '0' ? 'active' : ''}`}
+              >
+                <span className="key-num-label">0</span>
+                <span className="key-letter-label">+</span>
+              </button>
+              
+              <button 
+                onClick={handleBackspace} 
+                className={`key-circle-btn text-utility ${activeKey === 'backspace' ? 'active' : ''}`}
+                style={{ fontSize: '11px', fontWeight: 600 }}
+              >
+                ⌫
+              </button>
+            </div>
+
+            <div className="iphone-lock-footer-info">
+              <span>Nexia System Cockpit v1.0</span>
             </div>
 
           </div>
 
         </div>
-
-        {/* GLASS TIMELINE TUBE */}
-        <section className="glass-timeline-section">
-          <h3 className="card-mini-title">Feuille de Route 2026 → 2031</h3>
-          
-          <div className="timeline-tube-container">
-            {/* The structural glass cylinder */}
-            <div className="glass-tube-cylinder" />
-            
-            {/* Liquid metallic timeline beads */}
-            <div className="timeline-nodes-track">
-              {phases.map((phase, idx) => {
-                const isCurrentPhase = idx === 0;
-                return (
-                  <div 
-                    key={idx}
-                    className={`timeline-bead-wrapper ${isCurrentPhase ? 'current' : ''}`}
-                    onClick={() => {
-                      playTactileClick();
-                      setActivePhaseIndex(idx);
-                    }}
-                  >
-                    <span className="bead-year">{phase.dates.replace("Année ", "")}</span>
-                    <div className="bead-circle" />
-                    <span className="bead-label">{phase.title.split(" : ")[1]}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        <footer className="life-os-footer">
-          <span>Le Club IA</span>
-          <span className="footer-dot">•</span>
-          <span>Gamaliel Tankeu</span>
-        </footer>
 
       </div>
 
@@ -546,7 +653,6 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
       {activePhaseIndex !== null && (
         <div className="os-modal-backdrop" onClick={() => setActivePhaseIndex(null)}>
           <div className="os-modal-card" onClick={(e) => e.stopPropagation()}>
-            
             <button 
               className="os-modal-close"
               onClick={() => setActivePhaseIndex(null)}
@@ -591,21 +697,20 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
                 </p>
               </div>
             </div>
-
           </div>
         </div>
       )}
 
-      {/* Premium Apple Materials Stylesheet */}
+      {/* Stylesheet supporting iPhone visual cockpit */}
       <style>{`
-        /* Reset and structural base */
+        /* Global structure */
         .life-os-container {
           position: fixed;
           top: 0;
           left: 0;
           width: 100vw;
           height: 100vh;
-          background-color: #FFFFFF;
+          background-color: #FAFAFA;
           color: #0F172A;
           z-index: 1000;
           overflow: hidden;
@@ -614,7 +719,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           -webkit-user-select: none;
         }
 
-        /* SVG texture grain mask */
+        /* SVG Noise filter */
         .paper-grain-overlay {
           position: absolute;
           top: 0;
@@ -623,31 +728,30 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           bottom: 0;
           pointer-events: none;
           z-index: 10;
-          opacity: 0.15;
+          opacity: 0.12;
           mix-blend-mode: multiply;
-          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.18 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.15 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
         }
 
-        /* Apple Mouse glow tracking */
+        /* Ambient glows and follow cursor */
         .cursor-halo {
           position: fixed;
           width: 600px;
           height: 600px;
-          background: radial-gradient(circle, rgba(0, 102, 204, 0.04) 0%, rgba(99, 91, 255, 0.015) 40%, rgba(0, 0, 0, 0) 70%);
+          background: radial-gradient(circle, rgba(0, 102, 204, 0.035) 0%, rgba(99, 91, 255, 0.012) 40%, rgba(0, 0, 0, 0) 70%);
           border-radius: 50%;
           transform: translate(-50%, -50%);
           pointer-events: none;
           z-index: 2;
         }
 
-        /* Soft global atmospheric elements */
         .ambient-orb-top {
           position: absolute;
           top: -200px;
-          left: 10%;
+          left: 5%;
           width: 800px;
           height: 600px;
-          background: radial-gradient(circle, rgba(0, 102, 204, 0.02) 0%, rgba(0,0,0,0) 80%);
+          background: radial-gradient(circle, rgba(0, 102, 204, 0.015) 0%, rgba(0,0,0,0) 80%);
           border-radius: 50%;
           z-index: 1;
           pointer-events: none;
@@ -656,171 +760,91 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         .ambient-orb-bottom {
           position: absolute;
           bottom: -300px;
-          right: 10%;
+          right: 5%;
           width: 900px;
           height: 700px;
-          background: radial-gradient(circle, rgba(139, 92, 246, 0.015) 0%, rgba(0,0,0,0) 80%);
+          background: radial-gradient(circle, rgba(139, 92, 246, 0.01) 0%, rgba(0,0,0,0) 80%);
           border-radius: 50%;
           z-index: 1;
           pointer-events: none;
         }
 
-        /* Raycast style console box */
-        .raycast-console-wrapper {
-          position: fixed;
-          top: 32px;
-          right: 48px;
-          z-index: 100;
-          display: flex;
-          flex-direction: column;
-          align-items: flex-end;
-          gap: 6px;
+        /* Dual Column Layout */
+        .life-os-dual-layout {
+          display: grid;
+          grid-template-columns: 1fr 400px;
+          height: 100vh;
+          width: 100%;
+          position: relative;
+          z-index: 3;
         }
 
         @media (max-width: 1024px) {
-          .raycast-console-wrapper {
-            right: 50%;
-            transform: translateX(50%);
-            top: 24px;
-            width: 90%;
-            max-width: 330px;
+          .life-os-dual-layout {
+            grid-template-columns: 1fr;
           }
         }
 
-        .raycast-console {
-          display: flex;
-          align-items: center;
-          gap: 14px;
-          padding: 8px 16px;
-          background: rgba(255, 255, 255, 0.4);
-          backdrop-filter: blur(40px) saturate(200%);
-          -webkit-backdrop-filter: blur(40px) saturate(200%);
-          border: 1px solid rgba(255, 255, 255, 0.6);
-          border-radius: 9999px;
-          box-shadow: 
-            0 1px 2px rgba(0, 0, 0, 0.005), 
-            0 8px 24px rgba(0, 0, 0, 0.015);
-        }
-
-        .console-brand {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-
-        .text-blue-apple {
-          color: #0066CC;
-        }
-
-        .console-title {
-          font-size: 10.5px;
-          font-weight: 700;
-          letter-spacing: 0.06em;
-          color: #1E293B;
-          text-transform: uppercase;
-        }
-
-        .console-divider {
-          width: 1px;
-          height: 14px;
-          background-color: rgba(0, 0, 0, 0.06);
-        }
-
-        .pin-slots {
-          display: flex;
-          gap: 8px;
-          align-items: center;
-        }
-
-        .pin-dot-slot {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          background-color: rgba(0, 0, 0, 0.06);
-          border: 1px solid rgba(0, 0, 0, 0.03);
-          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .pin-dot-slot.filled {
-          background-color: #0066CC;
-          border-color: #0066CC;
-          transform: scale(1.15);
-          box-shadow: 0 0 8px rgba(0, 102, 204, 0.3);
-        }
-
-        .pin-dot-slot.error {
-          background-color: #EF4444 !important;
-          border-color: #EF4444 !important;
-        }
-
-        .console-instruction {
-          font-size: 10.5px;
-          font-weight: 600;
-          color: #64748B;
-        }
-
-        .console-error-msg {
-          font-size: 10px;
-          font-weight: 600;
-          color: #EF4444;
-          margin-right: 16px;
-          animation: fadeIn 0.1s ease;
-        }
-
-        .shake-console {
-          animation: shakeConsole 0.5s ease-in-out;
-        }
-
-        @keyframes shakeConsole {
-          0%, 100% { transform: translateX(0); }
-          15%, 45%, 75% { transform: translateX(-6px); }
-          30%, 60%, 90% { transform: translateX(6px); }
-        }
-
-        /* Scrollable main cockpit container */
-        .life-os-content {
-          position: relative;
-          z-index: 3;
-          width: 100%;
-          max-width: 1100px;
-          margin: 0 auto;
-          padding: 100px 24px 120px 24px;
-          height: 100vh;
+        /* Left Cockpit Column */
+        .cockpit-left-pane {
+          padding: 60px 48px;
           overflow-y: auto;
+          height: 100vh;
           display: flex;
           flex-direction: column;
-          gap: 56px;
+          gap: 40px;
+          border-right: 1px solid rgba(0, 0, 0, 0.04);
         }
 
-        /* Scrollbar styles matching Apple minimalist look */
-        .life-os-content::-webkit-scrollbar {
-          width: 4px;
-        }
-        .life-os-content::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .life-os-content::-webkit-scrollbar-thumb {
-          background: rgba(0, 0, 0, 0.05);
-          border-radius: 99px;
+        @media (max-width: 1024px) {
+          .cockpit-left-pane {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 20;
+            background-color: #FAFAFA;
+          }
+          .cockpit-left-pane.show-mobile {
+            display: flex !important;
+          }
         }
 
-        /* HERO HEADER */
+        .life-os-grid-sublayout {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 28px;
+        }
+
+        @media (max-width: 768px) {
+          .life-os-grid-sublayout {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        .workspace-flex {
+          display: flex;
+          flex-direction: column;
+        }
+
+        /* Hero text styles */
         .life-os-hero {
           display: flex;
           flex-direction: column;
-          gap: 8px;
-          margin-top: 20px;
+          gap: 6px;
         }
 
         .hero-eyebrow {
           font-size: 11px;
           font-weight: 700;
-          letter-spacing: 0.18em;
+          letter-spacing: 0.16em;
           color: #94A3B8;
         }
 
         .hero-headline {
-          font-size: 64px;
+          font-size: 56px;
           font-weight: 800;
           letter-spacing: -0.04em;
           color: #0F172A;
@@ -828,24 +852,19 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         }
 
         .hero-subheadline {
-          font-size: 20px;
+          font-size: 18px;
           color: #475569;
           font-weight: 500;
-          line-height: 1.4;
+          line-height: 1.45;
           letter-spacing: -0.01em;
-          max-width: 600px;
+          max-width: 580px;
         }
 
-        @media (max-width: 768px) {
-          .hero-headline { font-size: 48px; }
-          .hero-subheadline { font-size: 16px; }
-        }
-
-        /* LIQUID PROGRESSION JAUGE (MagSafe style) */
+        /* MagSafe progression tracker */
         .magsafe-progress-section {
           display: flex;
           flex-direction: column;
-          gap: 12px;
+          gap: 10px;
         }
 
         .progress-labels {
@@ -855,19 +874,18 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         }
 
         .progress-value {
-          font-size: 32px;
+          font-size: 28px;
           font-weight: 800;
           letter-spacing: -0.03em;
           color: #0066CC;
-          font-variant-numeric: tabular-nums;
         }
 
         .progress-legend {
-          font-size: 12px;
+          font-size: 11px;
           font-weight: 700;
           color: #64748B;
           text-transform: uppercase;
-          letter-spacing: 0.06em;
+          letter-spacing: 0.05em;
         }
 
         .magsafe-progress-track {
@@ -898,63 +916,27 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           background-size: 200px 100%;
         }
 
-        @keyframes magsafeSweep {
-          0% { background-position: -200px 0; }
-          100% { background-position: calc(100% + 200px) 0; }
-        }
-
-        /* CORE WORKSPACE GRID */
-        .life-os-workspace-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 32px;
-          align-items: start;
-        }
-
-        @media (max-width: 1024px) {
-          .life-os-workspace-grid {
-            grid-template-columns: 1fr;
-            gap: 24px;
-          }
-        }
-
-        .workspace-column {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .flex-column {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .gap-32 {
-          gap: 32px;
-        }
-
-        /* Cards Apple Design System */
+        /* Cards general aesthetics */
         .card {
           background-color: #FFFFFF;
-          border: 1px solid rgba(0, 0, 0, 0.035);
+          border: 1px solid rgba(0, 0, 0, 0.03);
           border-radius: 28px;
           box-shadow: 
             0 1px 3px rgba(0, 0, 0, 0.005),
-            0 10px 40px rgba(0, 0, 0, 0.015);
+            0 8px 30px rgba(0, 0, 0, 0.012);
           position: relative;
           overflow: hidden;
-          transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
+          transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
         }
 
-        /* 3D Floating Hover effect */
         .card:hover {
-          transform: translateY(-4px) scale(1.006);
-          border-color: rgba(0, 102, 204, 0.15);
+          transform: translateY(-4px) scale(1.005);
+          border-color: rgba(0, 102, 204, 0.12);
           box-shadow: 
             0 2px 6px rgba(0, 0, 0, 0.008),
-            0 20px 60px rgba(0, 0, 0, 0.03);
+            0 16px 48px rgba(0, 0, 0, 0.02);
         }
 
-        /* 3D Card light glare reflection overlay */
         .card-glare-reflection {
           position: absolute;
           top: 0;
@@ -974,7 +956,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
 
         /* Mission Card */
         .premium-mission-card {
-          padding: 36px;
+          padding: 32px;
           background: linear-gradient(180deg, #FFFFFF 0%, rgba(0, 102, 204, 0.002) 100%);
         }
 
@@ -982,7 +964,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 24px;
+          margin-bottom: 20px;
         }
 
         .badge-apple {
@@ -1006,11 +988,10 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         }
 
         .days-number {
-          font-size: 36px;
+          font-size: 32px;
           font-weight: 800;
           letter-spacing: -0.04em;
           color: #0F172A;
-          font-variant-numeric: tabular-nums;
         }
 
         .days-text {
@@ -1023,7 +1004,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         }
 
         .mission-title {
-          font-size: 32px;
+          font-size: 28px;
           font-weight: 800;
           letter-spacing: -0.03em;
           color: #0F172A;
@@ -1032,7 +1013,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         }
 
         .mission-rationale {
-          font-size: 14px;
+          font-size: 13.5px;
           line-height: 1.5;
           color: #475569;
           font-weight: 500;
@@ -1042,17 +1023,16 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           display: flex;
           flex-direction: column;
           gap: 10px;
-          margin-top: 24px;
+          margin-top: 20px;
         }
 
-        /* Glass frosted capsules list */
         .capsule-objective-item {
           display: flex;
           align-items: center;
           gap: 14px;
-          padding: 12px 20px;
+          padding: 12px 18px;
           background: rgba(255, 255, 255, 0.5);
-          border: 1px solid rgba(0, 0, 0, 0.03);
+          border: 1px solid rgba(0, 0, 0, 0.025);
           border-radius: 99px;
           cursor: pointer;
           transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1060,7 +1040,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
 
         .capsule-objective-item:hover {
           background: rgba(0, 102, 204, 0.02);
-          border-color: rgba(0, 102, 204, 0.1);
+          border-color: rgba(0, 102, 204, 0.08);
           transform: scale(1.01);
         }
 
@@ -1068,7 +1048,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           width: 20px;
           height: 20px;
           border-radius: 50%;
-          border: 1px.5px solid #CBD5E1;
+          border: 1.5px solid #CBD5E1;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -1083,11 +1063,10 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         }
 
         .capsule-text {
-          font-size: 13px;
+          font-size: 12.5px;
           color: #1E293B;
           font-weight: 600;
           line-height: 1.4;
-          transition: color 0.2s ease;
         }
 
         .capsule-objective-item.completed .capsule-text {
@@ -1102,7 +1081,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           display: flex;
           align-items: center;
           gap: 10px;
-          font-size: 11.5px;
+          font-size: 11px;
           color: #64748B;
         }
 
@@ -1114,11 +1093,10 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           flex-shrink: 0;
         }
 
-        /* Rules Spotlight Card */
+        /* Quotes Card */
         .spotlight-quote-card {
-          padding: 28px;
-          background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(99, 91, 255, 0.005) 100%);
-          border-color: rgba(99, 91, 255, 0.05);
+          padding: 24px;
+          background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(99, 91, 255, 0.003) 100%);
         }
 
         .spotlight-quote-card .quote-icon {
@@ -1126,15 +1104,15 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           opacity: 0.12;
           width: 24px;
           height: 24px;
-          margin-bottom: 8px;
+          margin-bottom: 6px;
         }
 
         .spotlight-quote-card .quote-text {
-          font-size: 14px;
+          font-size: 13.5px;
           font-style: italic;
           color: #4F46E5;
           font-weight: 600;
-          line-height: 1.55;
+          line-height: 1.5;
         }
 
         .quote-sublabel {
@@ -1142,13 +1120,13 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           font-weight: 700;
           color: #94A3B8;
           text-transform: uppercase;
-          letter-spacing: 0.08em;
-          margin-top: 10px;
+          letter-spacing: 0.06em;
+          margin-top: 8px;
         }
 
-        /* Rules selector card list */
+        /* Rules selector list */
         .rules-selector-card {
-          padding: 28px;
+          padding: 24px;
         }
 
         .card-mini-title {
@@ -1156,23 +1134,23 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           font-weight: 700;
           color: #94A3B8;
           text-transform: uppercase;
-          letter-spacing: 0.1em;
-          margin-bottom: 16px;
-          border-bottom: 1px solid rgba(0,0,0,0.035);
+          letter-spacing: 0.08em;
+          margin-bottom: 14px;
+          border-bottom: 1px solid rgba(0,0,0,0.03);
           padding-bottom: 8px;
         }
 
         .rules-selector-list {
           display: flex;
           flex-direction: column;
-          gap: 6px;
+          gap: 4px;
         }
 
         .rule-select-row {
           display: flex;
           align-items: center;
           gap: 12px;
-          padding: 8px 12px;
+          padding: 8px 10px;
           border-radius: 8px;
           cursor: pointer;
           transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1187,10 +1165,10 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         }
 
         .rule-num {
-          font-size: 11px;
+          font-size: 10.5px;
           font-weight: 700;
           color: #94A3B8;
-          width: 16px;
+          width: 14px;
           text-align: center;
         }
 
@@ -1199,7 +1177,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         }
 
         .rule-title-text {
-          font-size: 12.5px;
+          font-size: 12px;
           font-weight: 600;
           color: #334155;
           white-space: nowrap;
@@ -1212,21 +1190,15 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           font-weight: 700;
         }
 
-        /* Vision Board Gallery (Apple application-like cards) */
+        /* Vision Gallery Card */
         .vision-gallery-card {
-          padding: 28px;
+          padding: 24px;
         }
 
         .vision-gallery-grid {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
-          gap: 12px;
-        }
-
-        @media (max-width: 480px) {
-          .vision-gallery-grid {
-            grid-template-columns: 1fr;
-          }
+          gap: 10px;
         }
 
         .gallery-icon-card {
@@ -1234,11 +1206,11 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           display: flex;
           align-items: center;
           gap: 12px;
-          padding: 14px;
-          border-radius: 18px;
+          padding: 12px;
+          border-radius: 16px;
           background-color: #FFFFFF;
-          border: 1px solid rgba(0, 0, 0, 0.03);
-          box-shadow: 0 2px 6px rgba(0,0,0,0.008);
+          border: 1px solid rgba(0, 0, 0, 0.025);
+          box-shadow: 0 1px 3px rgba(0,0,0,0.005);
           cursor: pointer;
           overflow: hidden;
           transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.3s ease;
@@ -1246,8 +1218,8 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
 
         .gallery-icon-card:hover {
           transform: translateY(-2px) scale(1.02);
-          border-color: rgba(0, 102, 204, 0.12);
-          box-shadow: 0 8px 18px rgba(0,0,0,0.02);
+          border-color: rgba(0, 102, 204, 0.1);
+          box-shadow: 0 6px 14px rgba(0,0,0,0.015);
         }
 
         .icon-overlay {
@@ -1265,7 +1237,6 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           opacity: 0.05;
         }
 
-        /* Color palettes for specific icons matching their emojis */
         .icon-residence .icon-overlay { background-color: #3B82F6; }
         .icon-immeuble .icon-overlay { background-color: #10B981; }
         .icon-marriage .icon-overlay { background-color: #EC4899; }
@@ -1274,12 +1245,12 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         .icon-peace .icon-overlay { background-color: #14B8A6; }
 
         .gallery-emoji {
-          font-size: 26px;
+          font-size: 24px;
           transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         .gallery-icon-card:hover .gallery-emoji {
-          transform: scale(1.15) rotate(4deg);
+          transform: scale(1.15) rotate(3deg);
         }
 
         .gallery-meta {
@@ -1289,54 +1260,45 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         }
 
         .gallery-title {
-          font-size: 13px;
+          font-size: 12.5px;
           font-weight: 700;
           color: #0F172A;
         }
 
         .gallery-detail {
-          font-size: 9.5px;
+          font-size: 9px;
           color: #64748B;
           font-weight: 600;
         }
 
-        /* GLASS TIMELINE TUBE */
+        /* Timeline Glass tube */
         .glass-timeline-section {
           display: flex;
           flex-direction: column;
           gap: 16px;
-          margin-top: 16px;
         }
 
         .timeline-tube-container {
           position: relative;
-          padding: 40px 0;
+          padding: 36px 0;
           width: 100%;
           overflow-x: auto;
           display: flex;
           align-items: center;
         }
 
-        .timeline-tube-container::-webkit-scrollbar {
-          height: 3px;
-        }
-
-        /* 3D Glass tube cylinder line background */
         .glass-tube-cylinder {
           position: absolute;
           top: 50%;
           left: 0;
           right: 0;
-          height: 10px;
+          height: 8px;
           background: linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0%, rgba(200, 200, 200, 0.3) 50%, rgba(150, 150, 150, 0.1) 100%);
           border: 1px solid rgba(255, 255, 255, 0.7);
           backdrop-filter: blur(8px);
           -webkit-backdrop-filter: blur(8px);
           border-radius: 99px;
           z-index: 1;
-          box-shadow: 
-            inset 0 1px 2px rgba(255, 255, 255, 0.8),
-            0 2px 4px rgba(0, 0, 0, 0.02);
         }
 
         .timeline-nodes-track {
@@ -1345,8 +1307,8 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           display: flex;
           justify-content: space-between;
           width: 100%;
-          min-width: 800px;
-          padding: 0 20px;
+          min-width: 780px;
+          padding: 0 16px;
         }
 
         .timeline-bead-wrapper {
@@ -1355,7 +1317,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           align-items: center;
           gap: 10px;
           cursor: pointer;
-          width: 110px;
+          width: 100px;
           transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
@@ -1364,22 +1326,18 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         }
 
         .bead-year {
-          font-size: 11.5px;
+          font-size: 11px;
           font-weight: 700;
           color: #94A3B8;
-          transition: color 0.2s ease;
         }
 
-        /* Glass / metallic bead sphere */
         .bead-circle {
-          width: 20px;
-          height: 20px;
+          width: 18px;
+          height: 18px;
           border-radius: 50%;
           background: radial-gradient(circle at 35% 35%, #FFFFFF 0%, #E2E8F0 60%, #CBD5E1 100%);
           border: 1px solid rgba(255, 255, 255, 0.8);
-          box-shadow: 
-            0 2px 4px rgba(0, 0, 0, 0.08),
-            inset 0 -1px 2px rgba(0,0,0,0.05);
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
           transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
@@ -1389,20 +1347,18 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         }
 
         .bead-label {
-          font-size: 10.5px;
+          font-size: 10px;
           font-weight: 700;
           color: #64748B;
           text-align: center;
           line-height: 1.3;
-          transition: color 0.2s ease;
         }
 
-        /* Active/current bead sphere styling */
         .timeline-bead-wrapper.current .bead-circle {
           background: radial-gradient(circle at 35% 35%, #FFFFFF 0%, #3b82f6 60%, #0066CC 100%);
           box-shadow: 
-            0 4px 10px rgba(0, 102, 204, 0.25),
-            0 0 0 3px rgba(0, 102, 204, 0.08);
+            0 4px 8px rgba(0, 102, 204, 0.2),
+            0 0 0 3px rgba(0, 102, 204, 0.06);
           transform: scale(1.2);
         }
 
@@ -1415,22 +1371,252 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           font-weight: 800;
         }
 
-        /* Footers */
         .life-os-footer {
           display: flex;
           justify-content: center;
           gap: 8px;
-          font-size: 11px;
+          font-size: 10.5px;
           font-weight: 700;
           color: #94A3B8;
           margin-top: auto;
-          padding-top: 40px;
+          padding-top: 30px;
           letter-spacing: 0.05em;
           text-transform: uppercase;
         }
 
         .footer-dot {
-          color: rgba(0, 0, 0, 0.06);
+          color: rgba(0, 0, 0, 0.05);
+        }
+
+        /* RIGHT PANEL: IPHONE LOCK CODE PORTAL */
+        .lockscreen-right-pane {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 40px;
+          height: 100vh;
+          position: relative;
+          background: radial-gradient(circle at 100% 100%, rgba(99, 91, 255, 0.01) 0%, transparent 60%);
+        }
+
+        @media (max-width: 1024px) {
+          .lockscreen-right-pane {
+            padding: 24px;
+            height: 100vh;
+          }
+        }
+
+        /* iPhone lock screen card proportions */
+        .iphone-lock-card {
+          width: 100%;
+          max-width: 320px;
+          padding: 40px 24px;
+          background: rgba(255, 255, 255, 0.4);
+          backdrop-filter: blur(40px) saturate(210%);
+          -webkit-backdrop-filter: blur(40px) saturate(210%);
+          border: 1px solid rgba(255, 255, 255, 0.65);
+          border-radius: 36px;
+          box-shadow: 
+            0 1px 2px rgba(0, 0, 0, 0.005), 
+            0 12px 36px rgba(0, 0, 0, 0.02);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          position: relative;
+        }
+
+        .iphone-lock-header {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 24px;
+        }
+
+        .padlock-badge {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.5);
+          border: 1px solid rgba(255, 255, 255, 0.7);
+          box-shadow: var(--shadow-sm);
+        }
+
+        .iphone-lock-icon {
+          width: 18px;
+          height: 18px;
+          color: #0F172A;
+        }
+
+        .iphone-lock-prompt {
+          font-size: 15px;
+          font-weight: 600;
+          color: #0F172A;
+          letter-spacing: -0.01em;
+        }
+
+        /* Passcode indicator dots */
+        .iphone-pin-indicators {
+          display: flex;
+          gap: 16px;
+          margin-bottom: 28px;
+          height: 12px;
+          align-items: center;
+        }
+
+        .iphone-pin-dot {
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          border: 1px solid rgba(0, 0, 0, 0.15);
+          background-color: transparent;
+          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .iphone-pin-dot.active {
+          background-color: #0F172A;
+          border-color: #0F172A;
+          transform: scale(1.1);
+        }
+
+        .iphone-pin-dot.error {
+          background-color: #EF4444 !important;
+          border-color: #EF4444 !important;
+        }
+
+        .iphone-error-text {
+          font-size: 10.5px;
+          font-weight: 600;
+          color: #EF4444;
+          margin-bottom: 16px;
+        }
+
+        /* iPhone circular buttons layout grid */
+        .iphone-keypad-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 20px 24px;
+          justify-items: center;
+          width: 100%;
+          max-width: 250px;
+        }
+
+        .key-circle-btn {
+          width: 62px;
+          height: 62px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.4);
+          border: 1px solid rgba(255, 255, 255, 0.6);
+          color: #0F172A;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          user-select: none;
+          transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+          line-height: 1.1;
+        }
+
+        /* Tap / Key down active state */
+        .key-circle-btn.active, .key-circle-btn:active {
+          background-color: #FFFFFF;
+          border-color: #FFFFFF;
+          transform: scale(0.92);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        }
+
+        .key-num-label {
+          font-size: 24px;
+          font-weight: 400;
+          font-variant-numeric: tabular-nums;
+        }
+
+        .key-letter-label {
+          font-size: 8px;
+          font-weight: 700;
+          color: #64748B;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          margin-top: 1px;
+        }
+
+        .key-circle-btn.text-utility {
+          background: transparent;
+          border-color: transparent;
+          color: #475569;
+        }
+
+        .key-circle-btn.text-utility.active, .key-circle-btn.text-utility:active {
+          background: rgba(255, 255, 255, 0.3);
+          transform: scale(0.95);
+        }
+
+        .iphone-lock-footer-info {
+          margin-top: 36px;
+          font-size: 9px;
+          font-weight: 700;
+          color: #94A3B8;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+        }
+
+        .shake-iphone {
+          animation: shakeIphone 0.5s ease-in-out;
+        }
+
+        @keyframes shakeIphone {
+          0%, 100% { transform: translateX(0); }
+          15%, 45%, 75% { transform: translateX(-6px); }
+          30%, 60%, 90% { transform: translateX(6px); }
+        }
+
+        /* Mobile specific layout buttons */
+        .btn-view-plan-mobile {
+          display: none;
+          position: absolute;
+          top: 24px;
+          left: 24px;
+          padding: 8px 14px;
+          background-color: #FFFFFF;
+          border: 1px solid rgba(0,0,0,0.04);
+          border-radius: 99px;
+          font-size: 11.5px;
+          font-weight: 700;
+          color: #475569;
+          cursor: pointer;
+          align-items: center;
+          box-shadow: var(--shadow-sm);
+        }
+
+        .btn-view-passcode-mobile {
+          display: none;
+          width: 100%;
+          padding: 12px;
+          background-color: #0F172A;
+          color: #FFFFFF;
+          border: none;
+          border-radius: 99px;
+          font-size: 13px;
+          font-weight: 700;
+          cursor: pointer;
+          align-items: center;
+          justify-content: center;
+          margin-top: 16px;
+        }
+
+        @media (max-width: 1024px) {
+          .btn-view-plan-mobile {
+            display: flex !important;
+          }
+          
+          .btn-view-passcode-mobile {
+            display: flex !important;
+          }
         }
 
         /* APPLE VISION PRO MORPHING MODALS */
