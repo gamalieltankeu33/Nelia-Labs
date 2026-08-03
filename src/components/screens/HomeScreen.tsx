@@ -328,7 +328,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setActiveScreen }) => {
                   />
                 </svg>
                 <div className="obj-jauge-avatar-container">
-                  <img src="/avatar.jpg" alt="Gamaliel" className="obj-jauge-avatar-img" />
+                  <img src="/gamaliel.jpg" alt="Gamaliel" className="obj-jauge-avatar-img" />
                   <div className="obj-jauge-percentage-badge">
                     {radialProgress}%
                   </div>
