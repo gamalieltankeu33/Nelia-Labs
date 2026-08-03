@@ -283,8 +283,12 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
                     width: `${dot.orbitRadius * 2}px`,
                     height: `${dot.orbitRadius * 2}px`,
                     animationDuration: `${dot.speed}s`,
-                    transform: `rotate(${dot.initialAngle}deg)`
-                  }}
+                    '--start-angle': `${dot.initialAngle}deg`,
+                    '--end-angle': `${dot.initialAngle + 360}deg`,
+                    animationName: 'orbitRotateCustom',
+                    animationTimingFunction: 'linear',
+                    animationIterationCount: 'infinite'
+                  } as React.CSSProperties}
                 >
                   <div 
                     className="kinetic-colored-bead" 
@@ -307,9 +311,13 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
                       width: `${planet.orbitRadius * 2}px`,
                       height: `${planet.orbitRadius * 2}px`,
                       animationDuration: `${planet.speed}s`,
-                      transform: `rotate(${planet.initialAngle}deg)`,
+                      '--start-angle': `${planet.initialAngle}deg`,
+                      '--end-angle': `${planet.initialAngle + 360}deg`,
+                      animationName: 'orbitRotateCustom',
+                      animationTimingFunction: 'linear',
+                      animationIterationCount: 'infinite',
                       zIndex: isHovered ? 100 : 10
-                    }}
+                    } as React.CSSProperties}
                   >
                     <div 
                       className={`floating-planet-sphere ${isHovered ? 'planet-hovered' : ''}`}
@@ -721,7 +729,6 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           align-items: center;
           justify-content: center;
           pointer-events: none;
-          animation: orbitRotate linear infinite;
         }
 
         .planet-orbit-holder.orbit-paused {
@@ -802,7 +809,6 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           border-radius: 50%;
           pointer-events: none;
           z-index: 8;
-          animation: orbitRotate linear infinite;
         }
 
         .kinetic-colored-bead {
@@ -815,9 +821,9 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
           box-shadow: 0 0 6px rgba(0,0,0,0.1);
         }
 
-        @keyframes orbitRotate {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
+        @keyframes orbitRotateCustom {
+          from { transform: rotate(var(--start-angle)); }
+          to { transform: rotate(var(--end-angle)); }
         }
 
         /* COLUMN 3: RIGHT KEYPAD PANEL */
