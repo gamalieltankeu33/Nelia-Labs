@@ -88,13 +88,8 @@
 }
 
 body {
-  background-color: var(--bg-primary);
-  background-image: 
-    radial-gradient(rgba(99, 91, 255, 0.02) 1px, transparent 0),
-    radial-gradient(rgba(99, 91, 255, 0.01) 1.5px, transparent 0),
-    radial-gradient(circle at 80% 0%, rgba(99, 91, 255, 0.03) 0%, rgba(99, 91, 255, 0) 50%);
-  background-size: 24px 24px, 48px 48px, 100% 100%;
-  background-position: 0 0, 12px 12px, 0 0;
+  background-color: #FAFAFA;
+  background-image: radial-gradient(circle at 50% 0%, rgba(0, 113, 227, 0.02) 0%, rgba(250, 250, 252, 0) 80%);
   color: var(--text-primary);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
@@ -648,4 +643,331 @@ tr:hover td {
   font-size: 12px;
   color: var(--text-muted);
   margin-top: 4px;
+}
+
+/* ==========================================================================
+   APPLE VISIONOS VISUAL OVERRIDES & MOBILE FIRST STACKING
+   ========================================================================== */
+
+/* 1. Global Cards Override (Hardware-inspired White Slab Look) */
+body .card,
+body .stat-card,
+body .simulator-card,
+body .chart-card,
+body .kpi-object-card,
+body .kanban-card,
+body .dashboard-card,
+body .content-card,
+body .collab-card,
+body .reminder-timeline-card,
+body .task-card,
+body .simulation-card,
+body .welcome-banner,
+body .context-goal-card,
+body .todo-list-card,
+body .recent-list-card,
+body .performance-chart-card,
+body .detail-card,
+body .metric-card,
+body .objective-card {
+  background-color: #FFFFFF !important;
+  border: 1px solid rgba(0, 0, 0, 0.015) !important;
+  border-radius: 32px !important;
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.005),
+    0 16px 40px rgba(0, 0, 0, 0.015),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+  padding: 28px !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* 2. Interactive Spring Hover on Cards */
+body .card:hover,
+body .stat-card:hover,
+body .kpi-object-card:hover,
+body .reminder-timeline-card:hover,
+body .app-icon-shortcut-card:hover,
+body .kanban-card:hover {
+  transform: translateY(-4px) scale(1.02) !important;
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.005),
+    0 24px 60px rgba(0, 0, 0, 0.035) !important;
+}
+
+body .card:active,
+body .stat-card:active,
+body .kpi-object-card:active,
+body .reminder-timeline-card:active,
+body .kanban-card:active {
+  transform: scale(0.98) !important;
+}
+
+/* 3. Global Typographical Overrides (SF Pro look) */
+body .screen-header,
+body .page-header {
+  margin-bottom: 32px !important;
+  margin-top: 10px !important;
+}
+
+body .screen-title,
+body .page-title,
+body .section-title {
+  font-size: 36px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.04em !important;
+  color: #1D1D1F !important;
+  margin-bottom: 8px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+body .screen-title-icon,
+body .page-title-icon {
+  width: 28px !important;
+  height: 28px !important;
+  color: #0071E3 !important; /* Apple Blue highlight icon */
+  stroke-width: 2 !important;
+}
+
+body .screen-subtitle,
+body .page-subtitle,
+body .section-subtitle {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: #8E8E93 !important;
+  margin-bottom: 0 !important;
+  line-height: 1.45 !important;
+}
+
+/* 4. Elegant Inputs Override */
+body input, 
+body select, 
+body textarea {
+  background-color: #FFFFFF !important;
+  border: 1.5px solid rgba(0, 0, 0, 0.08) !important;
+  border-radius: 12px !important;
+  padding: 10px 14px !important;
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  color: #1D1D1F !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.01) !important;
+}
+
+body input:focus, 
+body select:focus, 
+body textarea:focus {
+  border-color: #0071E3 !important;
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.12) !important;
+}
+
+/* 5. Buttons Styling */
+body .btn,
+body button.btn-primary,
+body button.btn-secondary {
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  padding: 10px 20px !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+}
+
+body .btn-primary,
+body button.btn-primary {
+  background-color: #0071E3 !important;
+  color: #FFFFFF !important;
+  border: none !important;
+}
+
+body .btn-primary:hover,
+body button.btn-primary:hover {
+  background-color: #005BB2 !important;
+  transform: scale(1.02) !important;
+}
+
+body .btn-secondary,
+body button.btn-secondary {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+  color: #515154 !important;
+  border: none !important;
+}
+
+body .btn-secondary:hover,
+body button.btn-secondary:hover {
+  background-color: rgba(0, 0, 0, 0.06) !important;
+  color: #1D1D1F !important;
+}
+
+/* 6. Clean iOS Timeframe Tabs */
+body .timeframe-tabs {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+  border-radius: 12px !important;
+  padding: 3px !important;
+  display: inline-flex !important;
+  gap: 2px !important;
+  border: none !important;
+}
+
+body .timeframe-tab {
+  border-radius: 9px !important;
+  padding: 6px 14px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #515154 !important;
+  border: none !important;
+  background: transparent !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+}
+
+body .timeframe-tab.active {
+  background-color: #FFFFFF !important;
+  color: #1D1D1F !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06) !important;
+}
+
+/* 7. Kanban Board CRM Spatial Overrides */
+body .kanban-board-wrapper {
+  margin-top: 32px !important;
+}
+
+body .kanban-board {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 24px !important;
+  align-items: start !important;
+}
+
+body .kanban-column {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+}
+
+body .kanban-column-header {
+  padding: 8px 4px !important;
+  border: none !important;
+  background: transparent !important;
+  margin-bottom: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+body .kanban-column-header h4 {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: #1D1D1F !important;
+  letter-spacing: -0.01em !important;
+}
+
+body .kanban-column-dot {
+  width: 6px !important;
+  height: 6px !important;
+  border-radius: 50% !important;
+}
+
+body .kanban-cards-container {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  min-height: 400px !important;
+}
+
+body .kanban-card {
+  background-color: #FFFFFF !important;
+  border-radius: 20px !important;
+  padding: 20px !important;
+  border: 1px solid rgba(0, 0, 0, 0.01) !important;
+  box-shadow: 
+    0 1px 2px rgba(0,0,0,0.005),
+    0 8px 24px rgba(0,0,0,0.01) !important;
+  margin-bottom: 0 !important;
+}
+
+/* 8. Table Styling & Breath of Air */
+body .table-container {
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  overflow-x: auto !important;
+}
+
+body .table, 
+body table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  margin: 12px 0 !important;
+}
+
+body th {
+  font-size: 9.5px !important;
+  font-weight: 700 !important;
+  color: #8E8E93 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  padding: 14px 18px !important;
+  border-bottom: 1.5px solid rgba(0, 0, 0, 0.04) !important;
+  background: transparent !important;
+}
+
+body td {
+  font-size: 13.5px !important;
+  padding: 18px !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.02) !important;
+  color: #1D1D1F !important;
+}
+
+body tr:hover td {
+  background-color: rgba(0, 0, 0, 0.005) !important;
+}
+
+/* 9. Mobile First Responsive Rules */
+@media (max-width: 900px) {
+  body .home-grid,
+  body .prospects-grid,
+  body .launch-grid,
+  body .expenses-grid,
+  body .collabs-grid,
+  body .content-grid,
+  body .simulation-grid,
+  body .kanban-board,
+  body .simulator-grid,
+  body .cockpit-kpi-grid,
+  body .cockpit-split-layout,
+  body .dashboard-grid,
+  body .today-grid {
+    grid-template-columns: 1fr !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 20px !important;
+  }
+  
+  body .screen-title,
+  body .page-title,
+  body .section-title {
+    font-size: 28px !important;
+  }
+  
+  body .card,
+  body .stat-card,
+  body .kpi-object-card,
+  body .welcome-banner {
+    padding: 20px !important;
+    border-radius: 24px !important;
+  }
+  
+  body .main-content {
+    padding: 20px 16px 120px 16px !important;
+  }
 }
