@@ -327,8 +327,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setActiveScreen }) => {
                     strokeLinecap="round"
                   />
                 </svg>
-                <div className="obj-jauge-percentage">
-                  <span>{radialProgress}%</span>
+                <div className="obj-jauge-avatar-container">
+                  <img src="/avatar.jpg" alt="Gamaliel" className="obj-jauge-avatar-img" />
+                  <div className="obj-jauge-percentage-badge">
+                    {radialProgress}%
+                  </div>
                 </div>
               </div>
             </div>
@@ -764,12 +767,37 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setActiveScreen }) => {
           transition: stroke-dashoffset 1.5s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .obj-jauge-percentage {
+        .obj-jauge-avatar-container {
           position: absolute;
-          font-size: 20px;
+          width: 96px;
+          height: 96px;
+          border-radius: 50%;
+          overflow: hidden;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 1px solid rgba(0, 0, 0, 0.02);
+          background-color: #FAFAFA;
+        }
+
+        .obj-jauge-avatar-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .obj-jauge-percentage-badge {
+          position: absolute;
+          bottom: 0px;
+          background-color: #FFFFFF;
+          border: 0.5px solid rgba(0,0,0,0.06);
+          box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+          padding: 2px 8px;
+          border-radius: 99px;
+          font-size: 11px;
           font-weight: 800;
-          color: #1D1D1F;
-          letter-spacing: -0.02em;
+          color: #0071E3;
+          letter-spacing: -0.01em;
         }
 
         .apple-btn-secondary {
