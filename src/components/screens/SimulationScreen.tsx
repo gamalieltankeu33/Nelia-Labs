@@ -56,7 +56,7 @@ const DEFAULT_PARAMS: SimulationParams = {
   salesStrategy: 'direct', // Conversion directe en live
   callBookingRate: 10,
   callClosingRate: 20,
-  directConversionRate: 10, // Closing à 10% en live
+  directConversionRate: 5, // Closing à 5% en live
   followUpMultiplier: 2.0 // Relances x2 (double les ventes du live)
 };
 
@@ -92,7 +92,7 @@ export const SimulationScreen: React.FC = () => {
       salesStrategy: 'direct' as const,
       callBookingRate: 10,
       callClosingRate: 20,
-      directConversionRate: 10,
+      directConversionRate: 5,
       followUpMultiplier: 2.0
     },
     niche_ia_mid: {
