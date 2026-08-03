@@ -27,6 +27,7 @@ interface SimulationParams {
   callBookingRate: number;
   callClosingRate: number;
   directConversionRate: number;
+  followUpMultiplier: number;
 }
 
 interface SavedSimulation extends SimulationParams {
@@ -38,6 +39,7 @@ interface SimulationResults {
   inscrits: number;
   participants: number;
   appels: number;
+  ventesLive: number;
   ventes: number;
   ca: number;
   net: number;
@@ -48,13 +50,14 @@ interface SimulationResults {
 const DEFAULT_PARAMS: SimulationParams = {
   name: '',
   budget: 2000,
-  cpr: 4.5,
+  cpr: 0.13, // Clic = inscrit à 0.13€/dollars
   showUpRate: 25,
-  offerPrice: 997,
-  salesStrategy: 'calls',
+  offerPrice: 125, // Prix de l'offre à 125€
+  salesStrategy: 'direct', // Conversion directe en live
   callBookingRate: 10,
   callClosingRate: 20,
-  directConversionRate: 1.5
+  directConversionRate: 10, // Closing à 10% en live
+  followUpMultiplier: 2.0 // Relances x2 (double les ventes du live)
 };
 
 export const SimulationScreen: React.FC = () => {
@@ -64,7 +67,7 @@ export const SimulationScreen: React.FC = () => {
   const [params, setParams] = useState<SimulationParams>(DEFAULT_PARAMS);
   const [simName, setSimName] = useState('');
   const [savedSims, setSavedSims] = useState<SavedSimulation[]>([]);
-  const [activePreset, setActivePreset] = useState<string>('niche_ia_mid');
+  const [activePreset, setActivePreset] = useState<string>('ia_relance_low');
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   // Load saved simulations from localStorage on mount
@@ -81,6 +84,17 @@ export const SimulationScreen: React.FC = () => {
 
   // Presets mapping
   const presets = {
+    ia_relance_low: {
+      budget: 2000,
+      cpr: 0.13,
+      showUpRate: 25,
+      offerPrice: 125,
+      salesStrategy: 'direct' as const,
+      callBookingRate: 10,
+      callClosingRate: 20,
+      directConversionRate: 10,
+      followUpMultiplier: 2.0
+    },
     niche_ia_mid: {
       budget: 1500,
       cpr: 4.5,
@@ -89,7 +103,8 @@ export const SimulationScreen: React.FC = () => {
       salesStrategy: 'calls' as const,
       callBookingRate: 10,
       callClosingRate: 20,
-      directConversionRate: 1.5
+      directConversionRate: 1.5,
+      followUpMultiplier: 1.2
     },
     niche_ia_high: {
       budget: 3000,
@@ -99,17 +114,8 @@ export const SimulationScreen: React.FC = () => {
       salesStrategy: 'calls' as const,
       callBookingRate: 12,
       callClosingRate: 25,
-      directConversionRate: 1.2
-    },
-    niche_ia_direct: {
-      budget: 1000,
-      cpr: 3.5,
-      showUpRate: 30,
-      offerPrice: 297,
-      salesStrategy: 'direct' as const,
-      callBookingRate: 8,
-      callClosingRate: 15,
-      directConversionRate: 2.0
+      directConversionRate: 1.2,
+      followUpMultiplier: 1.2
     }
   };
 
@@ -181,9 +187,10 @@ export const SimulationScreen: React.FC = () => {
       showUpRate,
       offerPrice,
       salesStrategy,
-      callBookingRate: 10, // default placeholder
+      callBookingRate: 10,
       callClosingRate: callClosingRate || 20,
-      directConversionRate: directConversionRate || 1.5
+      directConversionRate: directConversionRate || 1.5,
+      followUpMultiplier: 1.2
     });
     setActivePreset('');
   };
@@ -195,6 +202,7 @@ export const SimulationScreen: React.FC = () => {
     let effectiveBooking = p.callBookingRate;
     let effectiveClosing = p.callClosingRate;
     let effectiveDirectConversion = p.directConversionRate;
+    let effectiveMultiplier = p.followUpMultiplier;
 
     if (modifierType === 'pessimistic') {
       effectiveCpr = p.cpr * 1.35; // +35% CPR
@@ -202,27 +210,30 @@ export const SimulationScreen: React.FC = () => {
       effectiveBooking = Math.max(2, p.callBookingRate * 0.8); // -20% bookings
       effectiveClosing = Math.max(5, p.callClosingRate * 0.7); // -30% closing
       effectiveDirectConversion = Math.max(0.2, p.directConversionRate * 0.65); // -35% direct conversion
+      effectiveMultiplier = Math.max(1.0, p.followUpMultiplier * 0.85); // Relances less effective
     } else if (modifierType === 'optimistic') {
-      effectiveCpr = Math.max(1.0, p.cpr * 0.75); // -25% CPR
+      effectiveCpr = Math.max(0.01, p.cpr * 0.75); // -25% CPR
       effectiveShowUp = Math.min(80, p.showUpRate * 1.2); // +20% attendance
       effectiveBooking = Math.min(40, p.callBookingRate * 1.15); // +15% bookings
       effectiveClosing = Math.min(60, p.callClosingRate * 1.25); // +25% closing
-      effectiveDirectConversion = Math.min(10, p.directConversionRate * 1.35); // +35% direct conversion
+      effectiveDirectConversion = Math.min(25, p.directConversionRate * 1.35); // +35% direct conversion
+      effectiveMultiplier = Math.min(5.0, p.followUpMultiplier * 1.15); // Relances more effective
     }
 
-    const inscrits = Math.round(p.budget / Math.max(0.2, effectiveCpr));
+    const inscrits = Math.round(p.budget / Math.max(0.01, effectiveCpr));
     const participants = Math.round(inscrits * (effectiveShowUp / 100));
     
     let appels = 0;
-    let ventes = 0;
+    let ventesLive = 0;
 
     if (p.salesStrategy === 'calls') {
       appels = Math.round(participants * (effectiveBooking / 100));
-      ventes = Math.round(appels * (effectiveClosing / 100));
+      ventesLive = Math.round(appels * (effectiveClosing / 100));
     } else {
-      ventes = Math.round(participants * (effectiveDirectConversion / 100));
+      ventesLive = Math.round(participants * (effectiveDirectConversion / 100));
     }
 
+    const ventes = Math.round(ventesLive * effectiveMultiplier);
     const ca = ventes * p.offerPrice;
     const net = ca - p.budget;
     const roas = p.budget > 0 ? ca / p.budget : 0;
@@ -232,6 +243,7 @@ export const SimulationScreen: React.FC = () => {
       inscrits,
       participants,
       appels,
+      ventesLive,
       ventes,
       ca,
       net,
@@ -243,6 +255,10 @@ export const SimulationScreen: React.FC = () => {
   const realistic = calculateResult(params, 'realistic');
   const pessimistic = calculateResult(params, 'pessimistic');
   const optimistic = calculateResult(params, 'optimistic');
+
+  // Sales figures for detailed funnel presentation
+  const realisticLiveSales = realistic.ventesLive;
+  const realisticFollowUpSales = Math.max(0, realistic.ventes - realisticLiveSales);
 
   // Save current simulation to localStorage
   const saveSimulation = (e: React.FormEvent) => {
@@ -282,7 +298,8 @@ export const SimulationScreen: React.FC = () => {
       salesStrategy: sim.salesStrategy,
       callBookingRate: sim.callBookingRate,
       callClosingRate: sim.callClosingRate,
-      directConversionRate: sim.directConversionRate
+      directConversionRate: sim.directConversionRate,
+      followUpMultiplier: sim.followUpMultiplier || 2.0
     });
     setActivePreset('');
   };
@@ -312,7 +329,7 @@ export const SimulationScreen: React.FC = () => {
           <div>
             <h1 className="sim-title">Simulateur de Lancements Publicitaires</h1>
             <p className="sim-subtitle">
-              Configurez vos prévisions de lancements Meta Ads en entrant vos propres objectifs ou en important vos données réelles.
+              Projetez vos gains en entrant vos métriques de budget, coûts d'inscrits, conversion live et relances.
             </p>
           </div>
         </div>
@@ -328,29 +345,29 @@ export const SimulationScreen: React.FC = () => {
           <div className="card preset-card">
             <h3 className="sim-section-title">Presets & Données Réelles</h3>
             <p className="sim-section-desc">
-              Utilisez des données moyennes du marché ou importez les métriques réelles d'un mois précédent.
+              Sélectionnez un modèle de base ou importez les métriques réelles d'un mois précédent.
             </p>
             <div className="preset-buttons-row">
+              <button 
+                className={`preset-btn ${activePreset === 'ia_relance_low' ? 'preset-active' : ''}`}
+                onClick={() => applyPreset('ia_relance_low')}
+              >
+                <Flame className="size-4 text-orange" style={{ marginRight: '6px' }} />
+                IA Clic-Inscrit (€0.13 / Offre €125 / Relances x2)
+              </button>
               <button 
                 className={`preset-btn ${activePreset === 'niche_ia_mid' ? 'preset-active' : ''}`}
                 onClick={() => applyPreset('niche_ia_mid')}
               >
-                <Flame className="size-4 text-orange" style={{ marginRight: '6px' }} />
+                <Award className="size-4 text-indigo" style={{ marginRight: '6px' }} />
                 IA Premium (€997) - Appel
               </button>
               <button 
                 className={`preset-btn ${activePreset === 'niche_ia_high' ? 'preset-active' : ''}`}
                 onClick={() => applyPreset('niche_ia_high')}
               >
-                <Award className="size-4 text-indigo" style={{ marginRight: '6px' }} />
-                IA High-Ticket (€1997)
-              </button>
-              <button 
-                className={`preset-btn ${activePreset === 'niche_ia_direct' ? 'preset-active' : ''}`}
-                onClick={() => applyPreset('niche_ia_direct')}
-              >
                 <Percent className="size-4 text-emerald" style={{ marginRight: '6px' }} />
-                IA Initiation (€297) - Direct
+                IA High-Ticket (€1997)
               </button>
             </div>
 
@@ -421,9 +438,9 @@ export const SimulationScreen: React.FC = () => {
                   <input 
                     type="range" 
                     id="sim-cpr" 
-                    min="0.5" 
-                    max="25.0" 
-                    step="0.05" 
+                    min="0.05" 
+                    max="20.0" 
+                    step="0.01" 
                     value={params.cpr} 
                     onChange={(e) => handleParamChange('cpr', Number(e.target.value))}
                     className="sim-slider"
@@ -432,15 +449,15 @@ export const SimulationScreen: React.FC = () => {
                     <input 
                       type="number" 
                       step="0.01"
-                      min="0.1"
+                      min="0.01"
                       value={params.cpr} 
-                      onChange={(e) => handleParamChange('cpr', Math.max(0.1, Number(e.target.value)))}
+                      onChange={(e) => handleParamChange('cpr', Math.max(0.01, Number(e.target.value)))}
                       className="sim-inline-number-input"
                     />
                     <span className="input-suffix">€</span>
                   </div>
                 </div>
-                <div className="benchmark-range-text">Standard marché : 3.00 € - 7.00 €</div>
+                <div className="benchmark-range-text">Standard marché : 3.00 € - 7.00 € (0.13 € pour CPC-Inscrit)</div>
               </div>
 
               {/* Show Up Rate */}
@@ -591,7 +608,7 @@ export const SimulationScreen: React.FC = () => {
                       type="range" 
                       id="sim-direct" 
                       min="0.1" 
-                      max="20.0" 
+                      max="40.0" 
                       step="0.1" 
                       value={params.directConversionRate} 
                       onChange={(e) => handleParamChange('directConversionRate', Number(e.target.value))}
@@ -610,9 +627,46 @@ export const SimulationScreen: React.FC = () => {
                       <span className="input-suffix">%</span>
                     </div>
                   </div>
-                  <div className="benchmark-range-text">Standard marché : 1.0% - 3.0%</div>
+                  <div className="benchmark-range-text">Standard marché : 1.0% - 3.0% (10% pour votre objectif)</div>
                 </div>
               )}
+
+              {/* Follow-up Multiplier (Facteur Relances) */}
+              <div className="form-group sub-group" style={{ backgroundColor: 'rgba(139, 92, 246, 0.02)', borderColor: 'rgba(139, 92, 246, 0.08)' }}>
+                <div className="label-row">
+                  <label htmlFor="sim-multiplier">
+                    Effet des Relances (Multiplicateur)
+                    <span className="help-tooltip" title="Coefficient appliqué aux ventes du live pour modéliser les ventes post-webinaire. Un facteur de 2x signifie que vous doublez vos ventes totales lors des relances.">
+                      <Info className="size-3 text-muted inline ml-1 cursor-pointer" />
+                    </span>
+                  </label>
+                </div>
+                <div className="slider-input-row">
+                  <input 
+                    type="range" 
+                    id="sim-multiplier" 
+                    min="1.0" 
+                    max="4.0" 
+                    step="0.1" 
+                    value={params.followUpMultiplier} 
+                    onChange={(e) => handleParamChange('followUpMultiplier', Number(e.target.value))}
+                    className="sim-slider"
+                  />
+                  <div className="input-suffix-wrapper" style={{ width: '90px' }}>
+                    <input 
+                      type="number" 
+                      step="0.1"
+                      min="1.0"
+                      max="10.0"
+                      value={params.followUpMultiplier} 
+                      onChange={(e) => handleParamChange('followUpMultiplier', Math.max(1.0, Number(e.target.value)))}
+                      className="sim-inline-number-input"
+                    />
+                    <span className="input-suffix">x</span>
+                  </div>
+                </div>
+                <div className="benchmark-range-text">Standard marché : 1.2x - 2.0x (Relances x2.0 pour votre objectif)</div>
+              </div>
             </div>
           </div>
 
@@ -701,7 +755,7 @@ export const SimulationScreen: React.FC = () => {
               <Target className="size-4 text-blue" /> Entonnoir de Conversion Réaliste
             </h3>
             <p className="sim-section-desc">
-              Visualisation des pertes d'audience à chaque étape du tunnel de vente.
+              Visualisation des pertes d'audience à chaque étape du tunnel de vente (Live + Relances).
             </p>
 
             <div className="funnel-container">
@@ -775,15 +829,17 @@ export const SimulationScreen: React.FC = () => {
               <div className="funnel-step-row" style={{ marginBottom: 0 }}>
                 <div className="funnel-step-label font-bold">
                   <span className="step-num bg-success-num">✓</span>
-                  <span>Clients Closés</span>
+                  <span>Ventes Totales</span>
                 </div>
                 <div className="funnel-step-bar-wrapper">
                   <div className="funnel-bar bg-funnel-sales" style={{ 
                     width: params.salesStrategy === 'calls' 
-                      ? `${Math.max(8, 85 * (params.showUpRate / 100) * (params.callBookingRate / 100) * (params.callClosingRate / 100))}%`
-                      : `${Math.max(8, 85 * (params.showUpRate / 100) * (params.directConversionRate / 100))}%` 
+                      ? `${Math.max(8, 85 * (params.showUpRate / 100) * (params.callBookingRate / 100) * (params.callClosingRate / 100) * params.followUpMultiplier)}%`
+                      : `${Math.max(8, 85 * (params.showUpRate / 100) * (params.directConversionRate / 100) * params.followUpMultiplier)}%` 
                   }}>
-                    <span className="funnel-bar-val">{realistic.ventes.toLocaleString('fr-FR')} Ventes</span>
+                    <span className="funnel-bar-val">
+                      {realistic.ventes.toLocaleString('fr-FR')} Ventes ({realisticLiveSales} Live + {realisticFollowUpSales} Relances)
+                    </span>
                   </div>
                 </div>
                 <div className="funnel-step-conversion">
