@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StoreProvider } from './context/StoreContext';
 import { Sidebar } from './components/Sidebar';
 import { HomeScreen } from './components/screens/HomeScreen';
@@ -27,6 +27,36 @@ const AppContent: React.FC = () => {
     setIsUnlocked(false);
     sessionStorage.removeItem('nexia_cockpit_unlocked');
   };
+
+  // Inactivity Auto-Lock Hook (5 minutes)
+  useEffect(() => {
+    if (!isUnlocked) return;
+
+    let timer: any;
+
+    const resetInactivityTimer = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        handleLock();
+      }, 5 * 60 * 1000); // 5 minutes
+    };
+
+    const interactionEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    
+    interactionEvents.forEach(evt => {
+      window.addEventListener(evt, resetInactivityTimer);
+    });
+
+    // Start timer on initial mount
+    resetInactivityTimer();
+
+    return () => {
+      clearTimeout(timer);
+      interactionEvents.forEach(evt => {
+        window.removeEventListener(evt, resetInactivityTimer);
+      });
+    };
+  }, [isUnlocked]);
 
   const renderActiveScreen = () => {
     switch (activeScreen) {
