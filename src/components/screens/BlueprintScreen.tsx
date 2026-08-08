@@ -21,13 +21,14 @@ export const BlueprintScreen: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingChallenge, setEditingChallenge] = useState<BlueprintChallenge | null>(null);
 
-  // Form states
+  // Form state (Default 7-day challenge & 10 000 FCFA registration fee)
   const [formData, setFormData] = useState<{
     title: string;
     startDate: string;
     endDate: string;
     organicPostsCount: number;
     registeredCount: number;
+    registrationFee: number;
     activeParticipantsCount: number;
     packsSold: number;
     packPrice: number;
@@ -37,10 +38,11 @@ export const BlueprintScreen: React.FC = () => {
   }>({
     title: '',
     startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    organicPostsCount: 10,
+    endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    organicPostsCount: 12,
     registeredCount: 300,
-    activeParticipantsCount: 150,
+    registrationFee: 10000,
+    activeParticipantsCount: 200,
     packsSold: 20,
     packPrice: 150000,
     currency: 'FCFA',
@@ -58,8 +60,9 @@ export const BlueprintScreen: React.FC = () => {
 
   // Simulator states
   const [simPosts, setSimPosts] = useState(15);
-  const [simLeadsPerPost, setSimLeadsPerPost] = useState(30);
-  const [simAttendanceRate, setSimAttendanceRate] = useState(60);
+  const [simLeadsPerPost, setSimLeadsPerPost] = useState(25);
+  const [simRegFee, setSimRegFee] = useState(10000);
+  const [simAttendanceRate, setSimAttendanceRate] = useState(65);
   const [simConversionRate, setSimConversionRate] = useState(8);
   const [simPackPrice, setSimPackPrice] = useState(150000);
 
@@ -67,7 +70,6 @@ export const BlueprintScreen: React.FC = () => {
     setSelectedMonth(globalSelectedMonth);
   }, [globalSelectedMonth]);
 
-  // Filter challenges based on selected month
   const filteredChallenges = selectedMonth === 'all'
     ? blueprintChallenges
     : blueprintChallenges.filter(c => c.month === selectedMonth || (c.startDate && c.startDate.substring(0, 7) === selectedMonth));
@@ -75,13 +77,14 @@ export const BlueprintScreen: React.FC = () => {
   const openCreateModal = () => {
     setEditingChallenge(null);
     setFormData({
-      title: `Challenge 5J Blueprint IA #${blueprintChallenges.length + 1}`,
+      title: `Challenge 7J Blueprint IA #${blueprintChallenges.length + 1}`,
       startDate: new Date().toISOString().split('T')[0],
-      endDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       organicPostsCount: 12,
-      registeredCount: 250,
-      activeParticipantsCount: 140,
-      packsSold: 15,
+      registeredCount: 300,
+      registrationFee: 10000,
+      activeParticipantsCount: 200,
+      packsSold: 20,
       packPrice: 150000,
       currency: 'FCFA',
       status: 'En cours',
@@ -98,6 +101,7 @@ export const BlueprintScreen: React.FC = () => {
       endDate: challenge.endDate,
       organicPostsCount: challenge.organicPostsCount,
       registeredCount: challenge.registeredCount,
+      registrationFee: challenge.registrationFee !== undefined ? challenge.registrationFee : 10000,
       activeParticipantsCount: challenge.activeParticipantsCount,
       packsSold: challenge.packsSold,
       packPrice: challenge.packPrice,
@@ -130,19 +134,25 @@ export const BlueprintScreen: React.FC = () => {
     });
   };
 
-  // Calculations across filtered challenges
-  const totalPacksSold = filteredChallenges.reduce((sum, c) => sum + c.packsSold, 0);
+  // Calculations
   const totalRegistered = filteredChallenges.reduce((sum, c) => sum + c.registeredCount, 0);
   const totalParticipants = filteredChallenges.reduce((sum, c) => sum + c.activeParticipantsCount, 0);
   const totalOrganicPosts = filteredChallenges.reduce((sum, c) => sum + c.organicPostsCount, 0);
+  const totalPacksSold = filteredChallenges.reduce((sum, c) => sum + c.packsSold, 0);
 
-  const totalBaseCAFCFA = filteredChallenges.reduce((sum, c) => sum + (c.packsSold * c.packPrice), 0);
+  const totalTicketRevenueFCFA = filteredChallenges.reduce((sum, c) => {
+    const fee = c.registrationFee !== undefined ? c.registrationFee : 10000;
+    return sum + (c.registeredCount * fee);
+  }, 0);
+
+  const totalPacksRevenueFCFA = filteredChallenges.reduce((sum, c) => sum + (c.packsSold * c.packPrice), 0);
+  
   const totalRemindersCAFCFA = filteredChallenges.reduce((sum, c) => {
     const remTotal = (c.reminders || []).reduce((rSum, r) => rSum + r.amount, 0);
     return sum + remTotal;
   }, 0);
 
-  const grandTotalCAFCFA = totalBaseCAFCFA + totalRemindersCAFCFA;
+  const grandTotalCAFCFA = totalTicketRevenueFCFA + totalPacksRevenueFCFA + totalRemindersCAFCFA;
   const grandTotalCAEUR = grandTotalCAFCFA * EXCHANGE_RATES.FCFA_TO_EUR;
 
   const globalConversionRate = totalRegistered > 0 ? (totalPacksSold / totalRegistered) * 100 : 0;
@@ -150,36 +160,32 @@ export const BlueprintScreen: React.FC = () => {
 
   // Simulator calculations
   const simTotalLeads = simPosts * simLeadsPerPost;
+  const simTicketCAFCFA = simTotalLeads * simRegFee;
   const simActiveParticipants = Math.round((simTotalLeads * simAttendanceRate) / 100);
-  const simEstimatedSales = Math.round((simTotalLeads * simConversionRate) / 100);
-  const simProjectedCAFCFA = simEstimatedSales * simPackPrice;
+  const simEstimatedPackSales = Math.round((simTotalLeads * simConversionRate) / 100);
+  const simPacksCAFCFA = simEstimatedPackSales * simPackPrice;
+  const simProjectedCAFCFA = simTicketCAFCFA + simPacksCAFCFA;
   const simProjectedCAEUR = simProjectedCAFCFA * EXCHANGE_RATES.FCFA_TO_EUR;
 
   return (
-    <div className="space-y-8 pb-12 animate-fadeIn">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <div className="p-2.5 bg-gradient-to-tr from-amber-500 to-orange-500 text-white rounded-xl shadow-md">
-              <Sparkles className="size-6" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-                Blueprint IA — Engine de Challenges 5 Jours
-              </h1>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                Acquisition Organique → Challenge 5J → Conversion & Ventes de Packs d'Accompagnement
-              </p>
-            </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+      {/* Screen Header */}
+      <div className="screen-header">
+        <div>
+          <div className="screen-title">
+            <Sparkles className="screen-title-icon" />
+            Blueprint IA — Engine de Challenges 7 Jours
+          </div>
+          <div className="screen-subtitle">
+            Acquisition Organique ➔ Inscription à 10 000 FCFA ➔ Accompagnement 7J ➔ Closing Packs VIP
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
-            className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+            style={{ width: '220px', padding: '10px 14px' }}
           >
             <option value="all">📊 Tous les challenges (Global)</option>
             {blueprintChallenges.map(c => (
@@ -189,283 +195,270 @@ export const BlueprintScreen: React.FC = () => {
             ))}
           </select>
 
-          <button
-            onClick={openCreateModal}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-semibold text-sm shadow-md shadow-amber-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-          >
+          <button onClick={openCreateModal} className="btn btn-primary">
             <Plus className="size-4" />
-            <span>Nouveau Challenge</span>
+            <span>Nouveau Challenge 7J</span>
           </button>
         </div>
       </div>
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid-cols-4">
         {/* Card 1: CA Total */}
-        <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 text-white border border-slate-800 shadow-xl relative overflow-hidden">
-          <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-amber-500/10 rounded-full blur-xl pointer-events-none" />
-          <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">Chiffre d'Affaires</span>
-            <DollarSign className="size-5 text-amber-400" />
+        <div className="card stat-card" style={{ background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)', color: '#FFFFFF' }}>
+          <div className="stat-icon-wrapper" style={{ backgroundColor: 'rgba(245, 158, 11, 0.2)', color: '#F59E0B' }}>
+            <DollarSign className="stat-icon" />
           </div>
-          <div className="text-2xl font-black text-white">
-            {grandTotalCAFCFA.toLocaleString('fr-FR')} FCFA
-          </div>
-          <div className="text-xs text-amber-300 font-medium mt-1">
-            ≈ {grandTotalCAEUR.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €
-          </div>
-          <div className="mt-3 pt-3 border-t border-slate-700/60 flex justify-between text-xs text-slate-400">
-            <span>Direct: {totalBaseCAFCFA.toLocaleString('fr-FR')} FCFA</span>
-            <span>Relances: {totalRemindersCAFCFA.toLocaleString('fr-FR')} FCFA</span>
-          </div>
-        </div>
-
-        {/* Card 2: Inscrits & Participants */}
-        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">Acquisition & Presence</span>
-            <Users className="size-5 text-blue-500" />
-          </div>
-          <div className="text-2xl font-black text-slate-900 dark:text-white">
-            {totalRegistered.toLocaleString('fr-FR')} <span className="text-sm font-normal text-slate-500">Inscrits</span>
-          </div>
-          <div className="text-xs text-blue-600 dark:text-blue-400 font-medium mt-1">
-            {totalParticipants.toLocaleString('fr-FR')} participants actifs sur 5J
-          </div>
-          <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between text-xs text-slate-500">
-            <span>{totalOrganicPosts} posts organiques</span>
-            <span>Taux présence: {globalAttendanceRate.toFixed(1)}%</span>
+          <div className="stat-meta">
+            <span className="stat-label" style={{ color: '#94A3B8' }}>Chiffre d'Affaires Total</span>
+            <div className="stat-val" style={{ color: '#FFFFFF', fontSize: '24px' }}>
+              {grandTotalCAFCFA.toLocaleString('fr-FR')} FCFA
+            </div>
+            <div style={{ fontSize: '12px', color: '#F59E0B', fontWeight: 600, marginTop: '2px' }}>
+              ≈ {grandTotalCAEUR.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €
+            </div>
+            <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255, 255, 255, 0.1)', fontSize: '11px', color: '#CBD5E1', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <span>Inscriptions: {totalTicketRevenueFCFA.toLocaleString('fr-FR')} FCFA</span>
+              <span>Packs VIP: {totalPacksRevenueFCFA.toLocaleString('fr-FR')} FCFA</span>
+            </div>
           </div>
         </div>
 
-        {/* Card 3: Packs Vendus & Conversion */}
-        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">Ventes & Conversion</span>
-            <ShoppingBag className="size-5 text-emerald-500" />
+        {/* Card 2: Inscriptions (10 000 FCFA) */}
+        <div className="card stat-card">
+          <div className="stat-icon-wrapper sale-icon">
+            <Users className="stat-icon text-blue" />
           </div>
-          <div className="text-2xl font-black text-slate-900 dark:text-white">
-            {totalPacksSold} <span className="text-sm font-normal text-slate-500">Packs vendus</span>
-          </div>
-          <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-1">
-            Taux de conversion global: {globalConversionRate.toFixed(1)}%
-          </div>
-          <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between text-xs text-slate-500">
-            <span>Inscrits → Clients</span>
-            <span>{filteredChallenges.length} challenges au total</span>
+          <div className="stat-meta">
+            <span className="stat-label">Inscriptions (10 000 FCFA)</span>
+            <div className="stat-val">
+              {totalRegistered.toLocaleString('fr-FR')} <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)' }}>inscrits</span>
+            </div>
+            <div className="stat-subtext text-blue" style={{ fontWeight: 600 }}>
+              {totalTicketRevenueFCFA.toLocaleString('fr-FR')} FCFA encassés
+            </div>
+            <div className="stat-subtext" style={{ marginTop: '4px' }}>
+              {totalOrganicPosts} posts d'acquisition
+            </div>
           </div>
         </div>
 
-        {/* Card 4: Impact Moyen par Challenge */}
-        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">Moyenne par Challenge</span>
-            <Flame className="size-5 text-orange-500" />
+        {/* Card 3: Packs VIP Vendus */}
+        <div className="card stat-card">
+          <div className="stat-icon-wrapper" style={{ backgroundColor: 'rgba(16, 185, 129, 0.12)', color: '#10B981' }}>
+            <ShoppingBag className="stat-icon" />
           </div>
-          <div className="text-2xl font-black text-slate-900 dark:text-white">
-            {filteredChallenges.length > 0 ? Math.round(totalRegistered / filteredChallenges.length) : 0} <span className="text-sm font-normal text-slate-500">inscrits/ch.</span>
+          <div className="stat-meta">
+            <span className="stat-label">Closing Packs VIP</span>
+            <div className="stat-val text-green">
+              {totalPacksSold} <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)' }}>packs vendus</span>
+            </div>
+            <div className="stat-subtext text-green" style={{ fontWeight: 600 }}>
+              Taux conversion: {globalConversionRate.toFixed(1)}%
+            </div>
+            <div className="stat-subtext" style={{ marginTop: '4px' }}>
+              {totalPacksRevenueFCFA.toLocaleString('fr-FR')} FCFA générés
+            </div>
           </div>
-          <div className="text-xs text-orange-600 dark:text-orange-400 font-medium mt-1">
-            Moy. {filteredChallenges.length > 0 ? (grandTotalCAFCFA / filteredChallenges.length).toLocaleString('fr-FR', { maximumFractionDigits: 0 }) : 0} FCFA / challenge
+        </div>
+
+        {/* Card 4: Accompagnement 7J */}
+        <div className="card stat-card">
+          <div className="stat-icon-wrapper" style={{ backgroundColor: 'rgba(249, 115, 22, 0.12)', color: '#F97316' }}>
+            <Flame className="stat-icon" />
           </div>
-          <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between text-xs text-slate-500">
-            <span>Moy. {filteredChallenges.length > 0 ? Math.round(totalPacksSold / filteredChallenges.length) : 0} packs</span>
-            <span>Accompagnement 5J</span>
+          <div className="stat-meta">
+            <span className="stat-label">Accompagnement 7J</span>
+            <div className="stat-val">
+              {totalParticipants.toLocaleString('fr-FR')} <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)' }}>actifs</span>
+            </div>
+            <div className="stat-subtext text-orange" style={{ fontWeight: 600 }}>
+              {globalAttendanceRate.toFixed(1)}% de présence sur 7J
+            </div>
+            <div className="stat-subtext" style={{ marginTop: '4px' }}>
+              {filteredChallenges.length} session(s) de challenge
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Visual Acquisition & Launch Funnel */}
-      <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Layers className="size-5 text-amber-500" />
-              Entonnoir de Conversion — Challenge Blueprint IA
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Du contenu d'attraction organique jusqu'au closing des packs d'accompagnement
-            </p>
-          </div>
-        </div>
+      {/* Visual Acquisition & Conversion Funnel */}
+      <div className="card">
+        <h3 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Layers className="size-5" style={{ color: '#F59E0B' }} />
+          Entonnoir de Conversion — Blueprint IA 7 Jours
+        </h3>
+        <p className="screen-subtitle" style={{ marginTop: '4px' }}>
+          Du contenu d'attraction jusqu'au closing des packs d'accompagnement VIP
+        </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 relative">
+        <div className="blueprint-funnel-grid">
           {/* Step 1 */}
-          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 space-y-2 relative">
-            <div className="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400">
+          <div className="blueprint-funnel-step">
+            <div className="blueprint-funnel-header">
               <span>Étape 1: Attraction</span>
-              <Share2 className="size-4 text-purple-500" />
+              <Share2 className="size-4 text-purple" />
             </div>
-            <div className="text-xl font-bold text-slate-900 dark:text-white">
-              {totalOrganicPosts} <span className="text-xs text-slate-500 font-normal">Posts Organiques</span>
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Vidéos courtes & posts sur Instagram/TikTok/FB
-            </p>
+            <div className="blueprint-funnel-val">{totalOrganicPosts} posts</div>
+            <div className="blueprint-funnel-sub">Vidéos & posts réseaux sociaux</div>
           </div>
 
           {/* Step 2 */}
-          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 space-y-2">
-            <div className="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400">
-              <span>Étape 2: Inscription</span>
-              <Users className="size-4 text-blue-500" />
+          <div className="blueprint-funnel-step">
+            <div className="blueprint-funnel-header">
+              <span>Étape 2: Billetterie (10k FCFA)</span>
+              <Users className="size-4 text-blue" />
             </div>
-            <div className="text-xl font-bold text-slate-900 dark:text-white">
-              {totalRegistered} <span className="text-xs text-slate-500 font-normal">Inscrits Challenge</span>
+            <div className="blueprint-funnel-val">{totalRegistered} inscrits</div>
+            <div className="blueprint-funnel-sub text-blue font-semibold">
+              {totalTicketRevenueFCFA.toLocaleString('fr-FR')} FCFA générés
             </div>
-            <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-              Moy. {totalOrganicPosts > 0 ? (totalRegistered / totalOrganicPosts).toFixed(1) : 0} inscrits / post
-            </p>
           </div>
 
           {/* Step 3 */}
-          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 space-y-2">
-            <div className="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400">
-              <span>Étape 3: Engagement 5J</span>
-              <Zap className="size-4 text-amber-500" />
+          <div className="blueprint-funnel-step">
+            <div className="blueprint-funnel-header">
+              <span>Étape 3: Presence 7J</span>
+              <Zap className="size-4" style={{ color: '#F59E0B' }} />
             </div>
-            <div className="text-xl font-bold text-slate-900 dark:text-white">
-              {totalParticipants} <span className="text-xs text-slate-500 font-normal">Participants Actifs</span>
+            <div className="blueprint-funnel-val">{totalParticipants} participants</div>
+            <div className="blueprint-funnel-sub" style={{ color: '#F59E0B', fontWeight: 600 }}>
+              {globalAttendanceRate.toFixed(1)}% d'engagement sur 7 jours
             </div>
-            <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
-              {globalAttendanceRate.toFixed(1)}% des inscrits engagés
-            </p>
           </div>
 
           {/* Step 4 */}
-          <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 border border-emerald-200 dark:border-emerald-800/60 space-y-2">
-            <div className="flex items-center justify-between text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-              <span>Étape 4: Vente & Closing</span>
-              <Award className="size-4 text-emerald-600" />
+          <div className="blueprint-funnel-step" style={{ background: '#ECFDF5', borderColor: '#A7F3D0' }}>
+            <div className="blueprint-funnel-header" style={{ color: '#047857' }}>
+              <span>Étape 4: Packs VIP</span>
+              <Award className="size-4 text-green" />
             </div>
-            <div className="text-xl font-bold text-emerald-950 dark:text-emerald-200">
-              {totalPacksSold} <span className="text-xs font-normal">Packs d'Accompagnement</span>
+            <div className="blueprint-funnel-val text-green">{totalPacksSold} packs VIP</div>
+            <div className="blueprint-funnel-sub text-green font-semibold">
+              {totalPacksRevenueFCFA.toLocaleString('fr-FR')} FCFA (Conversion {globalConversionRate.toFixed(1)}%)
             </div>
-            <p className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">
-              Taux conversion: {globalConversionRate.toFixed(1)}%
-            </p>
           </div>
         </div>
       </div>
 
-      {/* Challenges List Table & Management */}
-      <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
-        <div className="flex items-center justify-between">
+      {/* Challenges List Table */}
+      <div className="card">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
           <div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-              Liste des Challenges Blueprint IA
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Suivi détaillé de chaque session de challenge de 5 jours
+            <h3 className="section-title">Liste des Challenges Blueprint IA (7 Jours)</h3>
+            <p className="screen-subtitle" style={{ marginTop: '2px' }}>
+              Historique et suivi des performances de chaque session
             </p>
           </div>
         </div>
 
         {filteredChallenges.length === 0 ? (
-          <div className="py-12 text-center text-slate-400 space-y-3">
-            <Sparkles className="size-10 mx-auto text-slate-300 dark:text-slate-700" />
-            <p className="text-sm">Aucun challenge enregistré pour cette période.</p>
-            <button
-              onClick={openCreateModal}
-              className="px-4 py-2 bg-amber-500 text-white rounded-xl text-xs font-semibold hover:bg-amber-600 transition-colors"
-            >
+          <div style={{ padding: '48px 0', textAlign: 'center' }}>
+            <Sparkles className="size-10" style={{ margin: '0 auto 12px auto', color: 'var(--text-muted)' }} />
+            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '12px' }}>
+              Aucun challenge enregistré pour cette période.
+            </p>
+            <button onClick={openCreateModal} className="btn btn-primary btn-sm">
               Créer votre premier challenge Blueprint IA
             </button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300">
-              <thead className="bg-slate-50 dark:bg-slate-800/80 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">
+          <div className="table-container">
+            <table>
+              <thead>
                 <tr>
-                  <th className="px-4 py-3">Challenge & Dates</th>
-                  <th className="px-4 py-3">Statut</th>
-                  <th className="px-4 py-3">Acquisition (Posts/Inscrits)</th>
-                  <th className="px-4 py-3">Participants 5J</th>
-                  <th className="px-4 py-3">Packs Vendus</th>
-                  <th className="px-4 py-3">CA Total</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
+                  <th>Challenge & Dates 7J</th>
+                  <th>Statut</th>
+                  <th>Inscriptions (10 000 FCFA)</th>
+                  <th>Présence 7J</th>
+                  <th>Packs VIP Vendus</th>
+                  <th>Chiffre d'Affaires Total</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody>
                 {filteredChallenges.map((c) => {
-                  const baseSalesAmount = c.packsSold * c.packPrice;
-                  const remAmount = (c.reminders || []).reduce((sum, r) => sum + r.amount, 0);
-                  const challengeTotalCA = baseSalesAmount + remAmount;
+                  const regFee = c.registrationFee !== undefined ? c.registrationFee : 10000;
+                  const ticketRev = c.registeredCount * regFee;
+                  const packRev = c.packsSold * c.packPrice;
+                  const remRev = (c.reminders || []).reduce((sum, r) => sum + r.amount, 0);
+                  const challengeTotalCA = ticketRev + packRev + remRev;
                   const conversionPct = c.registeredCount > 0 ? (c.packsSold / c.registeredCount) * 100 : 0;
+                  const attendancePct = c.registeredCount > 0 ? (c.activeParticipantsCount / c.registeredCount) * 100 : 0;
 
                   return (
-                    <tr key={c.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
-                      <td className="px-4 py-4 font-semibold text-slate-900 dark:text-white">
-                        <div>{c.title}</div>
-                        <div className="text-xs text-slate-400 font-normal flex items-center gap-1 mt-0.5">
+                    <tr key={c.id}>
+                      <td style={{ fontWeight: 600 }}>
+                        <div style={{ color: 'var(--text-primary)' }}>{c.title}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 400, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                           <Calendar className="size-3" />
                           <span>Du {c.startDate} au {c.endDate}</span>
                         </div>
                       </td>
 
-                      <td className="px-4 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                      <td>
+                        <span className={`blueprint-badge ${
                           c.status === 'En cours' 
-                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-800' 
+                            ? 'blueprint-badge-en-cours' 
                             : c.status === 'Terminé'
-                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
-                            : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                            ? 'blueprint-badge-termine'
+                            : 'blueprint-badge-planifie'
                         }`}>
                           {c.status}
                         </span>
                       </td>
 
-                      <td className="px-4 py-4">
-                        <div className="font-semibold text-slate-800 dark:text-slate-200">
+                      <td>
+                        <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
                           {c.registeredCount} inscrits
                         </div>
-                        <div className="text-xs text-slate-400">
-                          sur {c.organicPostsCount} posts organiques
+                        <div style={{ fontSize: '12px', color: 'var(--accent-blue)' }}>
+                          {ticketRev.toLocaleString('fr-FR')} FCFA ({regFee.toLocaleString('fr-FR')} FCFA/u)
                         </div>
                       </td>
 
-                      <td className="px-4 py-4">
-                        <div className="font-semibold text-slate-800 dark:text-slate-200">
+                      <td>
+                        <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
                           {c.activeParticipantsCount} actifs
                         </div>
-                        <div className="text-xs text-blue-500">
-                          {c.registeredCount > 0 ? ((c.activeParticipantsCount / c.registeredCount) * 100).toFixed(0) : 0}% de présence
+                        <div style={{ fontSize: '12px', color: '#F59E0B' }}>
+                          {attendancePct.toFixed(0)}% de présence 7J
                         </div>
                       </td>
 
-                      <td className="px-4 py-4">
-                        <div className="font-semibold text-emerald-600 dark:text-emerald-400">
-                          {c.packsSold} packs
+                      <td>
+                        <div style={{ fontWeight: 600, color: 'var(--status-success)' }}>
+                          {c.packsSold} packs VIP
                         </div>
-                        <div className="text-xs text-slate-400">
-                          à {c.packPrice.toLocaleString('fr-FR')} FCFA / u ({conversionPct.toFixed(1)}%)
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                          à {c.packPrice.toLocaleString('fr-FR')} FCFA ({conversionPct.toFixed(1)}%)
                         </div>
                       </td>
 
-                      <td className="px-4 py-4 font-bold text-slate-900 dark:text-white">
+                      <td style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
                         {challengeTotalCA.toLocaleString('fr-FR')} FCFA
                         {c.reminders && c.reminders.length > 0 && (
-                          <div className="text-xs font-normal text-amber-600 dark:text-amber-400">
-                            dont {remAmount.toLocaleString('fr-FR')} FCFA en relances
+                          <div style={{ fontSize: '11px', fontWeight: 500, color: '#F59E0B' }}>
+                            dont {remRev.toLocaleString('fr-FR')} FCFA relances
                           </div>
                         )}
                       </td>
 
-                      <td className="px-4 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                      <td style={{ textAlign: 'right' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
                           <button
                             onClick={() => setActiveChallengeIdForReminder(activeChallengeIdForReminder === c.id ? null : c.id)}
-                            className="p-1.5 rounded-lg text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors"
-                            title="Ajouter des ventes de relances post-challenge"
+                            className="btn btn-secondary btn-sm btn-icon-only"
+                            title="Saisir des relances post-challenge"
                           >
-                            <Plus className="size-4" />
+                            <Plus className="size-4 text-orange" />
                           </button>
                           <button
                             onClick={() => openEditModal(c)}
-                            className="p-1.5 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors"
+                            className="btn btn-secondary btn-sm btn-icon-only"
                             title="Modifier"
                           >
-                            <Edit3 className="size-4" />
+                            <Edit3 className="size-4 text-blue" />
                           </button>
                           <button
                             onClick={() => {
@@ -473,10 +466,10 @@ export const BlueprintScreen: React.FC = () => {
                                 deleteBlueprintChallenge(c.id);
                               }
                             }}
-                            className="p-1.5 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                            className="btn btn-secondary btn-sm btn-icon-only"
                             title="Supprimer"
                           >
-                            <Trash2 className="size-4" />
+                            <Trash2 className="size-4 text-red" />
                           </button>
                         </div>
                       </td>
@@ -489,71 +482,68 @@ export const BlueprintScreen: React.FC = () => {
         )}
       </div>
 
-      {/* Relances Post-Challenge Form Modal inline or drawer */}
+      {/* Relances Post-Challenge Drawer */}
       {activeChallengeIdForReminder && (
-        <div className="p-6 rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 space-y-4 animate-fadeIn">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-amber-900 dark:text-amber-200 flex items-center gap-2">
-              <Plus className="size-4 text-amber-600" />
+        <div className="blueprint-reminder-drawer">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#92400E', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Plus className="size-4" />
               Saisir des Ventes Post-Challenge (Relances J+1 à J+7)
-            </h3>
+            </h4>
             <button
               onClick={() => setActiveChallengeIdForReminder(null)}
-              className="text-xs text-amber-700 dark:text-amber-400 underline hover:no-underline"
+              style={{ fontSize: '12px', color: '#B45309', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
             >
               Fermer
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid-cols-3">
             <div>
-              <label className="block text-xs font-semibold text-amber-900 dark:text-amber-200 mb-1">Date de la relance</label>
+              <label style={{ color: '#92400E' }}>Date de la relance</label>
               <input
                 type="date"
                 value={reminderData.date}
                 onChange={(e) => setReminderData(prev => ({ ...prev, date: e.target.value }))}
-                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-amber-900 dark:text-amber-200 mb-1">Nombre de ventes générées</label>
+              <label style={{ color: '#92400E' }}>Nombre de ventes générées</label>
               <input
                 type="number"
                 min="1"
                 value={reminderData.count}
                 onChange={(e) => setReminderData(prev => ({ ...prev, count: Number(e.target.value) }))}
-                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-amber-900 dark:text-amber-200 mb-1">Montant total encassé (FCFA)</label>
+              <label style={{ color: '#92400E' }}>Montant total encassé (FCFA)</label>
               <input
                 type="number"
                 step="1000"
                 value={reminderData.amount}
                 onChange={(e) => setReminderData(prev => ({ ...prev, amount: Number(e.target.value) }))}
-                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
             </div>
           </div>
 
-          {/* Existing reminders list */}
+          {/* Existing reminders */}
           {(() => {
             const targetChallenge = blueprintChallenges.find(c => c.id === activeChallengeIdForReminder);
             if (!targetChallenge || !targetChallenge.reminders || targetChallenge.reminders.length === 0) return null;
             return (
-              <div className="pt-2 border-t border-amber-200/60 dark:border-amber-800/60 space-y-2">
-                <span className="text-xs font-semibold text-amber-900 dark:text-amber-200">Relances déjà saisies :</span>
-                <div className="flex flex-wrap gap-2">
+              <div style={{ borderTop: '1px solid #FCD34D', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: '#92400E' }}>Relances déjà enregistrées :</span>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                   {targetChallenge.reminders.map((r) => (
-                    <div key={r.id} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-700 text-xs text-slate-800 dark:text-slate-200">
+                    <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#FFFFFF', borderRadius: '8px', border: '1px solid #FCD34D', fontSize: '12px' }}>
                       <span>{r.date} : {r.count} vente(s) ({r.amount.toLocaleString('fr-FR')} FCFA)</span>
                       <button
                         onClick={() => deleteReminderFromBlueprintChallenge(targetChallenge.id, r.id)}
-                        className="text-red-500 hover:text-red-700 ml-1"
-                        title="Supprimer la relance"
+                        style={{ border: 'none', background: 'none', color: '#EF4444', cursor: 'pointer', padding: 0 }}
+                        title="Supprimer"
                       >
                         <Trash2 className="size-3" />
                       </button>
@@ -564,10 +554,11 @@ export const BlueprintScreen: React.FC = () => {
             );
           })()}
 
-          <div className="flex justify-end">
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <button
               onClick={() => handleAddReminder(activeChallengeIdForReminder)}
-              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs rounded-xl shadow-md transition-colors"
+              className="btn btn-primary btn-sm"
+              style={{ backgroundColor: '#D97706' }}
             >
               Enregistrer cette relance
             </button>
@@ -576,229 +567,214 @@ export const BlueprintScreen: React.FC = () => {
       )}
 
       {/* Simulator Section */}
-      <div className="p-6 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 text-white border border-slate-800 shadow-xl space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold flex items-center gap-2 text-amber-400">
-              <BarChart2 className="size-5" />
-              Simulateur & Calculateur Prévisionnel Blueprint IA
-            </h2>
-            <p className="text-xs text-slate-400">
-              Estimez le Chiffre d'Affaires généré par votre prochain Challenge 5J selon vos métriques organiques
-            </p>
+      <div className="blueprint-simulator-box">
+        <div>
+          <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#F59E0B', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <BarChart2 className="size-5" />
+            Simulateur & Calculateur Prévisionnel Blueprint IA
+          </h3>
+          <p style={{ fontSize: '13px', color: '#94A3B8', marginTop: '4px', marginBottom: '24px' }}>
+            Simulez les revenus de votre prochain Challenge 7J (Billetterie à 10 000 FCFA + Packs VIP)
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="blueprint-sim-control">
+              <div className="blueprint-sim-control-header">
+                <span>Posts Organiques d'Attraction</span>
+                <span className="blueprint-sim-control-val">{simPosts} posts</span>
+              </div>
+              <input type="range" min="1" max="50" value={simPosts} onChange={(e) => setSimPosts(Number(e.target.value))} className="blueprint-range-input" />
+            </div>
+
+            <div className="blueprint-sim-control">
+              <div className="blueprint-sim-control-header">
+                <span>Inscrits par post (Billetterie 10 000 FCFA)</span>
+                <span className="blueprint-sim-control-val">{simLeadsPerPost} inscrits/post</span>
+              </div>
+              <input type="range" min="5" max="100" value={simLeadsPerPost} onChange={(e) => setSimLeadsPerPost(Number(e.target.value))} className="blueprint-range-input" />
+            </div>
+
+            <div className="blueprint-sim-control">
+              <div className="blueprint-sim-control-header">
+                <span>Frais d'inscription au Challenge (FCFA)</span>
+                <span className="blueprint-sim-control-val">{simRegFee.toLocaleString('fr-FR')} FCFA</span>
+              </div>
+              <input type="number" step="1000" value={simRegFee} onChange={(e) => setSimRegFee(Number(e.target.value))} style={{ padding: '8px 12px', borderRadius: '8px', background: '#334155', border: '1px solid #475569', color: '#FFF' }} />
+            </div>
+
+            <div className="blueprint-sim-control">
+              <div className="blueprint-sim-control-header">
+                <span>Taux de présence sur 7 jours (%)</span>
+                <span className="blueprint-sim-control-val">{simAttendanceRate}%</span>
+              </div>
+              <input type="range" min="10" max="95" value={simAttendanceRate} onChange={(e) => setSimAttendanceRate(Number(e.target.value))} className="blueprint-range-input" />
+            </div>
+
+            <div className="blueprint-sim-control">
+              <div className="blueprint-sim-control-header">
+                <span>Taux de conversion aux Packs VIP (%)</span>
+                <span className="blueprint-sim-control-val">{simConversionRate}%</span>
+              </div>
+              <input type="range" min="1" max="30" value={simConversionRate} onChange={(e) => setSimConversionRate(Number(e.target.value))} className="blueprint-range-input" />
+            </div>
+
+            <div className="blueprint-sim-control">
+              <div className="blueprint-sim-control-header">
+                <span>Prix du Pack VIP (FCFA)</span>
+                <span className="blueprint-sim-control-val">{simPackPrice.toLocaleString('fr-FR')} FCFA</span>
+              </div>
+              <input type="number" step="5000" value={simPackPrice} onChange={(e) => setSimPackPrice(Number(e.target.value))} style={{ padding: '8px 12px', borderRadius: '8px', background: '#334155', border: '1px solid #475569', color: '#FFF' }} />
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Controls */}
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between text-xs font-semibold mb-1">
-                <span className="text-slate-300">Nombre de Posts Organiques d'Attraction</span>
-                <span className="text-amber-400">{simPosts} posts</span>
-              </div>
-              <input 
-                type="range" min="1" max="50" value={simPosts} 
-                onChange={(e) => setSimPosts(Number(e.target.value))}
-                className="w-full accent-amber-500 cursor-pointer"
-              />
-            </div>
-
-            <div>
-              <div className="flex justify-between text-xs font-semibold mb-1">
-                <span className="text-slate-300">Nombre moyen d'inscrits par post</span>
-                <span className="text-amber-400">{simLeadsPerPost} inscrits/post</span>
-              </div>
-              <input 
-                type="range" min="5" max="100" value={simLeadsPerPost} 
-                onChange={(e) => setSimLeadsPerPost(Number(e.target.value))}
-                className="w-full accent-amber-500 cursor-pointer"
-              />
-            </div>
-
-            <div>
-              <div className="flex justify-between text-xs font-semibold mb-1">
-                <span className="text-slate-300">Taux de présence & d'engagement sur 5J</span>
-                <span className="text-amber-400">{simAttendanceRate}%</span>
-              </div>
-              <input 
-                type="range" min="10" max="95" value={simAttendanceRate} 
-                onChange={(e) => setSimAttendanceRate(Number(e.target.value))}
-                className="w-full accent-amber-500 cursor-pointer"
-              />
-            </div>
-
-            <div>
-              <div className="flex justify-between text-xs font-semibold mb-1">
-                <span className="text-slate-300">Taux de conversion aux Packs d'Accompagnement</span>
-                <span className="text-amber-400">{simConversionRate}%</span>
-              </div>
-              <input 
-                type="range" min="1" max="30" value={simConversionRate} 
-                onChange={(e) => setSimConversionRate(Number(e.target.value))}
-                className="w-full accent-amber-500 cursor-pointer"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Prix du Pack d'Accompagnement (FCFA)</label>
-              <input 
-                type="number" step="5000" value={simPackPrice} 
-                onChange={(e) => setSimPackPrice(Number(e.target.value))}
-                className="w-full px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-              />
+        {/* Results */}
+        <div className="blueprint-sim-results">
+          <div>
+            <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94A3B8', fontWeight: 600 }}>Chiffre d'Affaires Prévisionnel</span>
+            <div className="blueprint-sim-ca">{simProjectedCAFCFA.toLocaleString('fr-FR')} FCFA</div>
+            <div style={{ fontSize: '14px', color: '#CBD5E1', fontWeight: 500, marginTop: '2px' }}>
+              ≈ {simProjectedCAEUR.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} € Total estimé
             </div>
           </div>
 
-          {/* Results Display */}
-          <div className="p-6 rounded-2xl bg-slate-800/80 border border-slate-700/80 flex flex-col justify-between space-y-4">
-            <div>
-              <span className="text-xs uppercase tracking-wider text-slate-400 font-semibold">Résultats Prévisionnels</span>
-              <div className="text-3xl font-black text-amber-400 mt-2">
-                {simProjectedCAFCFA.toLocaleString('fr-FR')} FCFA
-              </div>
-              <div className="text-sm text-slate-300 font-medium mt-1">
-                ≈ {simProjectedCAEUR.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} € Chiffre d'Affaires estimé
-              </div>
+          <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px', color: '#CBD5E1' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Inscriptions (10 000 FCFA x {simTotalLeads}) :</span>
+              <strong style={{ color: '#60A5FA' }}>{simTicketCAFCFA.toLocaleString('fr-FR')} FCFA</strong>
             </div>
-
-            <div className="space-y-2 pt-4 border-t border-slate-700 text-xs text-slate-300">
-              <div className="flex justify-between">
-                <span>Inscrits totaux attendus :</span>
-                <span className="font-bold text-white">{simTotalLeads} inscrits</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Participants 5J actifs :</span>
-                <span className="font-bold text-blue-400">{simActiveParticipants} participants</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Packs d'Accompagnement vendus :</span>
-                <span className="font-bold text-emerald-400">{simEstimatedSales} ventes</span>
-              </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Participants 7J engagés :</span>
+              <strong style={{ color: '#F59E0B' }}>{simActiveParticipants} participants</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Ventes Packs VIP ({simEstimatedPackSales} packs) :</span>
+              <strong style={{ color: '#34D399' }}>{simPacksCAFCFA.toLocaleString('fr-FR')} FCFA</strong>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Modal Modal for Create / Edit Challenge */}
+      {/* Modal for Create / Edit Challenge */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-xl p-6 space-y-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Sparkles className="size-5 text-amber-500" />
-                {editingChallenge ? 'Modifier le Challenge' : 'Nouveau Challenge Blueprint IA'}
+        <div className="modal-backdrop">
+          <div className="modal-content" style={{ maxWidth: '560px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Sparkles className="size-5" style={{ color: '#F59E0B' }} />
+                {editingChallenge ? 'Modifier le Challenge' : 'Nouveau Challenge 7J Blueprint IA'}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg font-bold"
+                style={{ border: 'none', background: 'none', fontSize: '18px', fontWeight: 700, cursor: 'pointer', color: 'var(--text-secondary)' }}
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleFormSubmit} className="space-y-4">
+            <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Titre du Challenge</label>
+                <label>Titre du Challenge</label>
                 <input
                   type="text"
                   required
                   value={formData.title}
                   onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  placeholder="ex: Challenge 5J Blueprint IA #3 - Offre & Automation"
+                  placeholder="ex: Challenge 7J Blueprint IA #3 - Offre & Automation"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid-cols-2" style={{ gap: '16px' }}>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Date de début (J1)</label>
+                  <label>Date de début (J1)</label>
                   <input
                     type="date"
                     required
                     value={formData.startDate}
                     onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Date de fin (J5)</label>
+                  <label>Date de fin (J7)</label>
                   <input
                     type="date"
                     required
                     value={formData.endDate}
                     onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid-cols-3" style={{ gap: '12px' }}>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Posts Organiques</label>
+                  <label>Posts Organiques</label>
                   <input
                     type="number"
                     min="0"
                     value={formData.organicPostsCount}
                     onChange={(e) => setFormData(prev => ({ ...prev, organicPostsCount: Number(e.target.value) }))}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nombre d'inscrits</label>
+                  <label>Inscrits Payants</label>
                   <input
                     type="number"
                     min="0"
                     value={formData.registeredCount}
                     onChange={(e) => setFormData(prev => ({ ...prev, registeredCount: Number(e.target.value) }))}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Participants Actifs 5J</label>
+                  <label>Prix Inscription (FCFA)</label>
+                  <input
+                    type="number"
+                    step="1000"
+                    value={formData.registrationFee}
+                    onChange={(e) => setFormData(prev => ({ ...prev, registrationFee: Number(e.target.value) }))}
+                  />
+                </div>
+              </div>
+
+              <div className="grid-cols-3" style={{ gap: '12px' }}>
+                <div>
+                  <label>Participants 7J</label>
                   <input
                     type="number"
                     min="0"
                     value={formData.activeParticipantsCount}
                     onChange={(e) => setFormData(prev => ({ ...prev, activeParticipantsCount: Number(e.target.value) }))}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Packs Vendus</label>
+                  <label>Packs VIP Vendus</label>
                   <input
                     type="number"
                     min="0"
                     value={formData.packsSold}
                     onChange={(e) => setFormData(prev => ({ ...prev, packsSold: Number(e.target.value) }))}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Prix Unitaire Pack (FCFA)</label>
+                  <label>Prix Pack VIP (FCFA)</label>
                   <input
                     type="number"
                     step="5000"
                     value={formData.packPrice}
                     onChange={(e) => setFormData(prev => ({ ...prev, packPrice: Number(e.target.value) }))}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Statut du Challenge</label>
+                <label>Statut du Challenge</label>
                 <select
                   value={formData.status}
                   onChange={(e: any) => setFormData(prev => ({ ...prev, status: e.target.value }))}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                 >
                   <option value="Planifié">📅 Planifié</option>
                   <option value="En cours">🔥 En cours</option>
@@ -807,29 +783,28 @@ export const BlueprintScreen: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Notes & Remarques</label>
+                <label>Notes & Remarques</label>
                 <textarea
                   rows={2}
                   value={formData.notes}
                   onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  placeholder="Canaux utilisés, retours clients, thématiques abordées..."
+                  placeholder="Canaux d'acquisition, thématiques des 7 jours, retours d'expérience..."
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', paddingTop: '12px', borderTop: '1px solid var(--border-color)' }}>
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                  className="btn btn-secondary"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold shadow-md transition-colors"
+                  className="btn btn-primary"
                 >
-                  Enregistrer
+                  Enregistrer le Challenge
                 </button>
               </div>
             </form>

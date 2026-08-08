@@ -971,3 +971,162 @@ body tr:hover td {
     padding: 20px 16px 120px 16px !important;
   }
 }
+
+/* ==========================================================================
+   BLUEPRINT IA CUSTOM STYLES (Apple-grade Light Soft UI)
+   ========================================================================== */
+
+.blueprint-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.blueprint-badge-en-cours {
+  background-color: #FEF3C7;
+  color: #B45309;
+  border: 1px solid #FCD34D;
+}
+
+.blueprint-badge-termine {
+  background-color: #D1FAE5;
+  color: #047857;
+  border: 1px solid #6EE7B7;
+}
+
+.blueprint-badge-planifie {
+  background-color: #F1F5F9;
+  color: #475569;
+  border: 1px solid #CBD5E1;
+}
+
+.blueprint-funnel-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 16px;
+}
+
+@media (max-width: 900px) {
+  .blueprint-funnel-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.blueprint-funnel-step {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-sm);
+}
+
+.blueprint-funnel-step:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-blue);
+  box-shadow: var(--shadow-md);
+}
+
+.blueprint-funnel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.blueprint-funnel-val {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.blueprint-funnel-sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.blueprint-simulator-box {
+  background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  color: #FFFFFF;
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  box-shadow: var(--shadow-premium);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+
+@media (max-width: 900px) {
+  .blueprint-simulator-box {
+    grid-template-columns: 1fr;
+  }
+}
+
+.blueprint-sim-control {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.blueprint-sim-control-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+  color: #94A3B8;
+}
+
+.blueprint-sim-control-val {
+  color: #F59E0B;
+  font-weight: 700;
+}
+
+.blueprint-range-input {
+  width: 100%;
+  accent-color: #F59E0B;
+  cursor: pointer;
+}
+
+.blueprint-sim-results {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.blueprint-sim-ca {
+  font-size: 32px;
+  font-weight: 900;
+  color: #F59E0B;
+  letter-spacing: -0.03em;
+}
+
+.blueprint-reminder-drawer {
+  background: #FFFBEB;
+  border: 1px solid #FCD34D;
+  border-radius: var(--radius-md);
+  padding: 20px;
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}

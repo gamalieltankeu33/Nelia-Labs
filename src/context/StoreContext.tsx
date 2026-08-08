@@ -225,38 +225,40 @@ const getDemoData = (): NextiaStore => {
     blueprintChallenges: [
       {
         id: 'bp-1',
-        title: 'Challenge 5J Blueprint IA #1 - Automatisation & Offres',
+        title: 'Challenge 7J Blueprint IA #1 - Automatisation & Workflows',
         month: '2026-08',
         startDate: '2026-08-10',
-        endDate: '2026-08-14',
+        endDate: '2026-08-16',
         organicPostsCount: 14,
         registeredCount: 380,
-        activeParticipantsCount: 210,
+        registrationFee: 10000,
+        activeParticipantsCount: 260,
         packsSold: 28,
         packPrice: 150000,
         currency: 'FCFA',
         status: 'En cours',
-        notes: 'Acquisition via Instagram Reels + Groupe VIP WhatsApp.',
+        notes: 'Inscriptions 10 000 FCFA/participant + Accompagnement 7J + Ventes Packs VIP.',
         reminders: [
-          { id: 'bp-r1', date: '2026-08-16', count: 5, amount: 750000 }
+          { id: 'bp-r1', date: '2026-08-18', count: 5, amount: 750000 }
         ]
       },
       {
         id: 'bp-2',
-        title: 'Challenge 5J Blueprint IA #2 - Masterclass Prompting & Workflows',
+        title: 'Challenge 7J Blueprint IA #2 - Masterclass Prompting & Offres',
         month: '2026-07',
-        startDate: '2026-07-15',
-        endDate: '2026-07-19',
+        startDate: '2026-07-10',
+        endDate: '2026-07-16',
         organicPostsCount: 18,
         registeredCount: 450,
-        activeParticipantsCount: 290,
+        registrationFee: 10000,
+        activeParticipantsCount: 310,
         packsSold: 35,
         packPrice: 150000,
         currency: 'FCFA',
         status: 'Terminé',
-        notes: 'Excellente conversion des solopreneurs sur l\'offre d\'accompagnement.',
+        notes: '7 jours d\'accompagnement avec closing des packs VIP en fin de session.',
         reminders: [
-          { id: 'bp-r2', date: '2026-07-22', count: 8, amount: 1200000 }
+          { id: 'bp-r2', date: '2026-07-20', count: 8, amount: 1200000 }
         ]
       }
     ],
@@ -1063,6 +1065,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       endDate: challengeData.endDate,
       organicPostsCount: Number(challengeData.organicPostsCount) || 0,
       registeredCount: Number(challengeData.registeredCount) || 0,
+      registrationFee: challengeData.registrationFee !== undefined ? Number(challengeData.registrationFee) : 10000,
       activeParticipantsCount: Number(challengeData.activeParticipantsCount) || 0,
       packsSold: Number(challengeData.packsSold) || 0,
       packPrice: Number(challengeData.packPrice) || 0,
