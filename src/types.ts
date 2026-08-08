@@ -84,13 +84,31 @@ export interface Expense {
   date: string; // YYYY-MM-DD
 }
 
+export interface BlueprintChallenge {
+  id: string;
+  title: string;                 // ex: "Challenge 5J Blueprint IA #1 - Offre & Automatisations"
+  month: string;                 // YYYY-MM
+  startDate: string;             // YYYY-MM-DD
+  endDate: string;               // YYYY-MM-DD
+  organicPostsCount: number;     // Publications d'acquisition / d'attraction
+  registeredCount: number;       // Inscrits au challenge
+  activeParticipantsCount: number; // Participants actifs / Présents aux sessions 5j
+  packsSold: number;             // Packs d'accompagnement vendus
+  packPrice: number;             // Prix unitaire du pack
+  currency?: 'FCFA' | 'EUR' | 'USD';
+  status: 'Planifié' | 'En cours' | 'Terminé';
+  notes?: string;
+  reminders?: Reminder[];        // Relances post-challenge & ventes de rattrapage
+}
+
 export interface NextiaStore {
   contents: PublishedContent[];
   sales: DigitalSale[];
   prospects: Prospect[];
-  launches: Record<string, MonthlyLaunch>; // Clé: YYYY-MM
+  launches: Record<string, MonthlyLaunch>;
   collabs: CommercialCollab[];
   expenses: Expense[];
+  blueprintChallenges: BlueprintChallenge[];
   objectives: Record<string, number>; // Clé: YYYY-MM
 }
 

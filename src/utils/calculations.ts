@@ -1,4 +1,4 @@
-import type { PublishedContent, DigitalSale, Prospect, MonthlyLaunch, CommercialCollab, Expense } from '../types';
+import type { PublishedContent, DigitalSale, Prospect, MonthlyLaunch, CommercialCollab, Expense, BlueprintChallenge } from '../types';
 
 export const EXCHANGE_RATES = {
   EUR_TO_FCFA: 655.957,
@@ -22,6 +22,33 @@ export function calculateLaunchCA(launch: MonthlyLaunch | undefined): number {
   if (!launch) return 0;
   const remindersTotal = launch.reminders.reduce((sum, r) => sum + r.amount, 0);
   return launch.daySalesAmount + remindersTotal;
+}
+
+/**
+ * Calcule le CA Blueprint IA en FCFA
+ */
+export function calculateBlueprintCAInFCFA(challenges: BlueprintChallenge[] = [], month: string): number {
+  return (challenges || [])
+    .filter(c => c.month === month || getYearMonth(c.startDate) === month)
+    .reduce((sum, c) => {
+      const baseSales = c.packsSold * c.packPrice;
+      const remindersTotal = (c.reminders || []).reduce((rSum, r) => rSum + r.amount, 0);
+      const totalAmount = baseSales + remindersTotal;
+      const curr = c.currency || 'FCFA';
+      if (curr === 'EUR') {
+        return sum + (totalAmount * EXCHANGE_RATES.EUR_TO_FCFA);
+      } else if (curr === 'USD') {
+        return sum + (totalAmount * EXCHANGE_RATES.USD_TO_EUR * EXCHANGE_RATES.EUR_TO_FCFA);
+      }
+      return sum + totalAmount;
+    }, 0);
+}
+
+/**
+ * Calcule le CA Blueprint IA converti en EUR
+ */
+export function calculateBlueprintCA(challenges: BlueprintChallenge[] = [], month: string): number {
+  return calculateBlueprintCAInFCFA(challenges, month) * EXCHANGE_RATES.FCFA_TO_EUR;
 }
 
 /**
@@ -50,9 +77,6 @@ export function calculateDigitalCA(sales: DigitalSale[], month: string): number 
     }, 0);
 }
 
-/**
- * Calcule le CA Collaborations pour un mois donné
- */
 /**
  * Calcule le CA Collaborations contracté pour un mois donné (Confirmé, Publié, Payé - exclut En discussion)
  */
@@ -85,7 +109,6 @@ export function calculateChargesForMonth(expenses: Expense[], month: string): nu
   return expenses
     .filter(e => {
       const expenseMonth = getYearMonth(e.date);
-      // Un mois ne doit pas transporter les charges d'un autre mois
       return expenseMonth === month;
     })
     .reduce((sum, e) => sum + e.amount, 0);
@@ -99,7 +122,8 @@ export function getAvailableMonths(
   sales: DigitalSale[],
   collabs: CommercialCollab[],
   expenses: Expense[],
-  prospects: Prospect[]
+  prospects: Prospect[],
+  blueprintChallenges: BlueprintChallenge[] = []
 ): { value: string; label: string }[] {
   const monthsSet = new Set<string>();
   
@@ -113,6 +137,10 @@ export function getAvailableMonths(
   prospects.forEach(p => {
     if (p.dealDate) monthsSet.add(p.dealDate.substring(0, 7));
     if (p.history && p.history[0]?.date) monthsSet.add(p.history[0].date.substring(0, 7));
+  });
+  (blueprintChallenges || []).forEach(b => {
+    if (b.month) monthsSet.add(b.month);
+    if (b.startDate) monthsSet.add(b.startDate.substring(0, 7));
   });
   
   // 3. Ajouter le mois en cours
@@ -154,9 +182,11 @@ export function calculateTotalContractedCA(
   launch: MonthlyLaunch | undefined,
   prospects: Prospect[],
   sales: DigitalSale[],
-  collabs: CommercialCollab[]
+  collabs: CommercialCollab[],
+  blueprintChallenges: BlueprintChallenge[] = []
 ): number {
   const launchCA = calculateLaunchCA(launch); // in FCFA
+  const blueprintCA = calculateBlueprintCA(blueprintChallenges, month); // in EUR
   const premiumCA = calculatePremiumCA(prospects, month); // in EUR
   const digitalCA = calculateDigitalCA(sales, month); // in EUR
   const collabsCA = calculateCollabsContractedCA(collabs, month); // in USD
@@ -164,7 +194,7 @@ export function calculateTotalContractedCA(
   const launchCAEUR = launchCA * EXCHANGE_RATES.FCFA_TO_EUR;
   const collabsCAEUR = collabsCA * EXCHANGE_RATES.USD_TO_EUR;
   
-  return launchCAEUR + premiumCA + digitalCA + collabsCAEUR;
+  return launchCAEUR + blueprintCA + premiumCA + digitalCA + collabsCAEUR;
 }
 
 /**
@@ -175,9 +205,11 @@ export function calculateTotalCollectedCA(
   launch: MonthlyLaunch | undefined,
   prospects: Prospect[],
   sales: DigitalSale[],
-  collabs: CommercialCollab[]
+  collabs: CommercialCollab[],
+  blueprintChallenges: BlueprintChallenge[] = []
 ): number {
   const launchCA = calculateLaunchCA(launch); // in FCFA
+  const blueprintCA = calculateBlueprintCA(blueprintChallenges, month); // in EUR
   const premiumCA = calculatePremiumCA(prospects, month); // in EUR
   const digitalCA = calculateDigitalCA(sales, month); // in EUR
   const collabsCA = calculateCollabsCollectedCA(collabs, month); // in USD
@@ -185,7 +217,7 @@ export function calculateTotalCollectedCA(
   const launchCAEUR = launchCA * EXCHANGE_RATES.FCFA_TO_EUR;
   const collabsCAEUR = collabsCA * EXCHANGE_RATES.USD_TO_EUR;
   
-  return launchCAEUR + premiumCA + digitalCA + collabsCAEUR;
+  return launchCAEUR + blueprintCA + premiumCA + digitalCA + collabsCAEUR;
 }
 
 /**

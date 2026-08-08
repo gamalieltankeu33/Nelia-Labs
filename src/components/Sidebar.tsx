@@ -5,6 +5,7 @@ import {
   FileText, 
   Users, 
   Send,
+  Sparkles,
   Briefcase, 
   DollarSign, 
   PieChart, 
@@ -20,6 +21,7 @@ import { useStore } from '../context/StoreContext';
 import { supabase } from '../supabaseClient';
 import { 
   calculateLaunchCA, 
+  calculateBlueprintCA,
   calculatePremiumCA, 
   calculateDigitalCA, 
   calculateCollabsContractedCA,
@@ -51,12 +53,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
     launches,
     collabs,
     expenses,
+    blueprintChallenges,
     objectives,
     selectedMonth,
     setSelectedMonth
   } = useStore();
 
-  const availableMonths = getAvailableMonths(launches, sales, collabs, expenses, prospects);
+  const availableMonths = getAvailableMonths(launches, sales, collabs, expenses, prospects, blueprintChallenges);
 
   const [selectedYear, selectedMonthNum] = selectedMonth.split('-');
   const dateObj = new Date(Number(selectedYear), Number(selectedMonthNum) - 1, 15);
@@ -65,13 +68,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   
   const launch = launches[selectedMonth];
   const launchCA = calculateLaunchCA(launch);
+  const blueprintCA = calculateBlueprintCA(blueprintChallenges, selectedMonth);
   const premiumCA = calculatePremiumCA(prospects, selectedMonth);
   const digitalCA = calculateDigitalCA(sales, selectedMonth);
   const collabsCollectedCA = calculateCollabsCollectedCA(collabs, selectedMonth);
   const collabsContractedCA = calculateCollabsContractedCA(collabs, selectedMonth);
   
-  const totalCollectedCA = (launchCA * EXCHANGE_RATES.FCFA_TO_EUR) + premiumCA + digitalCA + (collabsCollectedCA * EXCHANGE_RATES.USD_TO_EUR);
-  const totalContractedCA = (launchCA * EXCHANGE_RATES.FCFA_TO_EUR) + premiumCA + digitalCA + (collabsContractedCA * EXCHANGE_RATES.USD_TO_EUR);
+  const totalCollectedCA = (launchCA * EXCHANGE_RATES.FCFA_TO_EUR) + blueprintCA + premiumCA + digitalCA + (collabsCollectedCA * EXCHANGE_RATES.USD_TO_EUR);
+  const totalContractedCA = (launchCA * EXCHANGE_RATES.FCFA_TO_EUR) + blueprintCA + premiumCA + digitalCA + (collabsContractedCA * EXCHANGE_RATES.USD_TO_EUR);
   
   const monthlyObjective = objectives[selectedMonth] || 5000;
   const progressPercent = monthlyObjective > 0 ? Math.min((totalCollectedCA / monthlyObjective) * 100, 100) : 0;
@@ -82,6 +86,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'content', name: 'Contenu', icon: FileText },
     { id: 'prospects', name: 'Prospection', icon: Users },
     { id: 'launch', name: 'Lancement', icon: Send },
+    { id: 'blueprint', name: 'Blueprint IA', icon: Sparkles },
     { id: 'collabs', name: 'Collabs', icon: Briefcase },
     { id: 'expenses', name: 'Charges', icon: DollarSign },
     { id: 'dashboard', name: 'Tableau de bord', icon: PieChart },

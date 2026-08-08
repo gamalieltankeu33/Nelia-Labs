@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
-import { DollarSign, Plus, Trash2, Database, Upload, Download, RefreshCw, AlertTriangle } from 'lucide-react';
+import { DollarSign, Plus, Trash2, Database, Upload, Download, RefreshCw, AlertTriangle, Lock } from 'lucide-react';
+import { getYearMonth } from '../../utils/calculations';
 import type { Expense } from '../../types';
 
 export const ExpensesScreen: React.FC = () => {
@@ -12,8 +13,12 @@ export const ExpensesScreen: React.FC = () => {
     exportData, 
     resetToDemoData, 
     clearAllData,
-    selectedMonth
+    selectedMonth,
+    setSelectedMonth,
+    launches
   } = useStore();
+
+  const isMonthClosed = launches[selectedMonth]?.status === 'Terminé';
 
   const getDefaultDate = () => {
     const today = new Date().toISOString().split('T')[0];
@@ -43,6 +48,14 @@ export const ExpensesScreen: React.FC = () => {
     const amountNum = parseFloat(form.amount);
     if (!form.name || isNaN(amountNum)) return;
 
+    // Validation: check if the month of the target date is closed
+    const expenseMonth = getYearMonth(form.date);
+    const targetLaunch = launches[expenseMonth];
+    if (targetLaunch?.status === 'Terminé') {
+      alert(`Impossible d'enregistrer la charge : le mois de facturation choisi (${expenseMonth}) est clôturé.`);
+      return;
+    }
+
     addExpense({
       name: form.name,
       amount: amountNum,
@@ -56,6 +69,28 @@ export const ExpensesScreen: React.FC = () => {
       frequency: form.frequency,
       date: getDefaultDate()
     });
+  };
+
+  const getTodayMonthLabel = () => {
+    const today = new Date();
+    const label = today.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  };
+
+  const handleMoveToCurrentMonth = async (exp: Expense) => {
+    const today = new Date();
+    const currentMonthStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+    const newDate = `${currentMonthStr}-01`;
+    
+    if (window.confirm(`Déplacer la charge "${exp.name}" de ${exp.amount} € vers le mois en cours (${newDate}) ?`)) {
+      await deleteExpense(exp.id);
+      await addExpense({
+        name: exp.name,
+        amount: exp.amount,
+        frequency: exp.frequency,
+        date: newDate
+      });
+    }
   };
 
   const filteredExpenses = expenses.filter(e => e.date.startsWith(selectedMonth));
@@ -96,20 +131,112 @@ export const ExpensesScreen: React.FC = () => {
     }
   };
 
+  const getAvailableMonths = () => {
+    const monthsSet = new Set<string>();
+    
+    // 1. Add all months that have launch records in database
+    Object.keys(launches).forEach(m => monthsSet.add(m));
+    
+    // 2. Add current month
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonthNum = currentDate.getMonth() + 1;
+    const currentMonthStr = `${currentYear}-${String(currentMonthNum).padStart(2, '0')}`;
+    monthsSet.add(currentMonthStr);
+    
+    // 3. Add future months (up to 12 months in the future)
+    let tempYear = currentYear;
+    let tempMonth = currentMonthNum;
+    for (let i = 0; i < 12; i++) {
+      tempMonth++;
+      if (tempMonth > 12) {
+        tempMonth = 1;
+        tempYear++;
+      }
+      monthsSet.add(`${tempYear}-${String(tempMonth).padStart(2, '0')}`);
+    }
+
+    // 4. Ensure current selection is also present
+    if (selectedMonth) {
+      monthsSet.add(selectedMonth);
+    }
+
+    // Sort descending (latest months first)
+    const sortedMonths = Array.from(monthsSet).sort().reverse();
+    
+    return sortedMonths.map(monthStr => {
+      const [year, month] = monthStr.split('-').map(Number);
+      const date = new Date(year, month - 1, 15);
+      const label = date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+      const capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1);
+      return { value: monthStr, label: capitalizedLabel };
+    });
+  };
+
   return (
     <div className="fade-in">
-      <div className="screen-header">
+      <div className="screen-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 className="screen-title">
             <DollarSign className="screen-title-icon" /> Charges & Abonnements
           </h1>
           <p className="screen-subtitle">Suivez vos coûts fixes, récurrents et ponctuels pour piloter votre rentabilité</p>
         </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {isMonthClosed && (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '6px', 
+              padding: '6px 12px', 
+              borderRadius: '20px', 
+              background: 'rgba(239, 68, 68, 0.1)', 
+              color: 'var(--status-error)', 
+              fontSize: '13px', 
+              fontWeight: 600,
+              border: '1px solid rgba(239, 68, 68, 0.2)'
+            }}>
+              <Lock className="size-3.5" /> Clôturé
+            </div>
+          )}
+          <label style={{ margin: 0, whiteSpace: 'nowrap', fontSize: '14px', fontWeight: 500 }}>Sélectionner le mois :</label>
+          <select 
+            value={selectedMonth}
+            onChange={e => setSelectedMonth(e.target.value)}
+            style={{ width: '180px', padding: '8px 12px', background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}
+          >
+            {getAvailableMonths().map(m => (
+              <option key={m.value} value={m.value}>{m.label}</option>
+            ))}
+          </select>
+        </div>
       </div>
+
+      {isMonthClosed && (
+        <div style={{ 
+          display: 'flex', 
+          gap: '12px',
+          alignItems: 'center', 
+          backgroundColor: 'rgba(239, 68, 68, 0.08)', 
+          border: '1px solid rgba(239, 68, 68, 0.2)', 
+          padding: '16px', 
+          borderRadius: 'var(--radius-md)', 
+          marginTop: '24px' 
+        }}>
+          <Lock className="text-red" style={{ flexShrink: 0, width: '20px', height: '20px' }} />
+          <div>
+            <h4 style={{ margin: 0, color: 'var(--status-error)', fontWeight: 700 }}>Ce mois est clôturé !</h4>
+            <p style={{ margin: '4px 0 0 0', fontSize: '13.5px', color: 'var(--text-secondary)' }}>
+              Toutes les opérations d'ajout et de suppression de charges pour ce mois sont verrouillées pour sécuriser vos données historiques.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="grid-cols-3" style={{ marginTop: '24px' }}>
         {/* Formulaire de création */}
-        <div className="card" style={{ height: 'fit-content' }}>
+        <div className="card" style={{ height: 'fit-content', opacity: isMonthClosed ? 0.65 : 1, transition: 'opacity 0.2s' }}>
           <h3 className="section-title" style={{ marginBottom: '20px' }}>Enregistrer une charge</h3>
           
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -121,6 +248,7 @@ export const ExpensesScreen: React.FC = () => {
                 value={form.name}
                 onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                 required
+                disabled={isMonthClosed}
               />
             </div>
 
@@ -134,6 +262,7 @@ export const ExpensesScreen: React.FC = () => {
                 required
                 min="0"
                 step="0.01"
+                disabled={isMonthClosed}
               />
             </div>
 
@@ -142,6 +271,7 @@ export const ExpensesScreen: React.FC = () => {
               <select
                 value={form.frequency}
                 onChange={e => setForm(f => ({ ...f, frequency: e.target.value as any }))}
+                disabled={isMonthClosed}
               >
                 <option value="Mensuel">Mensuel (Récurrent)</option>
                 <option value="Annuel">Annuel</option>
@@ -156,10 +286,16 @@ export const ExpensesScreen: React.FC = () => {
                 value={form.date}
                 onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
                 required
+                disabled={isMonthClosed}
               />
             </div>
 
-            <button type="submit" className="btn btn-primary" style={{ marginTop: '8px' }}>
+            <button 
+              type="submit" 
+              className="btn btn-primary" 
+              style={{ marginTop: '8px' }}
+              disabled={isMonthClosed}
+            >
               <Plus className="size-4" /> Enregistrer la charge
             </button>
           </form>
@@ -202,16 +338,30 @@ export const ExpensesScreen: React.FC = () => {
                         - {exp.amount.toLocaleString('fr-FR')} €
                       </td>
                       <td style={{ textAlign: 'right' }}>
-                        <button 
-                          className="btn btn-danger btn-icon-only"
-                          onClick={() => {
-                            if (window.confirm("Supprimer cette charge ?")) {
-                              deleteExpense(exp.id);
-                            }
-                          }}
-                        >
-                          <Trash2 className="size-4" />
-                        </button>
+                        {!isMonthClosed ? (
+                          <button 
+                            className="btn btn-danger btn-icon-only"
+                            onClick={() => {
+                              if (window.confirm("Supprimer cette charge ?")) {
+                                deleteExpense(exp.id);
+                              }
+                            }}
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
+                            <button 
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => handleMoveToCurrentMonth(exp)}
+                              style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', fontSize: '11.5px', height: '30px' }}
+                              title={`Déplacer vers ${getTodayMonthLabel()}`}
+                            >
+                              Déplacer vers {getTodayMonthLabel()}
+                            </button>
+                            <Lock className="size-4 text-secondary" style={{ opacity: 0.5 }} />
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))}

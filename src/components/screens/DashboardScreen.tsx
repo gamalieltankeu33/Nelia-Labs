@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { 
   calculateLaunchCA, 
+  calculateBlueprintCA,
   calculatePremiumCA, 
   calculateDigitalCA, 
   calculateCollabsContractedCA,
@@ -59,6 +60,7 @@ export const DashboardScreen: React.FC = () => {
     launches, 
     collabs, 
     expenses, 
+    blueprintChallenges,
     objectives,
     updateObjective,
     selectedMonth,
@@ -144,6 +146,7 @@ export const DashboardScreen: React.FC = () => {
   let barChartObjectiveData: number[] = [];
   
   let cumulativeLaunch = 0;
+  let cumulativeBlueprint = 0;
   let cumulativePremium = 0;
   let cumulativeDigital = 0;
   let cumulativeCollabsCollected = 0;
@@ -174,6 +177,7 @@ export const DashboardScreen: React.FC = () => {
         : getMonthsInWindow(selectedMonth, 6);
         
     let launchCAAll = 0;
+    let blueprintCAAll = 0;
     let premiumCAAll = 0;
     let digitalCAAll = 0;
     let collabsCollectedCAAll = 0;
@@ -182,12 +186,14 @@ export const DashboardScreen: React.FC = () => {
     months.forEach(m => {
       const l = launches[m];
       const lCA = calculateLaunchCA(l);
+      const bCA = calculateBlueprintCA(blueprintChallenges, m);
       const pCA = calculatePremiumCA(prospects, m);
       const dCA = calculateDigitalCA(sales, m);
       const cCollected = calculateCollabsCollectedCA(collabs, m);
       const cContracted = calculateCollabsContractedCA(collabs, m);
       
       launchCAAll += lCA * EXCHANGE_RATES.FCFA_TO_EUR;
+      blueprintCAAll += bCA;
       premiumCAAll += pCA;
       digitalCAAll += dCA;
       collabsCollectedCAAll += cCollected * EXCHANGE_RATES.USD_TO_EUR;
@@ -199,8 +205,8 @@ export const DashboardScreen: React.FC = () => {
       monthlyContentsCount += contents.filter(c => getYearMonth(c.date) === m).length;
     });
     
-    totalCollectedCA = launchCAAll + premiumCAAll + digitalCAAll + collabsCollectedCAAll;
-    totalContractedCA = launchCAAll + premiumCAAll + digitalCAAll + collabsContractedCAAll;
+    totalCollectedCA = launchCAAll + blueprintCAAll + premiumCAAll + digitalCAAll + collabsCollectedCAAll;
+    totalContractedCA = launchCAAll + blueprintCAAll + premiumCAAll + digitalCAAll + collabsContractedCAAll;
     totalOutflow = charges + adsSpent;
     netProfitCollected = totalCollectedCA - totalOutflow;
     netProfitContracted = totalContractedCA - totalOutflow;
@@ -232,11 +238,11 @@ export const DashboardScreen: React.FC = () => {
         
       barChartCollectedData = semesterMonths.map(m => {
         const key = `${year}-${m}`;
-        return calculateTotalCollectedCA(key, launches[key], prospects, sales, collabs);
+        return calculateTotalCollectedCA(key, launches[key], prospects, sales, collabs, blueprintChallenges);
       });
       barChartContractedData = semesterMonths.map(m => {
         const key = `${year}-${m}`;
-        return calculateTotalContractedCA(key, launches[key], prospects, sales, collabs);
+        return calculateTotalContractedCA(key, launches[key], prospects, sales, collabs, blueprintChallenges);
       });
       barChartObjectiveData = semesterMonths.map(m => {
         const key = `${year}-${m}`;
@@ -252,8 +258,8 @@ export const DashboardScreen: React.FC = () => {
         const label = dateObj.toLocaleDateString('fr-FR', { month: 'short' });
         return label.charAt(0).toUpperCase() + label.slice(1);
       });
-      barChartCollectedData = months.map(m => calculateTotalCollectedCA(m, launches[m], prospects, sales, collabs));
-      barChartContractedData = months.map(m => calculateTotalContractedCA(m, launches[m], prospects, sales, collabs));
+      barChartCollectedData = months.map(m => calculateTotalCollectedCA(m, launches[m], prospects, sales, collabs, blueprintChallenges));
+      barChartContractedData = months.map(m => calculateTotalContractedCA(m, launches[m], prospects, sales, collabs, blueprintChallenges));
       barChartObjectiveData = months.map(m => objectives[m] || 5000);
       
       chartTitle = `Performance sur ${timeFrame === '3-months' ? '3 mois' : '6 mois'} (finissant en ${new Date(selectedMonth + '-02').toLocaleDateString('fr-FR', { month: 'long' })})`;
@@ -261,6 +267,7 @@ export const DashboardScreen: React.FC = () => {
     }
 
     cumulativeLaunch = launchCAAll;
+    cumulativeBlueprint = blueprintCAAll;
     cumulativePremium = premiumCAAll;
     cumulativeDigital = digitalCAAll;
     cumulativeCollabsCollected = collabsCollectedCAAll;
@@ -273,6 +280,7 @@ export const DashboardScreen: React.FC = () => {
       const l = launches[m];
       const lCA = calculateLaunchCA(l);
       const lCAEUR = lCA * EXCHANGE_RATES.FCFA_TO_EUR;
+      const bCA = calculateBlueprintCA(blueprintChallenges, m);
       const pCA = calculatePremiumCA(prospects, m);
       const dCA = calculateDigitalCA(sales, m);
       const cCollectedCA = calculateCollabsCollectedCA(collabs, m);
@@ -280,8 +288,8 @@ export const DashboardScreen: React.FC = () => {
       const cContractedCA = calculateCollabsContractedCA(collabs, m);
       const cContractedCAEUR = cContractedCA * EXCHANGE_RATES.USD_TO_EUR;
       
-      totalCollectedCA += lCAEUR + pCA + dCA + cCollectedCAEUR;
-      totalContractedCA += lCAEUR + pCA + dCA + cContractedCAEUR;
+      totalCollectedCA += lCAEUR + bCA + pCA + dCA + cCollectedCAEUR;
+      totalContractedCA += lCAEUR + bCA + pCA + dCA + cContractedCAEUR;
       
       const aSpentEUR = l ? l.adsSpent : 0; // already in EUR
       const chg = calculateChargesForMonth(expenses, m);
@@ -293,6 +301,7 @@ export const DashboardScreen: React.FC = () => {
       monthlyContentsCount += contents.filter(c => getYearMonth(c.date) === m).length;
       
       cumulativeLaunch += lCAEUR;
+      cumulativeBlueprint += bCA;
       cumulativePremium += pCA;
       cumulativeDigital += dCA;
       cumulativeCollabsCollected += cCollectedCAEUR;
@@ -317,8 +326,8 @@ export const DashboardScreen: React.FC = () => {
     }));
 
     barChartLabels = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
-    barChartCollectedData = yearMonths.map(m => calculateTotalCollectedCA(m, launches[m], prospects, sales, collabs));
-    barChartContractedData = yearMonths.map(m => calculateTotalContractedCA(m, launches[m], prospects, sales, collabs));
+    barChartCollectedData = yearMonths.map(m => calculateTotalCollectedCA(m, launches[m], prospects, sales, collabs, blueprintChallenges));
+    barChartContractedData = yearMonths.map(m => calculateTotalContractedCA(m, launches[m], prospects, sales, collabs, blueprintChallenges));
     barChartObjectiveData = yearMonths.map(m => objectives[m] || 5000);
 
     chartTitle = `Performance Annuelle (${selectedYear})`;
@@ -331,6 +340,7 @@ export const DashboardScreen: React.FC = () => {
         const l = launches[m];
         const lCA = calculateLaunchCA(l);
         const lCAEUR = lCA * EXCHANGE_RATES.FCFA_TO_EUR;
+        const bCA = calculateBlueprintCA(blueprintChallenges, m);
         const pCA = calculatePremiumCA(prospects, m);
         const dCA = calculateDigitalCA(sales, m);
         const cCollectedCA = calculateCollabsCollectedCA(collabs, m);
@@ -338,8 +348,8 @@ export const DashboardScreen: React.FC = () => {
         const cContractedCA = calculateCollabsContractedCA(collabs, m);
         const cContractedCAEUR = cContractedCA * EXCHANGE_RATES.USD_TO_EUR;
         
-        totalCollectedCA += lCAEUR + pCA + dCA + cCollectedCAEUR;
-        totalContractedCA += lCAEUR + pCA + dCA + cContractedCAEUR;
+        totalCollectedCA += lCAEUR + bCA + pCA + dCA + cCollectedCAEUR;
+        totalContractedCA += lCAEUR + bCA + pCA + dCA + cContractedCAEUR;
         
         const aSpentEUR = l ? l.adsSpent : 0; // already in EUR
         const chg = calculateChargesForMonth(expenses, m);
@@ -351,6 +361,7 @@ export const DashboardScreen: React.FC = () => {
         monthlyContentsCount += contents.filter(c => getYearMonth(c.date) === m).length;
         
         cumulativeLaunch += lCAEUR;
+        cumulativeBlueprint += bCA;
         cumulativePremium += pCA;
         cumulativeDigital += dCA;
         cumulativeCollabsCollected += cCollectedCAEUR;
@@ -380,7 +391,7 @@ export const DashboardScreen: React.FC = () => {
       let yrCA = 0;
       for (let i = 1; i <= 12; i++) {
         const key = `${y}-${String(i).padStart(2, '0')}`;
-        yrCA += calculateTotalCollectedCA(key, launches[key], prospects, sales, collabs);
+        yrCA += calculateTotalCollectedCA(key, launches[key], prospects, sales, collabs, blueprintChallenges);
       }
       return yrCA;
     });
@@ -388,7 +399,7 @@ export const DashboardScreen: React.FC = () => {
       let yrCA = 0;
       for (let i = 1; i <= 12; i++) {
         const key = `${y}-${String(i).padStart(2, '0')}`;
-        yrCA += calculateTotalContractedCA(key, launches[key], prospects, sales, collabs);
+        yrCA += calculateTotalContractedCA(key, launches[key], prospects, sales, collabs, blueprintChallenges);
       }
       return yrCA;
     });
@@ -700,15 +711,16 @@ export const DashboardScreen: React.FC = () => {
     }
   };
 
-  const totalCumulativeCA = cumulativeLaunch + cumulativePremium + cumulativeDigital + cumulativeCollabs;
+  const totalCumulativeCA = cumulativeLaunch + cumulativeBlueprint + cumulativePremium + cumulativeDigital + cumulativeCollabs;
 
   const pieChartData = {
-    labels: ['Lancements (Club IA)', 'Premium (Business IA)', 'Produits Digitaux', 'Collaborations'],
+    labels: ['Lancements (Club IA)', 'Blueprint IA (Challenges)', 'Premium (Business IA)', 'Produits Digitaux', 'Collaborations'],
     datasets: [
       {
-        data: [cumulativeLaunch, cumulativePremium, cumulativeDigital, cumulativeCollabs],
+        data: [cumulativeLaunch, cumulativeBlueprint, cumulativePremium, cumulativeDigital, cumulativeCollabs],
         backgroundColor: [
           '#0066CC', // Bleu principal
+          '#F59E0B', // Or/Ambre Blueprint IA
           '#93C5FD', // Bleu poudré
           '#FCA5A5', // Corail doux
           '#E2E8F0'  // Gris neutre
@@ -1092,6 +1104,11 @@ export const DashboardScreen: React.FC = () => {
               <span className="source-color-dot" style={{ backgroundColor: '#C9A227' }} />
               <span className="source-name">Lancements (Club IA)</span>
               <span className="source-value">{cumulativeLaunch.toLocaleString('fr-FR')} €</span>
+            </div>
+            <div className="source-row">
+              <span className="source-color-dot" style={{ backgroundColor: '#F59E0B' }} />
+              <span className="source-name">Blueprint IA (Challenges 5J)</span>
+              <span className="source-value">{cumulativeBlueprint.toLocaleString('fr-FR')} €</span>
             </div>
             <div className="source-row">
               <span className="source-color-dot" style={{ backgroundColor: '#3FBF8F' }} />

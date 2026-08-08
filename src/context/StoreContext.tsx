@@ -7,7 +7,8 @@ import type {
   CommercialCollab, 
   Expense, 
   NextiaStore,
-  Reminder
+  Reminder,
+  BlueprintChallenge
 } from '../types';
 import { PROSPECT_STATUSES } from '../types';
 import { supabase } from '../supabaseClient';
@@ -21,6 +22,7 @@ interface StoreContextType {
   launches: Record<string, MonthlyLaunch>;
   collabs: CommercialCollab[];
   expenses: Expense[];
+  blueprintChallenges: BlueprintChallenge[];
   objectives: Record<string, number>;
   savingStatus: SavingStatus;
   savingError: string | null;
@@ -49,6 +51,11 @@ interface StoreContextType {
   saveLaunch: (launch: Omit<MonthlyLaunch, 'id' | 'reminders'> & { status?: 'En cours' | 'Terminé' }) => void;
   addReminderToLaunch: (month: string, reminder: Omit<Reminder, 'id'>) => void;
   deleteReminderFromLaunch: (month: string, reminderId: string) => void;
+  
+  saveBlueprintChallenge: (challenge: Omit<BlueprintChallenge, 'id'> & { id?: string }) => void;
+  deleteBlueprintChallenge: (id: string) => void;
+  addReminderToBlueprintChallenge: (challengeId: string, reminder: Omit<Reminder, 'id'>) => void;
+  deleteReminderFromBlueprintChallenge: (challengeId: string, reminderId: string) => void;
   
   addCollab: (collab: Omit<CommercialCollab, 'id'>) => void;
   updateCollabStatus: (id: string, status: CommercialCollab['status']) => void;
@@ -215,6 +222,44 @@ const getDemoData = (): NextiaStore => {
       { id: 'e-4', name: 'Hébergement annuel Gandi', amount: 120, frequency: 'Annuel', date: '2026-07-05' },
       { id: 'e-5', name: 'Abonnement Make.com', amount: 16, frequency: 'Mensuel', date: '2026-06-01' },
     ],
+    blueprintChallenges: [
+      {
+        id: 'bp-1',
+        title: 'Challenge 5J Blueprint IA #1 - Automatisation & Offres',
+        month: '2026-08',
+        startDate: '2026-08-10',
+        endDate: '2026-08-14',
+        organicPostsCount: 14,
+        registeredCount: 380,
+        activeParticipantsCount: 210,
+        packsSold: 28,
+        packPrice: 150000,
+        currency: 'FCFA',
+        status: 'En cours',
+        notes: 'Acquisition via Instagram Reels + Groupe VIP WhatsApp.',
+        reminders: [
+          { id: 'bp-r1', date: '2026-08-16', count: 5, amount: 750000 }
+        ]
+      },
+      {
+        id: 'bp-2',
+        title: 'Challenge 5J Blueprint IA #2 - Masterclass Prompting & Workflows',
+        month: '2026-07',
+        startDate: '2026-07-15',
+        endDate: '2026-07-19',
+        organicPostsCount: 18,
+        registeredCount: 450,
+        activeParticipantsCount: 290,
+        packsSold: 35,
+        packPrice: 150000,
+        currency: 'FCFA',
+        status: 'Terminé',
+        notes: 'Excellente conversion des solopreneurs sur l\'offre d\'accompagnement.',
+        reminders: [
+          { id: 'bp-r2', date: '2026-07-22', count: 8, amount: 1200000 }
+        ]
+      }
+    ],
     objectives: DEFAULT_OBJECTIVES
   };
 };
@@ -231,6 +276,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (!parsed.objectives) {
           parsed.objectives = DEFAULT_OBJECTIVES;
         }
+        if (!parsed.blueprintChallenges) {
+          parsed.blueprintChallenges = [];
+        }
         return parsed;
       }
     } catch (e) {
@@ -243,6 +291,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       launches: {},
       collabs: [],
       expenses: [],
+      blueprintChallenges: [],
       objectives: DEFAULT_OBJECTIVES
     };
   });
@@ -491,6 +540,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             launches: launchesMap,
             collabs: collabsList,
             expenses: expensesList,
+            blueprintChallenges: [],
             objectives: Object.keys(objectivesMap).length > 0 ? objectivesMap : DEFAULT_OBJECTIVES
           };
           setStore(rawStore);
@@ -1002,6 +1052,77 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  // Actions Blueprint IA
+  const saveBlueprintChallenge = async (challengeData: Omit<BlueprintChallenge, 'id'> & { id?: string }) => {
+    const id = challengeData.id || `bp-${Date.now()}`;
+    const newChallenge: BlueprintChallenge = {
+      id,
+      title: challengeData.title,
+      month: challengeData.month || (challengeData.startDate ? challengeData.startDate.substring(0, 7) : new Date().toISOString().substring(0, 7)),
+      startDate: challengeData.startDate,
+      endDate: challengeData.endDate,
+      organicPostsCount: Number(challengeData.organicPostsCount) || 0,
+      registeredCount: Number(challengeData.registeredCount) || 0,
+      activeParticipantsCount: Number(challengeData.activeParticipantsCount) || 0,
+      packsSold: Number(challengeData.packsSold) || 0,
+      packPrice: Number(challengeData.packPrice) || 0,
+      currency: challengeData.currency || 'FCFA',
+      status: challengeData.status || 'En cours',
+      notes: challengeData.notes || '',
+      reminders: challengeData.reminders || []
+    };
+
+    setStore(prev => {
+      const exists = (prev.blueprintChallenges || []).some(c => c.id === id);
+      const updated = exists
+        ? (prev.blueprintChallenges || []).map(c => c.id === id ? newChallenge : c)
+        : [newChallenge, ...(prev.blueprintChallenges || [])];
+      return { ...prev, blueprintChallenges: updated };
+    });
+  };
+
+  const deleteBlueprintChallenge = async (id: string) => {
+    setStore(prev => ({
+      ...prev,
+      blueprintChallenges: (prev.blueprintChallenges || []).filter(c => c.id !== id)
+    }));
+  };
+
+  const addReminderToBlueprintChallenge = async (challengeId: string, reminder: Omit<Reminder, 'id'>) => {
+    const newReminder: Reminder = {
+      ...reminder,
+      id: `bp-r-${Date.now()}`
+    };
+
+    setStore(prev => ({
+      ...prev,
+      blueprintChallenges: (prev.blueprintChallenges || []).map(c => {
+        if (c.id === challengeId) {
+          return {
+            ...c,
+            reminders: [...(c.reminders || []), newReminder]
+          };
+        }
+        return c;
+      })
+    }));
+  };
+
+  const deleteReminderFromBlueprintChallenge = async (challengeId: string, reminderId: string) => {
+    setStore(prev => ({
+      ...prev,
+      blueprintChallenges: (prev.blueprintChallenges || []).map(c => {
+        if (c.id === challengeId) {
+          return {
+            ...c,
+            reminders: (c.reminders || []).filter(r => r.id !== reminderId)
+          };
+        }
+        return c;
+      })
+    }));
+  };
+
   // Actions Collaborations
   const addCollab = async (collab: Omit<CommercialCollab, 'id'>) => {
     const id = `co-${Date.now()}`;
@@ -1185,6 +1306,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         launches: {},
         collabs: [],
         expenses: [],
+        blueprintChallenges: [],
         objectives: DEFAULT_OBJECTIVES
       });
 
@@ -1231,6 +1353,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       saveLaunch,
       addReminderToLaunch,
       deleteReminderFromLaunch,
+      saveBlueprintChallenge,
+      deleteBlueprintChallenge,
+      addReminderToBlueprintChallenge,
+      deleteReminderFromBlueprintChallenge,
       addCollab,
       updateCollabStatus,
       deleteCollab,

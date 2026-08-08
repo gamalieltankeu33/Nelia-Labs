@@ -6,6 +6,7 @@ import { TodayScreen } from './components/screens/TodayScreen';
 import { ContentScreen } from './components/screens/ContentScreen';
 import { ProspectsScreen } from './components/screens/ProspectsScreen';
 import { LaunchScreen } from './components/screens/LaunchScreen';
+import { BlueprintScreen } from './components/screens/BlueprintScreen';
 import { CollabsScreen } from './components/screens/CollabsScreen';
 import { ExpensesScreen } from './components/screens/ExpensesScreen';
 import { DashboardScreen } from './components/screens/DashboardScreen';
@@ -70,6 +71,8 @@ const AppContent: React.FC = () => {
         return <ProspectsScreen />;
       case 'launch':
         return <LaunchScreen />;
+      case 'blueprint':
+        return <BlueprintScreen />;
       case 'collabs':
         return <CollabsScreen />;
       case 'expenses':

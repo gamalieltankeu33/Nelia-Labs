@@ -50,6 +50,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setActiveScreen }) => {
     launches, 
     collabs, 
     expenses, 
+    blueprintChallenges,
     objectives,
     selectedMonth
   } = useStore();
@@ -62,8 +63,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setActiveScreen }) => {
 
   const launch = launches[currentMonth];
   
-  const totalCollectedCA = calculateTotalCollectedCA(currentMonth, launch, prospects, sales, collabs);
-  const totalContractedCA = calculateTotalContractedCA(currentMonth, launch, prospects, sales, collabs);
+  const totalCollectedCA = calculateTotalCollectedCA(currentMonth, launch, prospects, sales, collabs, blueprintChallenges);
+  const totalContractedCA = calculateTotalContractedCA(currentMonth, launch, prospects, sales, collabs, blueprintChallenges);
 
   const adsSpent = launch ? launch.adsSpent : 0; 
   const adsSpentEUR = adsSpent * EXCHANGE_RATES.FCFA_TO_EUR;
