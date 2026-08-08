@@ -19,16 +19,15 @@ export const BlueprintScreen: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingChallenge, setEditingChallenge] = useState<BlueprintChallenge | null>(null);
 
-  // Form state (Default 7-day challenge & 10 000 FCFA registration fee)
+  // Form state for progressive data entry
   const [formData, setFormData] = useState<{
     title: string;
     startDate: string;
     endDate: string;
     organicPostsCount: number;
-    registeredCount: number;
+    communityMembersCount: number;
+    paidParticipantsCount: number;
     registrationFee: number;
-    upsellCount: number;
-    upsellAmount: number;
     currency: 'FCFA' | 'EUR' | 'USD';
     status: 'Planifié' | 'En cours' | 'Terminé';
     notes: string;
@@ -36,11 +35,10 @@ export const BlueprintScreen: React.FC = () => {
     title: '',
     startDate: '2026-03-02',
     endDate: '2026-03-08',
-    organicPostsCount: 12,
-    registeredCount: 200,
+    organicPostsCount: 15,
+    communityMembersCount: 450,
+    paidParticipantsCount: 250,
     registrationFee: 10000,
-    upsellCount: 10,
-    upsellAmount: 1500000,
     currency: 'FCFA',
     status: 'Planifié',
     notes: ''
@@ -57,14 +55,13 @@ export const BlueprintScreen: React.FC = () => {
   const openCreateModal = () => {
     setEditingChallenge(null);
     setFormData({
-      title: `Blueprint IA 7J - Session #${blueprintChallenges.length + 1}`,
+      title: `Blueprint IA 7J - Session Lancement Mars 2026`,
       startDate: '2026-03-02',
       endDate: '2026-03-08',
-      organicPostsCount: 12,
-      registeredCount: 200,
+      organicPostsCount: 15,
+      communityMembersCount: 0,
+      paidParticipantsCount: 0,
       registrationFee: 10000,
-      upsellCount: 10,
-      upsellAmount: 1500000,
       currency: 'FCFA',
       status: 'Planifié',
       notes: ''
@@ -78,11 +75,10 @@ export const BlueprintScreen: React.FC = () => {
       title: challenge.title,
       startDate: challenge.startDate,
       endDate: challenge.endDate,
-      organicPostsCount: challenge.organicPostsCount,
-      registeredCount: challenge.registeredCount,
+      organicPostsCount: challenge.organicPostsCount || 0,
+      communityMembersCount: challenge.communityMembersCount || 0,
+      paidParticipantsCount: challenge.paidParticipantsCount !== undefined ? challenge.paidParticipantsCount : 0,
       registrationFee: challenge.registrationFee !== undefined ? challenge.registrationFee : 10000,
-      upsellCount: challenge.upsellCount || 0,
-      upsellAmount: challenge.upsellAmount || 0,
       currency: challenge.currency || 'FCFA',
       status: challenge.status,
       notes: challenge.notes || ''
@@ -100,19 +96,25 @@ export const BlueprintScreen: React.FC = () => {
     setIsModalOpen(false);
   };
 
-  // Aggregated calculations across filtered sessions
-  const totalRegistered = filteredChallenges.reduce((sum, c) => sum + c.registeredCount, 0);
-  const totalOrganicPosts = filteredChallenges.reduce((sum, c) => sum + c.organicPostsCount, 0);
-  const totalUpsellsCount = filteredChallenges.reduce((sum, c) => sum + (c.upsellCount || 0), 0);
-
-  const totalTicketRevenueFCFA = filteredChallenges.reduce((sum, c) => {
-    const fee = c.registrationFee !== undefined ? c.registrationFee : 10000;
-    return sum + (c.registeredCount * fee);
+  // Aggregated metrics across sessions
+  const totalOrganicPosts = filteredChallenges.reduce((sum, c) => sum + (c.organicPostsCount || 0), 0);
+  const totalCommunityMembers = filteredChallenges.reduce((sum, c) => sum + (c.communityMembersCount || 0), 0);
+  const totalPaidParticipants = filteredChallenges.reduce((sum, c) => {
+    const paid = c.paidParticipantsCount !== undefined ? c.paidParticipantsCount : 0;
+    return sum + paid;
   }, 0);
 
-  const totalUpsellRevenueFCFA = filteredChallenges.reduce((sum, c) => sum + (c.upsellAmount || 0), 0);
-  const grandTotalCAFCFA = totalTicketRevenueFCFA + totalUpsellRevenueFCFA;
+  const grandTotalCAFCFA = filteredChallenges.reduce((sum, c) => {
+    const fee = c.registrationFee !== undefined ? c.registrationFee : 10000;
+    const paid = c.paidParticipantsCount !== undefined ? c.paidParticipantsCount : 0;
+    return sum + (paid * fee);
+  }, 0);
+
   const grandTotalCAEUR = grandTotalCAFCFA * EXCHANGE_RATES.FCFA_TO_EUR;
+
+  const globalConversionRate = totalCommunityMembers > 0 
+    ? (totalPaidParticipants / totalCommunityMembers) * 100 
+    : 0;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
@@ -121,10 +123,10 @@ export const BlueprintScreen: React.FC = () => {
         <div>
           <div className="screen-title">
             <Layers className="screen-title-icon" />
-            Blueprint IA — Suivi des Sessions 7 Jours
+            Blueprint IA — Sessions d'Accompagnement 7 Jours
           </div>
           <div className="screen-subtitle">
-            Mesure des inscriptions (10 000 FCFA/participant), de l'attraction et du Chiffre d'Affaires généré
+            Mesure des performances : Attraction Organique ➔ Communauté ➔ Passage à l'Action (10 000 FCFA)
           </div>
         </div>
 
@@ -144,7 +146,7 @@ export const BlueprintScreen: React.FC = () => {
 
           <button onClick={openCreateModal} className="btn btn-primary">
             <Plus className="size-4" />
-            <span>Nouveau Challenge 7J</span>
+            <span>Nouvelle Session Blueprint IA</span>
           </button>
         </div>
       </div>
@@ -157,59 +159,58 @@ export const BlueprintScreen: React.FC = () => {
             <DollarSign className="stat-icon" />
           </div>
           <div className="stat-meta">
-            <span className="stat-label" style={{ color: '#94A3B8' }}>Chiffre d'Affaires Total</span>
+            <span className="stat-label" style={{ color: '#94A3B8' }}>Chiffre d'Affaires Encaissé</span>
             <div className="stat-val" style={{ color: '#FFFFFF', fontSize: '24px' }}>
               {grandTotalCAFCFA.toLocaleString('fr-FR')} FCFA
             </div>
             <div style={{ fontSize: '12px', color: '#F59E0B', fontWeight: 600, marginTop: '2px' }}>
               ≈ {grandTotalCAEUR.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €
             </div>
-            <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255, 255, 255, 0.1)', fontSize: '11px', color: '#CBD5E1', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <span>Inscriptions (10k FCFA): {totalTicketRevenueFCFA.toLocaleString('fr-FR')} FCFA</span>
-              <span>Offres VIP / Upsells: {totalUpsellRevenueFCFA.toLocaleString('fr-FR')} FCFA</span>
+            <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255, 255, 255, 0.1)', fontSize: '11px', color: '#CBD5E1' }}>
+              {totalPaidParticipants} accompagnements x 10 000 FCFA
             </div>
           </div>
         </div>
 
-        {/* Card 2: Billetterie (10 000 FCFA) */}
+        {/* Card 2: Accompagnements Payés */}
         <div className="card stat-card">
           <div className="stat-icon-wrapper sale-icon">
-            <Users className="stat-icon text-blue" />
+            <ShoppingBag className="stat-icon text-green" />
           </div>
           <div className="stat-meta">
-            <span className="stat-label">Inscriptions (10 000 FCFA)</span>
-            <div className="stat-val">
-              {totalRegistered.toLocaleString('fr-FR')} <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)' }}>inscrits</span>
-            </div>
-            <div className="stat-subtext text-blue" style={{ fontWeight: 600 }}>
-              {totalTicketRevenueFCFA.toLocaleString('fr-FR')} FCFA encassés
-            </div>
-            <div className="stat-subtext" style={{ marginTop: '4px' }}>
-              10 000 FCFA = Accompagnement 7J inclus
-            </div>
-          </div>
-        </div>
-
-        {/* Card 3: Ventes Additionnelles */}
-        <div className="card stat-card">
-          <div className="stat-icon-wrapper" style={{ backgroundColor: 'rgba(16, 185, 129, 0.12)', color: '#10B981' }}>
-            <ShoppingBag className="stat-icon" />
-          </div>
-          <div className="stat-meta">
-            <span className="stat-label">Ventes Additionnelles / VIP</span>
+            <span className="stat-label">Accompagnements (10 000 FCFA)</span>
             <div className="stat-val text-green">
-              {totalUpsellsCount} <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)' }}>ventes</span>
+              {totalPaidParticipants.toLocaleString('fr-FR')} <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)' }}>payés</span>
             </div>
             <div className="stat-subtext text-green" style={{ fontWeight: 600 }}>
-              {totalUpsellRevenueFCFA.toLocaleString('fr-FR')} FCFA générés
+              {grandTotalCAFCFA.toLocaleString('fr-FR')} FCFA générés
             </div>
             <div className="stat-subtext" style={{ marginTop: '4px' }}>
-              Offres post-challenge
+              Accompagnement 7 jours inclus
             </div>
           </div>
         </div>
 
-        {/* Card 4: Attraction Organique */}
+        {/* Card 3: Membres de la Communauté */}
+        <div className="card stat-card">
+          <div className="stat-icon-wrapper" style={{ backgroundColor: 'rgba(59, 130, 246, 0.12)', color: '#3B82F6' }}>
+            <Users className="stat-icon" />
+          </div>
+          <div className="stat-meta">
+            <span className="stat-label">Membres Communauté</span>
+            <div className="stat-val">
+              {totalCommunityMembers.toLocaleString('fr-FR')} <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)' }}>membres</span>
+            </div>
+            <div className="stat-subtext text-blue" style={{ fontWeight: 600 }}>
+              Taux conversion: {globalConversionRate.toFixed(1)}%
+            </div>
+            <div className="stat-subtext" style={{ marginTop: '4px' }}>
+              Personnes échauffées dans la communauté
+            </div>
+          </div>
+        </div>
+
+        {/* Card 4: Posts d'Attraction */}
         <div className="card stat-card">
           <div className="stat-icon-wrapper" style={{ backgroundColor: 'rgba(139, 92, 246, 0.12)', color: '#8B5CF6' }}>
             <FileText className="stat-icon" />
@@ -220,7 +221,7 @@ export const BlueprintScreen: React.FC = () => {
               {totalOrganicPosts} <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)' }}>posts</span>
             </div>
             <div className="stat-subtext" style={{ color: '#8B5CF6', fontWeight: 600 }}>
-              Moy. {totalOrganicPosts > 0 ? (totalRegistered / totalOrganicPosts).toFixed(1) : 0} inscrits / post
+              Moy. {totalOrganicPosts > 0 ? (totalCommunityMembers / totalOrganicPosts).toFixed(1) : 0} membres / post
             </div>
             <div className="stat-subtext" style={{ marginTop: '4px' }}>
               {filteredChallenges.length} session(s) enregistrée(s)
@@ -235,7 +236,7 @@ export const BlueprintScreen: React.FC = () => {
           <div>
             <h3 className="section-title">Tableau de Bord des Sessions Blueprint IA (7 Jours)</h3>
             <p className="screen-subtitle" style={{ marginTop: '2px' }}>
-              Enregistrement des données et résultats par session
+              Saisie des résultats et suivi de l'évolution jour après jour
             </p>
           </div>
         </div>
@@ -257,10 +258,10 @@ export const BlueprintScreen: React.FC = () => {
                 <tr>
                   <th>Session & Dates (7 Jours)</th>
                   <th>Statut</th>
-                  <th>Posts Organiques</th>
-                  <th>Inscrits (10 000 FCFA)</th>
-                  <th>CA Billetterie (FCFA)</th>
-                  <th>Ventes VIP / Offres (FCFA)</th>
+                  <th>Posts d'Attraction</th>
+                  <th>Communauté</th>
+                  <th>Passage à l'Action (10 000 FCFA)</th>
+                  <th>Taux Conversion</th>
                   <th>Chiffre d'Affaires Total</th>
                   <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
@@ -268,10 +269,11 @@ export const BlueprintScreen: React.FC = () => {
               <tbody>
                 {filteredChallenges.map((c) => {
                   const regFee = c.registrationFee !== undefined ? c.registrationFee : 10000;
-                  const ticketRev = c.registeredCount * regFee;
-                  const upsellRev = c.upsellAmount || 0;
-                  const sessionTotalCA = ticketRev + upsellRev;
+                  const paidCount = c.paidParticipantsCount !== undefined ? c.paidParticipantsCount : 0;
+                  const communityCount = c.communityMembersCount || 0;
+                  const sessionTotalCA = paidCount * regFee;
                   const sessionTotalEUR = sessionTotalCA * EXCHANGE_RATES.FCFA_TO_EUR;
+                  const conversionPct = communityCount > 0 ? (paidCount / communityCount) * 100 : 0;
 
                   return (
                     <tr key={c.id}>
@@ -299,7 +301,7 @@ export const BlueprintScreen: React.FC = () => {
 
                       <td>
                         <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                          {c.organicPostsCount} posts
+                          {c.organicPostsCount || 0} posts
                         </div>
                         <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                           Publications d'attraction
@@ -308,28 +310,29 @@ export const BlueprintScreen: React.FC = () => {
 
                       <td>
                         <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                          {c.registeredCount} inscrits
+                          {communityCount} membres
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                          Groupe / Communauté
+                        </div>
+                      </td>
+
+                      <td>
+                        <div style={{ fontWeight: 600, color: 'var(--status-success)' }}>
+                          {paidCount} payés
                         </div>
                         <div style={{ fontSize: '12px', color: 'var(--accent-blue)' }}>
-                          {regFee.toLocaleString('fr-FR')} FCFA / participant
+                          à {regFee.toLocaleString('fr-FR')} FCFA / personne
                         </div>
                       </td>
 
-                      <td style={{ fontWeight: 600, color: 'var(--accent-blue)' }}>
-                        {ticketRev.toLocaleString('fr-FR')} FCFA
-                      </td>
-
-                      <td style={{ fontWeight: 600, color: 'var(--status-success)' }}>
-                        {upsellRev > 0 ? (
-                          <>
-                            <div>{upsellRev.toLocaleString('fr-FR')} FCFA</div>
-                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 400 }}>
-                              {c.upsellCount || 0} vente(s)
-                            </div>
-                          </>
-                        ) : (
-                          <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>-</span>
-                        )}
+                      <td>
+                        <div style={{ fontWeight: 600, color: '#F59E0B' }}>
+                          {conversionPct.toFixed(1)} %
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                          Communauté ➔ Payé
+                        </div>
                       </td>
 
                       <td style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
@@ -343,10 +346,12 @@ export const BlueprintScreen: React.FC = () => {
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
                           <button
                             onClick={() => openEditModal(c)}
-                            className="btn btn-secondary btn-sm btn-icon-only"
-                            title="Modifier"
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '6px 12px', fontSize: '12px' }}
+                            title="Mettre à jour les chiffres"
                           >
-                            <Edit3 className="size-4 text-blue" />
+                            <Edit3 className="size-3.5 text-blue" />
+                            <span>Remplir / Éditer</span>
                           </button>
                           <button
                             onClick={() => {
@@ -377,7 +382,7 @@ export const BlueprintScreen: React.FC = () => {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Layers className="size-5" style={{ color: 'var(--accent-blue)' }} />
-                {editingChallenge ? 'Modifier la Session' : 'Nouvelle Session Blueprint IA (7 Jours)'}
+                {editingChallenge ? 'Mettre à jour les Chiffres de la Session' : 'Nouvelle Session Blueprint IA (7 Jours)'}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -395,13 +400,13 @@ export const BlueprintScreen: React.FC = () => {
                   required
                   value={formData.title}
                   onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                  placeholder="ex: Blueprint IA 7J - Session Mars 2026"
+                  placeholder="ex: Blueprint IA 7J - Session Lancement Mars 2026"
                 />
               </div>
 
               <div className="grid-cols-2" style={{ gap: '16px' }}>
                 <div>
-                  <label>Date de début (J1)</label>
+                  <label>Date de début (J1, ex: Lundi)</label>
                   <input
                     type="date"
                     required
@@ -411,7 +416,7 @@ export const BlueprintScreen: React.FC = () => {
                 </div>
 
                 <div>
-                  <label>Date de fin (J7)</label>
+                  <label>Date de fin (J7, ex: Dimanche)</label>
                   <input
                     type="date"
                     required
@@ -423,7 +428,7 @@ export const BlueprintScreen: React.FC = () => {
 
               <div className="grid-cols-3" style={{ gap: '12px' }}>
                 <div>
-                  <label>Posts Organiques</label>
+                  <label>Posts d'Attraction</label>
                   <input
                     type="number"
                     min="0"
@@ -433,17 +438,31 @@ export const BlueprintScreen: React.FC = () => {
                 </div>
 
                 <div>
-                  <label>Nombre d'Inscrits</label>
+                  <label>Membres Communauté</label>
                   <input
                     type="number"
                     min="0"
-                    value={formData.registeredCount}
-                    onChange={(e) => setFormData(prev => ({ ...prev, registeredCount: Number(e.target.value) }))}
+                    value={formData.communityMembersCount}
+                    onChange={(e) => setFormData(prev => ({ ...prev, communityMembersCount: Number(e.target.value) }))}
+                    placeholder="Membres du groupe"
                   />
                 </div>
 
                 <div>
-                  <label>Frais Inscription (FCFA)</label>
+                  <label>Personnes Payées (10k FCFA)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.paidParticipantsCount}
+                    onChange={(e) => setFormData(prev => ({ ...prev, paidParticipantsCount: Number(e.target.value) }))}
+                    placeholder="Passages à l'action"
+                  />
+                </div>
+              </div>
+
+              <div className="grid-cols-2" style={{ gap: '16px' }}>
+                <div>
+                  <label>Tarif Accompagnement (FCFA)</label>
                   <input
                     type="number"
                     step="1000"
@@ -451,49 +470,27 @@ export const BlueprintScreen: React.FC = () => {
                     onChange={(e) => setFormData(prev => ({ ...prev, registrationFee: Number(e.target.value) }))}
                   />
                 </div>
-              </div>
-
-              <div className="grid-cols-2" style={{ gap: '16px' }}>
-                <div>
-                  <label>Nombre de Ventes VIP / Offres (Optionnel)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.upsellCount}
-                    onChange={(e) => setFormData(prev => ({ ...prev, upsellCount: Number(e.target.value) }))}
-                  />
-                </div>
 
                 <div>
-                  <label>Montant Ventes VIP (FCFA) (Optionnel)</label>
-                  <input
-                    type="number"
-                    step="5000"
-                    value={formData.upsellAmount}
-                    onChange={(e) => setFormData(prev => ({ ...prev, upsellAmount: Number(e.target.value) }))}
-                  />
+                  <label>Statut de la Session</label>
+                  <select
+                    value={formData.status}
+                    onChange={(e: any) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+                  >
+                    <option value="Planifié">Planifié</option>
+                    <option value="En cours">En cours (Mise à jour jour après jour)</option>
+                    <option value="Terminé">Terminé</option>
+                  </select>
                 </div>
               </div>
 
               <div>
-                <label>Statut de la Session</label>
-                <select
-                  value={formData.status}
-                  onChange={(e: any) => setFormData(prev => ({ ...prev, status: e.target.value }))}
-                >
-                  <option value="Planifié">Planifié</option>
-                  <option value="En cours">En cours</option>
-                  <option value="Terminé">Terminé</option>
-                </select>
-              </div>
-
-              <div>
-                <label>Notes / Bilan</label>
+                <label>Notes / Bilan de la session</label>
                 <textarea
                   rows={2}
                   value={formData.notes}
                   onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                  placeholder="Notes sur la session, retours d'expérience..."
+                  placeholder="Notes sur l'engagement dans la communauté, retours sur le challenge 7 jours..."
                 />
               </div>
 
@@ -509,7 +506,7 @@ export const BlueprintScreen: React.FC = () => {
                   type="submit"
                   className="btn btn-primary"
                 >
-                  Enregistrer la Session
+                  Enregistrer les données
                 </button>
               </div>
             </form>

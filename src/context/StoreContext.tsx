@@ -230,13 +230,12 @@ const getDemoData = (): NextiaStore => {
         startDate: '2026-03-02',
         endDate: '2026-03-08',
         organicPostsCount: 15,
-        registeredCount: 250,
+        communityMembersCount: 450,
+        paidParticipantsCount: 250,
         registrationFee: 10000,
-        upsellCount: 10,
-        upsellAmount: 1500000,
         currency: 'FCFA',
         status: 'Planifié',
-        notes: 'Lancement du challenge 7 jours le lundi 2 mars 2026.'
+        notes: 'Lancement du challenge 7 jours le lundi 2 mars 2026. 250 accompagnements visés à 10 000 FCFA.'
       },
       {
         id: 'bp-2',
@@ -245,13 +244,12 @@ const getDemoData = (): NextiaStore => {
         startDate: '2026-02-09',
         endDate: '2026-02-15',
         organicPostsCount: 12,
-        registeredCount: 180,
+        communityMembersCount: 320,
+        paidParticipantsCount: 180,
         registrationFee: 10000,
-        upsellCount: 8,
-        upsellAmount: 1200000,
         currency: 'FCFA',
         status: 'Terminé',
-        notes: '180 inscrits à 10 000 FCFA = 1,8M FCFA billetterie.'
+        notes: '320 personnes dans la communauté -> 180 passés à l\'action (1,8M FCFA encassés).'
       }
     ],
     objectives: DEFAULT_OBJECTIVES
@@ -1056,10 +1054,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       startDate: challengeData.startDate,
       endDate: challengeData.endDate,
       organicPostsCount: Number(challengeData.organicPostsCount) || 0,
-      registeredCount: Number(challengeData.registeredCount) || 0,
+      communityMembersCount: Number(challengeData.communityMembersCount) || 0,
+      paidParticipantsCount: Number(challengeData.paidParticipantsCount) || 0,
       registrationFee: challengeData.registrationFee !== undefined ? Number(challengeData.registrationFee) : 10000,
-      upsellCount: Number(challengeData.upsellCount) || 0,
-      upsellAmount: Number(challengeData.upsellAmount) || 0,
       currency: challengeData.currency || 'FCFA',
       status: challengeData.status || 'Planifié',
       notes: challengeData.notes || ''

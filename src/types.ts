@@ -86,15 +86,14 @@ export interface Expense {
 
 export interface BlueprintChallenge {
   id: string;
-  title: string;                 // ex: "Blueprint IA 7J - Lancement Mars 2026"
+  title: string;                 // ex: "Blueprint IA 7J - Session Mars 2026"
   month: string;                 // YYYY-MM
   startDate: string;             // YYYY-MM-DD
   endDate: string;               // YYYY-MM-DD
-  organicPostsCount: number;     // Publications d'acquisition / attraction
-  registeredCount: number;       // Nombre d'inscrits (10 000 FCFA / inscrit)
-  registrationFee?: number;      // Frais d'inscription (10 000 FCFA par défaut)
-  upsellCount?: number;          // Ventes additionnelles / Offres VIP post-challenge (optionnel)
-  upsellAmount?: number;         // CA additionnel généré (FCFA) (optionnel)
+  organicPostsCount: number;     // Publications d'attraction
+  communityMembersCount: number; // Personnes ayant rejoint la communauté
+  paidParticipantsCount: number;  // Personnes passées à l'action (Payé 10 000 FCFA)
+  registrationFee?: number;      // Tarif accompagnement (10 000 FCFA par défaut)
   currency?: 'FCFA' | 'EUR' | 'USD';
   status: 'Planifié' | 'En cours' | 'Terminé';
   notes?: string;
