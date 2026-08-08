@@ -33,9 +33,8 @@ export function calculateBlueprintCAInFCFA(challenges: BlueprintChallenge[] = []
     .reduce((sum, c) => {
       const regFee = c.registrationFee !== undefined ? c.registrationFee : 10000;
       const registrationRevenue = c.registeredCount * regFee;
-      const packSalesRevenue = c.packsSold * c.packPrice;
-      const remindersTotal = (c.reminders || []).reduce((rSum, r) => rSum + r.amount, 0);
-      const totalAmount = registrationRevenue + packSalesRevenue + remindersTotal;
+      const upsellRevenue = c.upsellAmount || 0;
+      const totalAmount = registrationRevenue + upsellRevenue;
       const curr = c.currency || 'FCFA';
       if (curr === 'EUR') {
         return sum + (totalAmount * EXCHANGE_RATES.EUR_TO_FCFA);

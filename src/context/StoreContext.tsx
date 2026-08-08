@@ -225,41 +225,33 @@ const getDemoData = (): NextiaStore => {
     blueprintChallenges: [
       {
         id: 'bp-1',
-        title: 'Challenge 7J Blueprint IA #1 - Automatisation & Workflows',
-        month: '2026-08',
-        startDate: '2026-08-10',
-        endDate: '2026-08-16',
-        organicPostsCount: 14,
-        registeredCount: 380,
+        title: 'Blueprint IA 7J - Session Lancement Mars 2026',
+        month: '2026-03',
+        startDate: '2026-03-02',
+        endDate: '2026-03-08',
+        organicPostsCount: 15,
+        registeredCount: 250,
         registrationFee: 10000,
-        activeParticipantsCount: 260,
-        packsSold: 28,
-        packPrice: 150000,
+        upsellCount: 10,
+        upsellAmount: 1500000,
         currency: 'FCFA',
-        status: 'En cours',
-        notes: 'Inscriptions 10 000 FCFA/participant + Accompagnement 7J + Ventes Packs VIP.',
-        reminders: [
-          { id: 'bp-r1', date: '2026-08-18', count: 5, amount: 750000 }
-        ]
+        status: 'Planifié',
+        notes: 'Lancement du challenge 7 jours le lundi 2 mars 2026.'
       },
       {
         id: 'bp-2',
-        title: 'Challenge 7J Blueprint IA #2 - Masterclass Prompting & Offres',
-        month: '2026-07',
-        startDate: '2026-07-10',
-        endDate: '2026-07-16',
-        organicPostsCount: 18,
-        registeredCount: 450,
+        title: 'Blueprint IA 7J - Session Février 2026',
+        month: '2026-02',
+        startDate: '2026-02-09',
+        endDate: '2026-02-15',
+        organicPostsCount: 12,
+        registeredCount: 180,
         registrationFee: 10000,
-        activeParticipantsCount: 310,
-        packsSold: 35,
-        packPrice: 150000,
+        upsellCount: 8,
+        upsellAmount: 1200000,
         currency: 'FCFA',
         status: 'Terminé',
-        notes: '7 jours d\'accompagnement avec closing des packs VIP en fin de session.',
-        reminders: [
-          { id: 'bp-r2', date: '2026-07-20', count: 8, amount: 1200000 }
-        ]
+        notes: '180 inscrits à 10 000 FCFA = 1,8M FCFA billetterie.'
       }
     ],
     objectives: DEFAULT_OBJECTIVES
@@ -1066,13 +1058,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       organicPostsCount: Number(challengeData.organicPostsCount) || 0,
       registeredCount: Number(challengeData.registeredCount) || 0,
       registrationFee: challengeData.registrationFee !== undefined ? Number(challengeData.registrationFee) : 10000,
-      activeParticipantsCount: Number(challengeData.activeParticipantsCount) || 0,
-      packsSold: Number(challengeData.packsSold) || 0,
-      packPrice: Number(challengeData.packPrice) || 0,
+      upsellCount: Number(challengeData.upsellCount) || 0,
+      upsellAmount: Number(challengeData.upsellAmount) || 0,
       currency: challengeData.currency || 'FCFA',
-      status: challengeData.status || 'En cours',
-      notes: challengeData.notes || '',
-      reminders: challengeData.reminders || []
+      status: challengeData.status || 'Planifié',
+      notes: challengeData.notes || ''
     };
 
     setStore(prev => {

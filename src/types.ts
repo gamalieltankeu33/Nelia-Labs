@@ -86,20 +86,19 @@ export interface Expense {
 
 export interface BlueprintChallenge {
   id: string;
-  title: string;                 // ex: "Challenge 7J Blueprint IA #1 - Offre & Automatisations"
+  title: string;                 // ex: "Blueprint IA 7J - Lancement Mars 2026"
   month: string;                 // YYYY-MM
   startDate: string;             // YYYY-MM-DD
   endDate: string;               // YYYY-MM-DD
-  organicPostsCount: number;     // Publications d'acquisition / d'attraction
-  registeredCount: number;       // Inscrits payants au challenge
-  registrationFee?: number;      // Frais d'inscription au challenge (ex: 10 000 FCFA par défaut)
-  activeParticipantsCount: number; // Participants actifs aux 7 jours d'accompagnement
-  packsSold: number;             // Packs d'accompagnement vendus
-  packPrice: number;             // Prix unitaire du pack (ex: 150 000 FCFA)
+  organicPostsCount: number;     // Publications d'acquisition / attraction
+  registeredCount: number;       // Nombre d'inscrits (10 000 FCFA / inscrit)
+  registrationFee?: number;      // Frais d'inscription (10 000 FCFA par défaut)
+  upsellCount?: number;          // Ventes additionnelles / Offres VIP post-challenge (optionnel)
+  upsellAmount?: number;         // CA additionnel généré (FCFA) (optionnel)
   currency?: 'FCFA' | 'EUR' | 'USD';
   status: 'Planifié' | 'En cours' | 'Terminé';
   notes?: string;
-  reminders?: Reminder[];        // Relances post-challenge & ventes de rattrapage
+  reminders?: Reminder[];
 }
 
 export interface NextiaStore {
