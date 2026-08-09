@@ -3,9 +3,8 @@ import { useStore } from '../../context/StoreContext';
 import { EXCHANGE_RATES } from '../../utils/calculations';
 import type { BlueprintChallenge } from '../../types';
 import { 
-  Plus, Trash2, Edit3, DollarSign, Users, ShoppingBag, 
-  Calendar, Layers, FileText, CheckCircle, Clock,
-  TrendingUp, Sparkles, Sliders, Search, ArrowRight
+  Plus, Trash2, Edit3, Calendar, FileText, CheckCircle, Clock,
+  Sparkles, Sliders, Search
 } from 'lucide-react';
 
 export const BlueprintScreen: React.FC = () => {
@@ -139,30 +138,20 @@ export const BlueprintScreen: React.FC = () => {
 
   return (
     <div className="bp-dashboard-container">
-      {/* Header Card */}
+      {/* Minimalist Header */}
       <div className="bp-header-card">
-        <div className="bp-title-group">
-          <div className="bp-title-icon-box">
-            <Layers className="size-6" />
-          </div>
-          <div>
-            <h1 className="bp-title-text">
-              Blueprint IA — Cockpit Sessions 7 Jours
-              <span className="bp-title-badge">7-Day Accelerator</span>
-            </h1>
-            <p className="bp-subtitle-text">
-              Mesure des performances : Attraction Organique ➔ Communauté ➔ Passage à l'Action (10 000 FCFA)
-            </p>
-          </div>
+        <div>
+          <h1 className="bp-title-text">Blueprint IA</h1>
+          <p className="bp-subtitle-text">Sessions & Accompagnement 7 Jours</p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
-            style={{ width: '220px', padding: '10px 14px', borderRadius: '12px', fontSize: '13px' }}
+            style={{ width: '180px', padding: '8px 12px', borderRadius: '10px', fontSize: '12.5px', border: '1px solid #E2E8F0' }}
           >
-            <option value="all">📅 Toutes les périodes (Global)</option>
+            <option value="all">Toutes les périodes</option>
             {blueprintChallenges.map(c => (
               <option key={c.id} value={c.month}>
                 {c.month} — {c.title}
@@ -173,23 +162,25 @@ export const BlueprintScreen: React.FC = () => {
           <button 
             onClick={() => setShowSimulator(!showSimulator)} 
             className="btn btn-secondary"
-            style={{ borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}
+            style={{ borderRadius: '10px', padding: '8px 14px', fontSize: '12.5px', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: '6px' }}
           >
-            <Sliders className="size-4 text-blue" />
-            <span>{showSimulator ? 'Masquer le Simulateur' : 'Simulateur CA'}</span>
+            <Sliders className="size-3.5 text-secondary" />
+            <span>{showSimulator ? 'Masquer Simulateur' : 'Simulateur'}</span>
           </button>
 
           <button 
             onClick={openCreateModal} 
             className="btn btn-primary"
             style={{ 
-              borderRadius: '12px', 
-              background: 'linear-gradient(135deg, #0066CC 0%, #004080 100%)',
-              boxShadow: '0 4px 14px rgba(0, 102, 204, 0.3)'
+              borderRadius: '10px',
+              padding: '8px 16px',
+              fontSize: '12.5px',
+              backgroundColor: '#0066CC',
+              boxShadow: 'none'
             }}
           >
-            <Plus className="size-4" />
-            <span>Nouvelle Session Blueprint</span>
+            <Plus className="size-3.5" />
+            <span>Nouvelle Session</span>
           </button>
         </div>
       </div>
@@ -197,35 +188,28 @@ export const BlueprintScreen: React.FC = () => {
       {/* Simulator Drawer (Toggleable) */}
       {showSimulator && (
         <div className="bp-simulator-drawer fade-in">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(245, 158, 11, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F59E0B' }}>
-                <Sparkles className="size-5" />
-              </div>
-              <div>
-                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#FFFFFF', margin: 0 }}>
-                  Simulateur de Projections Blueprint IA
-                </h3>
-                <p style={{ fontSize: '12px', color: '#94A3B8', margin: '2px 0 0 0' }}>
-                  Ajustez les curseurs pour estimer le chiffre d'affaires potentiel de votre prochaine session
-                </p>
-              </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Sparkles className="size-4 text-amber" />
+              <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#FFFFFF', margin: 0 }}>
+                Simulateur de Chiffre d'Affaires
+              </h3>
             </div>
             <button 
               onClick={() => setShowSimulator(false)}
-              style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', fontSize: '16px', fontWeight: 700 }}
+              style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', fontSize: '14px' }}
             >
               ✕
             </button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '28px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
             {/* Sliders */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px', fontWeight: 600, color: '#CBD5E1', marginBottom: '6px' }}>
-                  <span>📢 Posts d'Attraction Organique</span>
-                  <span style={{ color: '#F59E0B', fontWeight: 800 }}>{simPosts} posts</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 500, color: '#CBD5E1', marginBottom: '4px' }}>
+                  <span>Posts d'attraction</span>
+                  <span style={{ color: '#F59E0B', fontWeight: 700 }}>{simPosts} posts</span>
                 </div>
                 <input 
                   type="range" min="1" max="30" value={simPosts} 
@@ -235,9 +219,9 @@ export const BlueprintScreen: React.FC = () => {
               </div>
 
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px', fontWeight: 600, color: '#CBD5E1', marginBottom: '6px' }}>
-                  <span>👥 Membres captés par post</span>
-                  <span style={{ color: '#3B82F6', fontWeight: 800 }}>{simMembersPerPost} membres</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 500, color: '#CBD5E1', marginBottom: '4px' }}>
+                  <span>Membres par post</span>
+                  <span style={{ color: '#3B82F6', fontWeight: 700 }}>{simMembersPerPost} membres</span>
                 </div>
                 <input 
                   type="range" min="5" max="200" step="5" value={simMembersPerPost} 
@@ -247,9 +231,9 @@ export const BlueprintScreen: React.FC = () => {
               </div>
 
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px', fontWeight: 600, color: '#CBD5E1', marginBottom: '6px' }}>
-                  <span>🎯 Taux de conversion (Communauté ➔ 10k FCFA)</span>
-                  <span style={{ color: '#10B981', fontWeight: 800 }}>{simConvRate.toFixed(1)} %</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 500, color: '#CBD5E1', marginBottom: '4px' }}>
+                  <span>Taux de conversion</span>
+                  <span style={{ color: '#10B981', fontWeight: 700 }}>{simConvRate.toFixed(1)} %</span>
                 </div>
                 <input 
                   type="range" min="0.5" max="25" step="0.5" value={simConvRate} 
@@ -262,209 +246,120 @@ export const BlueprintScreen: React.FC = () => {
             {/* Results Box */}
             <div style={{ 
               backgroundColor: 'rgba(255, 255, 255, 0.05)', 
-              border: '1px solid rgba(255, 255, 255, 0.12)', 
-              borderRadius: '16px', 
-              padding: '20px', 
+              borderRadius: '12px', 
+              padding: '16px', 
               display: 'flex', 
               flexDirection: 'column', 
               justifyContent: 'space-between' 
             }}>
               <div>
-                <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94A3B8' }}>
-                  RÉSULTAT PROJETÉ (SESSION 7J)
+                <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94A3B8' }}>
+                  Projection Estimée
                 </span>
-                <div style={{ fontSize: '32px', fontWeight: 900, color: '#F59E0B', letterSpacing: '-0.03em', marginTop: '6px' }}>
+                <div style={{ fontSize: '26px', fontWeight: 800, color: '#F59E0B', letterSpacing: '-0.02em', marginTop: '4px' }}>
                   {simProjectedRevenue.toLocaleString('fr-FR')} FCFA
                 </div>
-                <div style={{ fontSize: '13px', fontWeight: 600, color: '#10B981', marginTop: '2px' }}>
+                <div style={{ fontSize: '12px', fontWeight: 600, color: '#10B981', marginTop: '2px' }}>
                   ≈ {simProjectedEUR.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '12px', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.1)', fontSize: '12px', color: '#CBD5E1' }}>
-                <div>👥 <strong>{simTotalMembers}</strong> membres estimés</div>
+              <div style={{ display: 'flex', gap: '12px', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.1)', fontSize: '11.5px', color: '#CBD5E1' }}>
+                <div><strong>{simTotalMembers}</strong> membres</div>
                 <div>•</div>
-                <div>💳 <strong>{simPaidCount}</strong> clients payants</div>
+                <div><strong>{simPaidCount}</strong> clients payants</div>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* KPI Cards Grid */}
+      {/* Minimalist 4 KPI Cards Grid */}
       <div className="bp-kpi-grid">
         {/* Card 1: CA Total */}
-        <div className="bp-ca-card">
-          <div className="bp-stat-header">
-            <span className="bp-stat-title" style={{ color: '#94A3B8' }}>Chiffre d'Affaires Encaissé</span>
-            <div className="bp-icon-badge bp-icon-gold">
-              <DollarSign className="size-5" />
-            </div>
-          </div>
+        <div className="bp-stat-card">
+          <span className="bp-stat-title">Chiffre d'Affaires Encaissé</span>
           <div>
-            <div className="bp-stat-value" style={{ color: '#FFFFFF' }}>
+            <div className="bp-stat-value">
               {grandTotalCAFCFA.toLocaleString('fr-FR')} FCFA
             </div>
-            <div style={{ fontSize: '13px', color: '#F59E0B', fontWeight: 700, marginTop: '4px' }}>
-              ≈ {grandTotalCAEUR.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €
+            <div className="bp-stat-subtext">
+              ≈ {grandTotalCAEUR.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} € ({totalPaidParticipants} ventes)
             </div>
-          </div>
-          <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.1)', fontSize: '11.5px', color: '#CBD5E1', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span>{totalPaidParticipants} ventes x 10 000 FCFA</span>
-            <span className="bp-pill-badge" style={{ background: 'rgba(245, 158, 11, 0.2)', color: '#F59E0B' }}>🏆 Encaissé</span>
           </div>
         </div>
 
         {/* Card 2: Accompagnements Payés */}
         <div className="bp-stat-card">
-          <div className="bp-stat-header">
-            <span className="bp-stat-title">Accompagnements (10 000 FCFA)</span>
-            <div className="bp-icon-badge bp-icon-emerald">
-              <ShoppingBag className="size-5" />
-            </div>
-          </div>
+          <span className="bp-stat-title">Accompagnements (10k FCFA)</span>
           <div>
-            <div className="bp-stat-value" style={{ color: '#10B981' }}>
-              {totalPaidParticipants.toLocaleString('fr-FR')} <span style={{ fontSize: '14px', fontWeight: 600, color: '#64748B' }}>payés</span>
+            <div className="bp-stat-value">
+              {totalPaidParticipants.toLocaleString('fr-FR')} payés
             </div>
-            <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#10B981', marginTop: '4px' }}>
+            <div className="bp-stat-subtext">
               {grandTotalCAFCFA.toLocaleString('fr-FR')} FCFA générés
             </div>
-          </div>
-          <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #E2E8F0', fontSize: '11.5px', color: '#64748B', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span>Accompagnement 7j inclus</span>
-            <span className="bp-pill-badge" style={{ background: '#ECFDF5', color: '#059669' }}>🟢 Payant</span>
           </div>
         </div>
 
         {/* Card 3: Membres Communauté */}
         <div className="bp-stat-card">
-          <div className="bp-stat-header">
-            <span className="bp-stat-title">Membres Communauté</span>
-            <div className="bp-icon-badge bp-icon-blue">
-              <Users className="size-5" />
-            </div>
-          </div>
+          <span className="bp-stat-title">Membres Communauté</span>
           <div>
-            <div className="bp-stat-value" style={{ color: '#0066CC' }}>
-              {totalCommunityMembers.toLocaleString('fr-FR')} <span style={{ fontSize: '14px', fontWeight: 600, color: '#64748B' }}>membres</span>
+            <div className="bp-stat-value">
+              {totalCommunityMembers.toLocaleString('fr-FR')} membres
             </div>
-            <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#0066CC', marginTop: '4px' }}>
-              Taux conversion: {globalConversionRate.toFixed(1)}%
+            <div className="bp-stat-subtext">
+              Taux de conversion: {globalConversionRate.toFixed(1)}%
             </div>
-          </div>
-          <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #E2E8F0', fontSize: '11.5px', color: '#64748B', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span>Audience échauffée</span>
-            <span className="bp-pill-badge" style={{ background: '#EFF6FF', color: '#1D4ED8' }}>👥 Engagés</span>
           </div>
         </div>
 
         {/* Card 4: Posts d'Attraction */}
         <div className="bp-stat-card">
-          <div className="bp-stat-header">
-            <span className="bp-stat-title">Posts d'Attraction</span>
-            <div className="bp-icon-badge bp-icon-purple">
-              <FileText className="size-5" />
-            </div>
-          </div>
+          <span className="bp-stat-title">Posts d'Attraction</span>
           <div>
-            <div className="bp-stat-value" style={{ color: '#7C3AED' }}>
-              {totalOrganicPosts} <span style={{ fontSize: '14px', fontWeight: 600, color: '#64748B' }}>posts</span>
+            <div className="bp-stat-value">
+              {totalOrganicPosts} posts
             </div>
-            <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#7C3AED', marginTop: '4px' }}>
-              Moy. {avgMembersPerPost.toFixed(1)} membres / post
+            <div className="bp-stat-subtext">
+              Moyenne: {avgMembersPerPost.toFixed(1)} membres / post
             </div>
-          </div>
-          <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #E2E8F0', fontSize: '11.5px', color: '#64748B', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span>{filteredChallenges.length} session(s)</span>
-            <span className="bp-pill-badge" style={{ background: '#F5F3FF', color: '#6D28D9' }}>📢 Organique</span>
           </div>
         </div>
       </div>
 
-      {/* Visual Conversion Funnel Card */}
+      {/* Minimalist Conversion Pipeline Card */}
       <div className="bp-funnel-card">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <h3 style={{ fontSize: '17px', fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-              <TrendingUp className="size-5 text-blue" />
-              Funnel de Conversion & Engine de Performance
-            </h3>
-            <p style={{ fontSize: '13px', color: '#64748B', margin: '4px 0 0 0' }}>
-              Du premier post d'attraction à la monétisation finale des sessions Blueprint IA
-            </p>
-          </div>
-          <span style={{ fontSize: '12px', fontWeight: 700, padding: '4px 12px', borderRadius: '12px', background: '#F1F5F9', color: '#475569' }}>
-            Taux de Conversion Global : {globalConversionRate.toFixed(1)}%
+          <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+            Conversion Pipeline
+          </h3>
+          <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748B' }}>
+            Taux global : {globalConversionRate.toFixed(1)}%
           </span>
         </div>
 
-        <div className="bp-funnel-steps-row">
-          {/* Step 1 */}
-          <div className="bp-funnel-box">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>
-                ÉTAPE 1 : ATTRACTION
-              </span>
-              <FileText className="size-4 text-purple" />
-            </div>
-            <div style={{ fontSize: '20px', fontWeight: 800, color: '#0F172A' }}>
-              {totalOrganicPosts} <span style={{ fontSize: '13px', color: '#64748B', fontWeight: 500 }}>posts d'attraction</span>
-            </div>
-            <div className="bp-progress-bar-bg">
-              <div className="bp-progress-bar-fill" style={{ width: '100%', background: '#8B5CF6' }}></div>
-            </div>
-            <div style={{ fontSize: '11.5px', color: '#64748B', fontWeight: 500 }}>
-              Levier organique initial
-            </div>
+        <div className="bp-funnel-strip">
+          {/* Col 1 */}
+          <div className="bp-funnel-col">
+            <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>1. Attraction Organique</span>
+            <div style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A' }}>{totalOrganicPosts} posts</div>
+            <span style={{ fontSize: '12px', color: '#64748B' }}>Publications initiales</span>
           </div>
 
-          {/* Arrow 1 */}
-          <div className="bp-funnel-arrow">
-            <ArrowRight className="size-5" />
+          {/* Col 2 */}
+          <div className="bp-funnel-col">
+            <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>2. Engagés Communauté</span>
+            <div style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A' }}>{totalCommunityMembers.toLocaleString('fr-FR')} membres</div>
+            <span style={{ fontSize: '12px', color: '#64748B' }}>Moy. {avgMembersPerPost.toFixed(1)} / post</span>
           </div>
 
-          {/* Step 2 */}
-          <div className="bp-funnel-box">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>
-                ÉTAPE 2 : COMMUNAUTÉ
-              </span>
-              <Users className="size-4 text-blue" />
-            </div>
-            <div style={{ fontSize: '20px', fontWeight: 800, color: '#0F172A' }}>
-              {totalCommunityMembers.toLocaleString('fr-FR')} <span style={{ fontSize: '13px', color: '#64748B', fontWeight: 500 }}>membres captés</span>
-            </div>
-            <div className="bp-progress-bar-bg">
-              <div className="bp-progress-bar-fill" style={{ width: '70%', background: '#3B82F6' }}></div>
-            </div>
-            <div style={{ fontSize: '11.5px', color: '#3B82F6', fontWeight: 600 }}>
-              Moy. {avgMembersPerPost.toFixed(1)} membres par post
-            </div>
-          </div>
-
-          {/* Arrow 2 */}
-          <div className="bp-funnel-arrow">
-            <ArrowRight className="size-5" />
-          </div>
-
-          {/* Step 3 */}
-          <div className="bp-funnel-box">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>
-                ÉTAPE 3 : MONÉTISATION (10K)
-              </span>
-              <ShoppingBag className="size-4 text-green" />
-            </div>
-            <div style={{ fontSize: '20px', fontWeight: 800, color: '#10B981' }}>
-              {totalPaidParticipants} <span style={{ fontSize: '13px', color: '#64748B', fontWeight: 500 }}>payés</span>
-            </div>
-            <div className="bp-progress-bar-bg">
-              <div className="bp-progress-bar-fill" style={{ width: `${Math.min(100, Math.max(10, globalConversionRate * 3))}%`, background: '#10B981' }}></div>
-            </div>
-            <div style={{ fontSize: '11.5px', color: '#10B981', fontWeight: 700 }}>
-              {grandTotalCAFCFA.toLocaleString('fr-FR')} FCFA encaissés
-            </div>
+          {/* Col 3 */}
+          <div className="bp-funnel-col">
+            <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>3. Clients Accompagnement (10K)</span>
+            <div style={{ fontSize: '18px', fontWeight: 700, color: '#10B981' }}>{totalPaidParticipants} payés</div>
+            <span style={{ fontSize: '12px', color: '#64748B' }}>{grandTotalCAFCFA.toLocaleString('fr-FR')} FCFA</span>
           </div>
         </div>
       </div>
@@ -472,20 +367,15 @@ export const BlueprintScreen: React.FC = () => {
       {/* Main Sessions Table Section */}
       <div className="bp-table-card">
         {/* Table Toolbar */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
-          <div>
-            <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
-              Tableau de Bord des Sessions Blueprint IA (7 Jours)
-            </h3>
-            <p style={{ fontSize: '13px', color: '#64748B', margin: '2px 0 0 0' }}>
-              Saisie des résultats et suivi de l'évolution jour après jour
-            </p>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+          <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+            Sessions Blueprint IA (7 Jours)
+          </h3>
 
           {/* Filters & Search */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
             {/* Status Pills */}
-            <div style={{ display: 'inline-flex', background: '#F1F5F9', borderRadius: '12px', padding: '3px' }}>
+            <div style={{ display: 'inline-flex', background: '#F8FAFC', borderRadius: '8px', padding: '2px', border: '1px solid #E2E8F0' }}>
               {(['all', 'En cours', 'Planifié', 'Terminé'] as const).map((status) => (
                 <button
                   key={status}
@@ -494,12 +384,12 @@ export const BlueprintScreen: React.FC = () => {
                     border: 'none',
                     background: statusFilter === status ? '#FFFFFF' : 'transparent',
                     color: statusFilter === status ? '#0F172A' : '#64748B',
-                    fontWeight: statusFilter === status ? 700 : 500,
-                    fontSize: '12px',
-                    padding: '6px 14px',
-                    borderRadius: '9px',
+                    fontWeight: statusFilter === status ? 600 : 500,
+                    fontSize: '11.5px',
+                    padding: '4px 10px',
+                    borderRadius: '6px',
                     cursor: 'pointer',
-                    boxShadow: statusFilter === status ? '0 2px 6px rgba(0,0,0,0.05)' : 'none',
+                    boxShadow: statusFilter === status ? '0 1px 3px rgba(0,0,0,0.05)' : 'none',
                     transition: 'all 0.15s ease'
                   }}
                 >
@@ -509,14 +399,14 @@ export const BlueprintScreen: React.FC = () => {
             </div>
 
             {/* Search Input */}
-            <div style={{ position: 'relative', width: '200px' }}>
-              <Search className="size-4" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
+            <div style={{ position: 'relative', width: '180px' }}>
+              <Search className="size-3.5" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
               <input
                 type="text"
                 placeholder="Rechercher..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ paddingLeft: '34px', fontSize: '12.5px', borderRadius: '12px', height: '36px' }}
+                style={{ paddingLeft: '30px', fontSize: '12px', borderRadius: '8px', height: '32px', border: '1px solid #E2E8F0' }}
               />
             </div>
           </div>
@@ -524,13 +414,13 @@ export const BlueprintScreen: React.FC = () => {
 
         {/* Table Content */}
         {filteredChallenges.length === 0 ? (
-          <div style={{ padding: '56px 0', textAlign: 'center' }}>
-            <Layers className="size-12" style={{ margin: '0 auto 12px auto', color: '#CBD5E1' }} />
-            <p style={{ color: '#64748B', fontSize: '14.5px', fontWeight: 500, marginBottom: '16px' }}>
-              Aucune session ne correspond aux critères sélectionnés.
+          <div style={{ padding: '40px 0', textAlign: 'center' }}>
+            <FileText className="size-8" style={{ margin: '0 auto 8px auto', color: '#CBD5E1' }} />
+            <p style={{ color: '#64748B', fontSize: '13.5px', fontWeight: 500, marginBottom: '12px' }}>
+              Aucune session enregistrée pour le moment.
             </p>
-            <button onClick={openCreateModal} className="btn btn-primary" style={{ borderRadius: '12px' }}>
-              Enregistrer une première session Blueprint IA
+            <button onClick={openCreateModal} className="btn btn-primary" style={{ borderRadius: '8px', padding: '6px 14px', fontSize: '12px' }}>
+              Créer une session
             </button>
           </div>
         ) : (
@@ -538,13 +428,13 @@ export const BlueprintScreen: React.FC = () => {
             <table>
               <thead>
                 <tr>
-                  <th>Session & Dates (7 Jours)</th>
+                  <th>Session & Dates</th>
                   <th>Statut</th>
-                  <th>Posts d'Attraction</th>
+                  <th>Posts</th>
                   <th>Communauté</th>
-                  <th>Passage à l'Action (10 000 FCFA)</th>
-                  <th>Taux Conversion</th>
-                  <th>Chiffre d'Affaires Total</th>
+                  <th>Payés (10k)</th>
+                  <th>Taux Conv.</th>
+                  <th>Chiffre d'Affaires</th>
                   <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
@@ -561,9 +451,9 @@ export const BlueprintScreen: React.FC = () => {
                     <tr key={c.id}>
                       {/* Title & Dates */}
                       <td style={{ fontWeight: 600 }}>
-                        <div style={{ color: '#0F172A', fontSize: '14px', fontWeight: 700 }}>{c.title}</div>
-                        <div style={{ fontSize: '12px', color: '#64748B', fontWeight: 500, marginTop: '3px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                          <Calendar className="size-3.5 text-blue" />
+                        <div style={{ color: '#0F172A', fontSize: '13.5px' }}>{c.title}</div>
+                        <div style={{ fontSize: '11.5px', color: '#64748B', fontWeight: 400, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <Calendar className="size-3 text-muted" />
                           <span>Du {c.startDate} au {c.endDate}</span>
                         </div>
                       </td>
@@ -578,13 +468,13 @@ export const BlueprintScreen: React.FC = () => {
                         )}
                         {c.status === 'Terminé' && (
                           <span className="bp-status-pill bp-status-termine">
-                            <CheckCircle className="size-3.5" />
+                            <CheckCircle className="size-3" />
                             Terminé
                           </span>
                         )}
                         {c.status === 'Planifié' && (
                           <span className="bp-status-pill bp-status-planifie">
-                            <Clock className="size-3.5" />
+                            <Clock className="size-3" />
                             Planifié
                           </span>
                         )}
@@ -592,76 +482,64 @@ export const BlueprintScreen: React.FC = () => {
 
                       {/* Posts */}
                       <td>
-                        <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '14px' }}>
+                        <div style={{ fontWeight: 600, color: '#0F172A' }}>
                           {c.organicPostsCount || 0} posts
-                        </div>
-                        <div style={{ fontSize: '11.5px', color: '#64748B' }}>
-                          Attraction organique
                         </div>
                       </td>
 
                       {/* Community */}
                       <td>
-                        <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '14px' }}>
+                        <div style={{ fontWeight: 600, color: '#0F172A' }}>
                           {communityCount.toLocaleString('fr-FR')} membres
-                        </div>
-                        <div style={{ fontSize: '11.5px', color: '#64748B' }}>
-                          Groupe / Communauté
                         </div>
                       </td>
 
                       {/* Paid Participants */}
                       <td>
-                        <div style={{ fontWeight: 800, color: '#10B981', fontSize: '14px' }}>
+                        <div style={{ fontWeight: 700, color: '#10B981' }}>
                           {paidCount} payés
-                        </div>
-                        <div style={{ fontSize: '11.5px', color: '#0066CC', fontWeight: 600 }}>
-                          à {regFee.toLocaleString('fr-FR')} FCFA / pers.
                         </div>
                       </td>
 
                       {/* Conversion Rate */}
                       <td>
-                        <div style={{ fontWeight: 800, color: conversionPct > 5 ? '#10B981' : '#D97706', fontSize: '14px' }}>
+                        <div style={{ fontWeight: 600, color: '#0F172A' }}>
                           {conversionPct.toFixed(1)} %
-                        </div>
-                        <div style={{ fontSize: '11.5px', color: '#64748B' }}>
-                          Communauté ➔ Client
                         </div>
                       </td>
 
                       {/* Revenue */}
                       <td>
-                        <div style={{ fontWeight: 900, color: '#0F172A', fontSize: '15px' }}>
+                        <div style={{ fontWeight: 700, color: '#0F172A' }}>
                           {sessionTotalCA.toLocaleString('fr-FR')} FCFA
                         </div>
-                        <div style={{ fontSize: '11.5px', color: '#F59E0B', fontWeight: 700 }}>
+                        <div style={{ fontSize: '11px', color: '#64748B' }}>
                           ≈ {sessionTotalEUR.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €
                         </div>
                       </td>
 
                       {/* Actions */}
                       <td style={{ textAlign: 'right' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
                           <button
                             onClick={() => openEditModal(c)}
                             className="bp-action-btn"
-                            title="Mettre à jour les chiffres"
+                            title="Éditer"
                           >
-                            <Edit3 className="size-3.5 text-blue" />
-                            <span>Remplir / Éditer</span>
+                            <Edit3 className="size-3" />
+                            <span>Éditer</span>
                           </button>
 
                           <button
                             onClick={() => {
-                              if (confirm("Voulez-vous vraiment supprimer cette session Blueprint IA ?")) {
+                              if (confirm("Supprimer cette session ?")) {
                                 deleteBlueprintChallenge(c.id);
                               }
                             }}
                             className="bp-delete-btn"
-                            title="Supprimer la session"
+                            title="Supprimer"
                           >
-                            <Trash2 className="size-4" />
+                            <Trash2 className="size-3.5" />
                           </button>
                         </div>
                       </td>
@@ -677,37 +555,34 @@ export const BlueprintScreen: React.FC = () => {
       {/* Modal for Create / Edit Session */}
       {isModalOpen && (
         <div className="modal-backdrop">
-          <div className="modal-content" style={{ maxWidth: '580px', borderRadius: '24px', padding: '32px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', borderBottom: '1px solid #E2E8F0', paddingBottom: '14px' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: '#0066CC', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Layers className="size-4" />
-                </div>
-                {editingChallenge ? 'Mettre à jour la Session Blueprint IA' : 'Nouvelle Session Blueprint IA (7 Jours)'}
+          <div className="modal-content" style={{ maxWidth: '520px', borderRadius: '16px', padding: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', borderBottom: '1px solid #E2E8F0', paddingBottom: '12px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+                {editingChallenge ? 'Modifier la Session' : 'Nouvelle Session Blueprint IA'}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                style={{ border: 'none', background: 'none', fontSize: '18px', fontWeight: 700, cursor: 'pointer', color: '#94A3B8' }}
+                style={{ border: 'none', background: 'none', fontSize: '16px', cursor: 'pointer', color: '#94A3B8' }}
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label>Nom / Titre de la session</label>
+                <label>Titre de la session</label>
                 <input
                   type="text"
                   required
                   value={formData.title}
                   onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                  placeholder="ex: Blueprint IA 7J - Session Lancement Mars 2026"
+                  placeholder="ex: Blueprint IA 7J - Session Mars 2026"
                 />
               </div>
 
-              <div className="grid-cols-2" style={{ gap: '16px' }}>
+              <div className="grid-cols-2" style={{ gap: '12px' }}>
                 <div>
-                  <label>Date de début (J1, ex: Lundi)</label>
+                  <label>Date de début</label>
                   <input
                     type="date"
                     required
@@ -717,7 +592,7 @@ export const BlueprintScreen: React.FC = () => {
                 </div>
 
                 <div>
-                  <label>Date de fin (J7, ex: Dimanche)</label>
+                  <label>Date de fin</label>
                   <input
                     type="date"
                     required
@@ -727,9 +602,9 @@ export const BlueprintScreen: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid-cols-3" style={{ gap: '12px' }}>
+              <div className="grid-cols-3" style={{ gap: '10px' }}>
                 <div>
-                  <label>Posts d'Attraction</label>
+                  <label>Posts</label>
                   <input
                     type="number"
                     min="0"
@@ -739,31 +614,29 @@ export const BlueprintScreen: React.FC = () => {
                 </div>
 
                 <div>
-                  <label>Membres Communauté</label>
+                  <label>Membres</label>
                   <input
                     type="number"
                     min="0"
                     value={formData.communityMembersCount}
                     onChange={(e) => setFormData(prev => ({ ...prev, communityMembersCount: Number(e.target.value) }))}
-                    placeholder="Ex: 383"
                   />
                 </div>
 
                 <div>
-                  <label>Personnes Payées (10k FCFA)</label>
+                  <label>Payés (10k)</label>
                   <input
                     type="number"
                     min="0"
                     value={formData.paidParticipantsCount}
                     onChange={(e) => setFormData(prev => ({ ...prev, paidParticipantsCount: Number(e.target.value) }))}
-                    placeholder="Ex: 25"
                   />
                 </div>
               </div>
 
-              <div className="grid-cols-2" style={{ gap: '16px' }}>
+              <div className="grid-cols-2" style={{ gap: '12px' }}>
                 <div>
-                  <label>Tarif Accompagnement (FCFA)</label>
+                  <label>Tarif (FCFA)</label>
                   <input
                     type="number"
                     step="1000"
@@ -773,51 +646,50 @@ export const BlueprintScreen: React.FC = () => {
                 </div>
 
                 <div>
-                  <label>Statut de la Session</label>
+                  <label>Statut</label>
                   <select
                     value={formData.status}
                     onChange={(e: any) => setFormData(prev => ({ ...prev, status: e.target.value }))}
                   >
-                    <option value="Planifié">📅 Planifié</option>
-                    <option value="En cours">⚡ En cours (Suivi au jour le jour)</option>
-                    <option value="Terminé">✅ Terminé</option>
+                    <option value="Planifié">Planifié</option>
+                    <option value="En cours">En cours</option>
+                    <option value="Terminé">Terminé</option>
                   </select>
                 </div>
               </div>
 
-              {/* Real-time CA Calculation Preview inside Modal */}
-              <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '14px', padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748B' }}>Chiffre d'Affaires Généré Calculé :</span>
-                <span style={{ fontSize: '16px', fontWeight: 800, color: '#10B981' }}>
+              <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '10px', padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '12px', color: '#64748B' }}>CA Estimé :</span>
+                <span style={{ fontSize: '14px', fontWeight: 700, color: '#10B981' }}>
                   {(formData.paidParticipantsCount * formData.registrationFee).toLocaleString('fr-FR')} FCFA
                 </span>
               </div>
 
               <div>
-                <label>Notes / Bilan de la session</label>
+                <label>Notes</label>
                 <textarea
                   rows={2}
                   value={formData.notes}
                   onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                  placeholder="Notes sur l'engagement, retours du groupe, thématiques des posts..."
+                  placeholder="Notes optionnelles..."
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', paddingTop: '16px', borderTop: '1px solid #E2E8F0' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', paddingTop: '12px', borderTop: '1px solid #E2E8F0' }}>
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
                   className="btn btn-secondary"
-                  style={{ borderRadius: '12px' }}
+                  style={{ borderRadius: '8px', padding: '8px 14px' }}
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
                   className="btn btn-primary"
-                  style={{ borderRadius: '12px', background: 'linear-gradient(135deg, #0066CC 0%, #004080 100%)' }}
+                  style={{ borderRadius: '8px', padding: '8px 16px', backgroundColor: '#0066CC' }}
                 >
-                  Enregistrer les données
+                  Enregistrer
                 </button>
               </div>
             </form>
