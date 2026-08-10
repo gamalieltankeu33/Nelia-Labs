@@ -232,10 +232,10 @@ const getDemoData = (): NextiaStore => {
         organicPostsCount: 15,
         communityMembersCount: 450,
         paidParticipantsCount: 250,
-        registrationFee: 10000,
+        registrationFee: 15000,
         currency: 'FCFA',
         status: 'Planifié',
-        notes: 'Lancement du challenge 7 jours le lundi 2 mars 2026. 250 accompagnements visés à 10 000 FCFA.'
+        notes: 'Lancement du challenge 7 jours le lundi 2 mars 2026. 250 accompagnements visés à 15 000 FCFA.'
       },
       {
         id: 'bp-2',
@@ -246,10 +246,10 @@ const getDemoData = (): NextiaStore => {
         organicPostsCount: 12,
         communityMembersCount: 320,
         paidParticipantsCount: 180,
-        registrationFee: 10000,
+        registrationFee: 15000,
         currency: 'FCFA',
         status: 'Terminé',
-        notes: '320 personnes dans la communauté -> 180 passés à l\'action (1,8M FCFA encassés).'
+        notes: '320 personnes dans la communauté -> 180 passés à l\'action (2,7M FCFA encaissés).'
       }
     ],
     objectives: DEFAULT_OBJECTIVES
@@ -1056,7 +1056,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       organicPostsCount: Number(challengeData.organicPostsCount) || 0,
       communityMembersCount: Number(challengeData.communityMembersCount) || 0,
       paidParticipantsCount: Number(challengeData.paidParticipantsCount) || 0,
-      registrationFee: challengeData.registrationFee !== undefined ? Number(challengeData.registrationFee) : 10000,
+      registrationFee: challengeData.registrationFee !== undefined ? Number(challengeData.registrationFee) : 15000,
       currency: challengeData.currency || 'FCFA',
       status: challengeData.status || 'Planifié',
       notes: challengeData.notes || ''

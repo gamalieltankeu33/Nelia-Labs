@@ -31,7 +31,7 @@ export function calculateBlueprintCAInFCFA(challenges: BlueprintChallenge[] = []
   return (challenges || [])
     .filter(c => c.month === month || getYearMonth(c.startDate) === month)
     .reduce((sum, c) => {
-      const regFee = c.registrationFee !== undefined ? c.registrationFee : 10000;
+      const regFee = c.registrationFee !== undefined ? c.registrationFee : 15000;
       const count = c.paidParticipantsCount !== undefined ? c.paidParticipantsCount : 0;
       const totalAmount = count * regFee;
       const curr = c.currency || 'FCFA';

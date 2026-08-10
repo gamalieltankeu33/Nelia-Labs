@@ -41,7 +41,7 @@ export const BlueprintScreen: React.FC = () => {
     organicPostsCount: 15,
     communityMembersCount: 450,
     paidParticipantsCount: 250,
-    registrationFee: 10000,
+    registrationFee: 15000,
     currency: 'FCFA',
     status: 'Planifié',
     notes: ''
@@ -51,7 +51,7 @@ export const BlueprintScreen: React.FC = () => {
   const [simPosts, setSimPosts] = useState<number>(10);
   const [simMembersPerPost, setSimMembersPerPost] = useState<number>(50);
   const [simConvRate, setSimConvRate] = useState<number>(5.0);
-  const [simPrice] = useState<number>(10000);
+  const [simPrice] = useState<number>(15000);
 
   useEffect(() => {
     setSelectedMonth(globalSelectedMonth);
@@ -76,7 +76,7 @@ export const BlueprintScreen: React.FC = () => {
       organicPostsCount: 10,
       communityMembersCount: 200,
       paidParticipantsCount: 20,
-      registrationFee: 10000,
+      registrationFee: 15000,
       currency: 'FCFA',
       status: 'Planifié',
       notes: ''
@@ -93,7 +93,7 @@ export const BlueprintScreen: React.FC = () => {
       organicPostsCount: challenge.organicPostsCount || 0,
       communityMembersCount: challenge.communityMembersCount || 0,
       paidParticipantsCount: challenge.paidParticipantsCount !== undefined ? challenge.paidParticipantsCount : 0,
-      registrationFee: challenge.registrationFee !== undefined ? challenge.registrationFee : 10000,
+      registrationFee: challenge.registrationFee !== undefined ? challenge.registrationFee : 15000,
       currency: challenge.currency || 'FCFA',
       status: challenge.status,
       notes: challenge.notes || ''
@@ -117,7 +117,7 @@ export const BlueprintScreen: React.FC = () => {
   const totalPaidParticipants = filteredChallenges.reduce((sum, c) => sum + (c.paidParticipantsCount !== undefined ? c.paidParticipantsCount : 0), 0);
 
   const grandTotalCAFCFA = filteredChallenges.reduce((sum, c) => {
-    const fee = c.registrationFee !== undefined ? c.registrationFee : 10000;
+    const fee = c.registrationFee !== undefined ? c.registrationFee : 15000;
     const paid = c.paidParticipantsCount !== undefined ? c.paidParticipantsCount : 0;
     return sum + (paid * fee);
   }, 0);
@@ -291,7 +291,7 @@ export const BlueprintScreen: React.FC = () => {
 
         {/* Card 2: Accompagnements Payés */}
         <div className="bp-stat-card">
-          <span className="bp-stat-title">Accompagnements (10k FCFA)</span>
+          <span className="bp-stat-title">Accompagnements (15k FCFA)</span>
           <div>
             <div className="bp-stat-value">
               {totalPaidParticipants.toLocaleString('fr-FR')} payés
@@ -357,7 +357,7 @@ export const BlueprintScreen: React.FC = () => {
 
           {/* Col 3 */}
           <div className="bp-funnel-col">
-            <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>3. Clients Accompagnement (10K)</span>
+            <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>3. Clients Accompagnement (15K)</span>
             <div style={{ fontSize: '18px', fontWeight: 700, color: '#10B981' }}>{totalPaidParticipants} payés</div>
             <span style={{ fontSize: '12px', color: '#64748B' }}>{grandTotalCAFCFA.toLocaleString('fr-FR')} FCFA</span>
           </div>
@@ -432,7 +432,7 @@ export const BlueprintScreen: React.FC = () => {
                   <th>Statut</th>
                   <th>Posts</th>
                   <th>Communauté</th>
-                  <th>Payés (10k)</th>
+                  <th>Payés (15k)</th>
                   <th>Taux Conv.</th>
                   <th>Chiffre d'Affaires</th>
                   <th style={{ textAlign: 'right' }}>Actions</th>
@@ -440,7 +440,7 @@ export const BlueprintScreen: React.FC = () => {
               </thead>
               <tbody>
                 {filteredChallenges.map((c) => {
-                  const regFee = c.registrationFee !== undefined ? c.registrationFee : 10000;
+                  const regFee = c.registrationFee !== undefined ? c.registrationFee : 15000;
                   const paidCount = c.paidParticipantsCount !== undefined ? c.paidParticipantsCount : 0;
                   const communityCount = c.communityMembersCount || 0;
                   const sessionTotalCA = paidCount * regFee;
@@ -624,7 +624,7 @@ export const BlueprintScreen: React.FC = () => {
                 </div>
 
                 <div>
-                  <label>Payés (10k)</label>
+                  <label>Payés (15k)</label>
                   <input
                     type="number"
                     min="0"
