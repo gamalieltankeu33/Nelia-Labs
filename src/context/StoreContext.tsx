@@ -268,8 +268,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (!parsed.objectives) {
           parsed.objectives = DEFAULT_OBJECTIVES;
         }
-        if (!parsed.blueprintChallenges) {
-          parsed.blueprintChallenges = [];
+        if (!parsed.blueprintChallenges || parsed.blueprintChallenges.length === 0) {
+          parsed.blueprintChallenges = getDemoData().blueprintChallenges;
+        } else {
+          // Migration automatique de tous les anciens prix (10 000 FCFA -> 15 000 FCFA)
+          parsed.blueprintChallenges = parsed.blueprintChallenges.map((c: any) => ({
+            ...c,
+            registrationFee: (!c.registrationFee || c.registrationFee === 10000) ? 15000 : Number(c.registrationFee)
+          }));
         }
         return parsed;
       }

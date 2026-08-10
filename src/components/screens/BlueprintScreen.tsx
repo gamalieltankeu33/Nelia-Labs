@@ -93,7 +93,7 @@ export const BlueprintScreen: React.FC = () => {
       organicPostsCount: challenge.organicPostsCount || 0,
       communityMembersCount: challenge.communityMembersCount || 0,
       paidParticipantsCount: challenge.paidParticipantsCount !== undefined ? challenge.paidParticipantsCount : 0,
-      registrationFee: challenge.registrationFee !== undefined ? challenge.registrationFee : 15000,
+      registrationFee: (!challenge.registrationFee || challenge.registrationFee === 10000) ? 15000 : challenge.registrationFee,
       currency: challenge.currency || 'FCFA',
       status: challenge.status,
       notes: challenge.notes || ''
@@ -117,7 +117,7 @@ export const BlueprintScreen: React.FC = () => {
   const totalPaidParticipants = filteredChallenges.reduce((sum, c) => sum + (c.paidParticipantsCount !== undefined ? c.paidParticipantsCount : 0), 0);
 
   const grandTotalCAFCFA = filteredChallenges.reduce((sum, c) => {
-    const fee = c.registrationFee !== undefined ? c.registrationFee : 15000;
+    const fee = (!c.registrationFee || c.registrationFee === 10000) ? 15000 : c.registrationFee;
     const paid = c.paidParticipantsCount !== undefined ? c.paidParticipantsCount : 0;
     return sum + (paid * fee);
   }, 0);
@@ -440,7 +440,7 @@ export const BlueprintScreen: React.FC = () => {
               </thead>
               <tbody>
                 {filteredChallenges.map((c) => {
-                  const regFee = c.registrationFee !== undefined ? c.registrationFee : 15000;
+                  const regFee = (!c.registrationFee || c.registrationFee === 10000) ? 15000 : c.registrationFee;
                   const paidCount = c.paidParticipantsCount !== undefined ? c.paidParticipantsCount : 0;
                   const communityCount = c.communityMembersCount || 0;
                   const sessionTotalCA = paidCount * regFee;
