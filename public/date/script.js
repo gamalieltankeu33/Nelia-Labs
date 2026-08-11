@@ -237,8 +237,55 @@ document.getElementById('confirmButton').addEventListener('click', () => {
   document.getElementById('summaryChoice').textContent = state.option;
 
   const prettyDate = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date(`${state.date}T12:00:00`));
-  document.getElementById('summaryDate').textContent = prettyDate.charAt(0).toUpperCase() + prettyDate.slice(1);
+  const formattedDateStr = prettyDate.charAt(0).toUpperCase() + prettyDate.slice(1);
+  document.getElementById('summaryDate').textContent = formattedDateStr;
   document.getElementById('summaryTime').textContent = state.time;
+
+  // 1. Sauvegarde locale pour l'espace d'administration
+  const responseData = {
+    name: customName || 'Daniella',
+    experience: info.name,
+    option: state.option,
+    date: formattedDateStr,
+    time: state.time,
+    created_at: new Date().toISOString()
+  };
+
+  try {
+    const existing = JSON.parse(localStorage.getItem('daniella_date_responses') || '[]');
+    existing.unshift(responseData);
+    localStorage.setItem('daniella_date_responses', JSON.stringify(existing));
+  } catch (e) {
+    console.error('Erreur sauvegarde locale:', e);
+  }
+
+  // 2. TENTATIVE SAUVEGARDER SUR SUPABASE (REST API DIRECT)
+  try {
+    const SUPABASE_URL = "https://mgzakxffsdgkkpsryica.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nemFreGZmc2Rna2twc3J5aWNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMDQ4ODUsImV4cCI6MjA5OTg4MDg4NX0.2cZxuLZHBCQdYnpeTgDmrI6SnSct1xsT46YAfEG0xWc";
+    fetch(`${SUPABASE_URL}/rest/v1/date_responses`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({
+        experience: info.name,
+        option: state.option,
+        date: formattedDateStr,
+        time: state.time
+      })
+    }).catch(err => console.log('Supabase sync note:', err));
+  } catch (err) {}
+
+  // 3. Préparation du lien WhatsApp pré-rempli
+  const waBtn = document.getElementById('whatsappButton');
+  if (waBtn) {
+    const message = `Coucou ! J'ai choisi notre rencard : ${info.name} (${state.option}) le ${formattedDateStr} à ${state.time} ! ♥`;
+    waBtn.href = `https://wa.me/?text=${encodeURIComponent(message)}`;
+  }
 
   showScreen('finale');
   launchConfetti();

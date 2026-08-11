@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Espace Admin — Réponses de Daniella ♥</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&display=swap" rel="stylesheet" />
+
+    <style>
+      :root {
+        --ink: #f9f4ff;
+        --muted: #b8afc3;
+        --pink: #ff668f;
+        --pink-light: #ffb0c5;
+        --line: rgba(255, 255, 255, 0.13);
+        --serif: "Playfair Display", Georgia, serif;
+        --sans: "DM Sans", Arial, sans-serif;
+        --mono: "DM Mono", monospace;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        min-height: 100vh;
+        margin: 0;
+        background: #160b20;
+        color: var(--ink);
+        font-family: var(--sans);
+        padding: 30px 20px;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 30px;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 20px;
+      }
+
+      h1 {
+        font-family: var(--serif);
+        font-size: 32px;
+        margin: 0;
+        color: #fff;
+      }
+
+      h1 em {
+        color: var(--pink-light);
+      }
+
+      .badge {
+        background: rgba(255, 176, 197, 0.15);
+        border: 1px solid var(--pink-light);
+        color: var(--pink-light);
+        padding: 6px 14px;
+        border-radius: 999px;
+        font: 11px var(--mono);
+      }
+
+      .card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--muted);
+        font-style: italic;
+      }
+
+      .response-title {
+        font: 600 24px var(--serif);
+        color: var(--pink-light);
+        margin: 0 0 8px 0;
+      }
+
+      .response-detail {
+        font-size: 16px;
+        color: #e0d5e3;
+        margin-bottom: 16px;
+      }
+
+      .meta-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 12px;
+        background: rgba(0,0,0,0.2);
+        padding: 14px;
+        border-radius: 10px;
+        font-family: var(--mono);
+        font-size: 13px;
+      }
+
+      .meta-item span {
+        display: block;
+        color: var(--muted);
+        font-size: 10px;
+        margin-bottom: 4px;
+      }
+
+      .btn {
+        background: linear-gradient(105deg, #ffb6c9, #fb7195);
+        color: #351323;
+        border: 0;
+        padding: 10px 18px;
+        border-radius: 999px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .btn-danger {
+        background: rgba(255, 100, 100, 0.2);
+        color: #ff9999;
+        border: 1px solid rgba(255, 100, 100, 0.3);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Résultats — <em>Daniella ♥</em></h1>
+        <span class="badge" id="countBadge">0 réponse</span>
+      </header>
+
+      <div id="resultsList">
+        <div class="card empty-state">
+          En attente du choix de Daniella... Dès qu'elle aura scellé la date, sa réponse s'affichera ici ! 🌸
+        </div>
+      </div>
+
+      <div style="margin-top: 30px; text-align: center;">
+        <button class="btn btn-danger" onclick="clearResults()">Réinitialiser les réponses</button>
+      </div>
+    </div>
+
+    <!-- Supabase JS Client CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+      const SUPABASE_URL = "https://mgzakxffsdgkkpsryica.supabase.co";
+      const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nemFreGZmc2Rna2twc3J5aWNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMDQ4ODUsImV4cCI6MjA5OTg4MDg4NX0.2cZxuLZHBCQdYnpeTgDmrI6SnSct1xsT46YAfEG0xWc";
+      const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+      async function loadResults() {
+        const resultsList = document.getElementById('resultsList');
+        const countBadge = document.getElementById('countBadge');
+        let responses = [];
+
+        // 1. Essai de récupération depuis Supabase
+        if (supabase) {
+          try {
+            const { data, error } = await supabase.from('date_responses').select('*').order('created_at', { ascending: false });
+            if (!error && data && data.length > 0) {
+              responses = data;
+            }
+          } catch (e) {
+            console.log('Supabase read error:', e);
+          }
+        }
+
+        // 2. Fallback localStorage si pas de supabase ou vide
+        if (responses.length === 0) {
+          const localData = localStorage.getItem('daniella_date_responses');
+          if (localData) {
+            try { responses = JSON.parse(localData); } catch (e) {}
+          }
+        }
+
+        if (responses.length === 0) {
+          countBadge.textContent = "0 réponse";
+          resultsList.innerHTML = `<div class="card empty-state">En attente du choix de Daniella... Dès qu'elle aura scellé la date, sa réponse s'affichera ici ! 🌸</div>`;
+          return;
+        }
+
+        countBadge.textContent = `${responses.length} réponse${responses.length > 1 ? 's' : ''}`;
+        resultsList.innerHTML = responses.map((res, i) => `
+          <div class="card">
+            <p class="response-title">✨ ${res.experience || 'Rendez-vous'}</p>
+            <p class="response-detail">👉 <strong>Option choisie :</strong> ${res.option || 'Non précisé'}</p>
+            <div class="meta-grid">
+              <div class="meta-item">
+                <span>DATE DU RENDEZ-VOUS</span>
+                ${res.date || 'À définir'}
+              </div>
+              <div class="meta-item">
+                <span>HEURE DU RENDEZ-VOUS</span>
+                ${res.time || 'À définir'}
+              </div>
+              <div class="meta-item">
+                <span>RECUE LE</span>
+                ${res.created_at ? new Date(res.created_at).toLocaleString('fr-FR') : 'Récemment'}
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      function clearResults() {
+        if (confirm("Effacer les résultats enregistrés ?")) {
+          localStorage.removeItem('daniella_date_responses');
+          if (supabase) {
+            supabase.from('date_responses').delete().neq('id', 0);
+          }
+          loadResults();
+        }
+      }
+
+      loadResults();
+      setInterval(loadResults, 5000); // Rechargement automatique toutes les 5 sec
+    </script>
+  </body>
+</html>
