@@ -261,7 +261,7 @@ document.getElementById('confirmButton').addEventListener('click', () => {
 
   // 2. ENVOI AUTOMATIQUE PAR EMAIL (FORMSUBMIT.CO)
   try {
-    const userEmail = "pennsunjo@gmail.com"; // Ton email de réception
+    const userEmail = "gamalielkelman@gmail.com"; // Ton email personnel de réception
     fetch(`https://formsubmit.co/ajax/${userEmail}`, {
       method: 'POST',
       headers: {
