@@ -1,6 +1,6 @@
-// Personalisation du prénom via l'URL (ex: ?name=Daniella ou ?prenom=Daniella) - Par défaut : Daniella
+// Personalisation du prénom via l'URL (ex: ?name=Hornella ou ?prenom=Hornella) - Par défaut : Hornella
 const urlParams = new URLSearchParams(window.location.search);
-const customName = urlParams.get('name') || urlParams.get('prenom') || 'Daniella';
+const customName = urlParams.get('name') || urlParams.get('prenom') || 'Hornella';
 
 if (customName) {
   const cleanName = customName.trim();
@@ -243,7 +243,7 @@ document.getElementById('confirmButton').addEventListener('click', () => {
 
   // 1. Sauvegarde locale pour l'espace d'administration
   const responseData = {
-    name: customName || 'Daniella',
+    name: customName || 'Hornella',
     experience: info.name,
     option: state.option,
     date: formattedDateStr,
@@ -269,9 +269,9 @@ document.getElementById('confirmButton').addEventListener('click', () => {
         'Accept': 'application/json'
       },
       body: JSON.stringify({
-        _subject: "💖 Daniella a accepté ton rendez-vous !",
+        _subject: "💖 Hornella a accepté ton rendez-vous !",
         _template: "table",
-        "Prénom": customName || "Daniella",
+        "Prénom": customName || "Hornella",
         "Rendez-vous": info.name,
         "Option choisie": state.option,
         "Date": formattedDateStr,
