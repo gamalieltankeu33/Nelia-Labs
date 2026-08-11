@@ -259,26 +259,31 @@ document.getElementById('confirmButton').addEventListener('click', () => {
     console.error('Erreur sauvegarde locale:', e);
   }
 
-  // 2. TENTATIVE SAUVEGARDER SUR SUPABASE (REST API DIRECT)
+  // 2. ENVOI AUTOMATIQUE PAR EMAIL (FORMSUBMIT.CO)
   try {
-    const SUPABASE_URL = "https://mgzakxffsdgkkpsryica.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nemFreGZmc2Rna2twc3J5aWNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMDQ4ODUsImV4cCI6MjA5OTg4MDg4NX0.2cZxuLZHBCQdYnpeTgDmrI6SnSct1xsT46YAfEG0xWc";
-    fetch(`${SUPABASE_URL}/rest/v1/date_responses`, {
+    const userEmail = "pennsunjo@gmail.com"; // Ton email de réception
+    fetch(`https://formsubmit.co/ajax/${userEmail}`, {
       method: 'POST',
       headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
         'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
+        'Accept': 'application/json'
       },
       body: JSON.stringify({
-        experience: info.name,
-        option: state.option,
-        date: formattedDateStr,
-        time: state.time
+        _subject: "💖 Daniella a accepté ton rendez-vous !",
+        _template: "table",
+        "Prénom": customName || "Daniella",
+        "Rendez-vous": info.name,
+        "Option choisie": state.option,
+        "Date": formattedDateStr,
+        "Heure": state.time,
+        "Envoyé le": new Date().toLocaleString('fr-FR')
       })
-    }).catch(err => console.log('Supabase sync note:', err));
-  } catch (err) {}
+    }).then(res => res.json())
+      .then(data => console.log('Email envoyé avec succès !', data))
+      .catch(err => console.error('Erreur envoi email:', err));
+  } catch (err) {
+    console.error('Erreur:', err);
+  }
 
   // 3. Préparation du lien WhatsApp pré-rempli
   const waBtn = document.getElementById('whatsappButton');
