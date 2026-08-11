@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1c1028" />
+    <meta name="description" content="Une invitation à un rendez-vous très spécial." />
+    <title>Une invitation pour toi ♥</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&display=swap" rel="stylesheet" />
+
+    <!-- Feuille de style CSS -->
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <!-- Arrière-plans animés -->
+    <div class="noise" aria-hidden="true"></div>
+    <div class="aurora aurora-one" aria-hidden="true"></div>
+    <div class="aurora aurora-two" aria-hidden="true"></div>
+    <div class="sparkles" aria-hidden="true"></div>
+
+    <main class="app-shell">
+      <!-- Barre supérieure -->
+      <div class="topbar">
+        <span class="signature">pour <em id="recipientName">toi</em></span>
+        <span class="step-indicator" id="stepIndicator">00 / 04</span>
+      </div>
+
+      <!-- ÉCRAN 00 : ACCUEIL & ENVELOPPE 3D -->
+      <section class="screen is-active" id="welcome" aria-labelledby="welcomeTitle">
+        <div class="envelope-scene" id="envelopeScene" role="button" tabindex="0" aria-label="Ouvrir l'enveloppe">
+          <div class="orbit orbit-one"></div>
+          <div class="orbit orbit-two"></div>
+          <div class="envelope-shadow"></div>
+          <div class="envelope">
+            <div class="envelope-back"></div>
+            <div class="letter">
+              <span>une idée<br />qui nous va bien</span><b>♥</b>
+            </div>
+            <div class="envelope-front"></div>
+            <div class="envelope-flap"></div>
+            <div class="wax-seal">♥</div>
+          </div>
+          <span class="tap-hint">Touche l'enveloppe ✨</span>
+        </div>
+        <div class="welcome-copy">
+          <p class="eyebrow">un petit mot, rien que pour toi</p>
+          <h1 id="welcomeTitle">J’ai quelque chose<br /><em>à te demander.</em></h1>
+          <p>Promis, c’est une excellente idée.<br />Et peut-être notre prochain souvenir préféré.</p>
+        </div>
+      </section>
+
+      <!-- ÉCRAN 01 : LA QUESTION -->
+      <section class="screen question-screen" id="question" aria-labelledby="questionTitle">
+        <div class="mini-envelope"><span>♥</span></div>
+        <p class="eyebrow">la question la plus importante du jour</p>
+        <h2 id="questionTitle">Tu veux sortir<br /><em>avec moi ?</em></h2>
+        <p class="subcopy">Un vrai rencard. De la complicité, de jolis regards et toi dans ta plus belle énergie.</p>
+        <div class="answer-row" id="answerRow">
+          <button class="button button-primary magnetic" id="yesButton">Évidemment, oui <span>↗</span></button>
+          <button class="button button-ghost" id="noButton">Non</button>
+        </div>
+        <p class="no-message" id="noMessage" aria-live="polite"></p>
+      </section>
+
+      <!-- ÉCRAN 02 : CHOIX DU RENDEZ-VOUS -->
+      <section class="screen choice-screen" id="experience" aria-labelledby="experienceTitle">
+        <div class="section-heading">
+          <p class="eyebrow">épisode 01 — notre prochain souvenir</p>
+          <h2 id="experienceTitle">Quel genre de<br /><em>folie douce ?</em></h2>
+          <p class="subcopy">Je m’occupe de tout. Tu n’as plus qu’à choisir l’ambiance qui te donne envie.</p>
+        </div>
+        <div class="date-grid" id="dateGrid">
+          <button class="date-card" data-date="restaurant" style="--accent: #ffad70; --glow: rgba(255,143,110,.26)">
+            <span class="card-number">01</span>
+            <span class="date-icon">✦</span>
+            <span class="date-name">Dîner<br />aux chandelles</span>
+            <span class="date-detail">des bouchées, des regards</span>
+            <span class="card-arrow">↗</span>
+          </button>
+          <button class="date-card" data-date="cinema" style="--accent: #bba7ff; --glow: rgba(155,125,255,.25)">
+            <span class="card-number">02</span>
+            <span class="date-icon">◒</span>
+            <span class="date-name">Cinéma<br />cocooning</span>
+            <span class="date-detail">pop-corn inclus, évidemment</span>
+            <span class="card-arrow">↗</span>
+          </button>
+          <button class="date-card" data-date="arcade" style="--accent: #7ce4d0; --glow: rgba(75,230,190,.23)">
+            <span class="card-number">03</span>
+            <span class="date-icon">⌘</span>
+            <span class="date-name">Arcade<br />& défis</span>
+            <span class="date-detail">la personne qui perd offre le dessert</span>
+            <span class="card-arrow">↗</span>
+          </button>
+          <button class="date-card" data-date="hike" style="--accent: #f6ce76; --glow: rgba(246,190,90,.22)">
+            <span class="card-number">04</span>
+            <span class="date-icon">⌁</span>
+            <span class="date-name">Échappée<br />en nature</span>
+            <span class="date-detail">belle vue, compagnie idéale</span>
+            <span class="card-arrow">↗</span>
+          </button>
+        </div>
+        <button class="text-button back-button" data-back="question">← revenir à la question</button>
+      </section>
+
+      <!-- ÉCRAN 03 : CHOIX DE L'OPTION -->
+      <section class="screen details-screen" id="details" aria-labelledby="detailsTitle">
+        <div class="details-visual" id="detailsVisual" aria-hidden="true"></div>
+        <div class="section-heading compact">
+          <p class="eyebrow" id="detailsKicker">épisode 02 — le programme</p>
+          <h2 id="detailsTitle">Dîner aux<br /><em>chandelles.</em></h2>
+          <p class="subcopy" id="detailsIntro">La seule règle : prendre notre temps.</p>
+        </div>
+        <div class="option-block">
+          <p class="option-label" id="optionLabel">qu’est-ce qui te ferait le plus plaisir ?</p>
+          <div class="pill-list" id="optionList"></div>
+        </div>
+        <button class="button button-primary continue-button" id="continueButton" disabled>Continuer <span>↗</span></button>
+        <button class="text-button back-button" data-back="experience">← changer d’idée</button>
+      </section>
+
+      <!-- ÉCRAN 04 : DATE ET HEURE -->
+      <section class="screen schedule-screen" id="schedule" aria-labelledby="scheduleTitle">
+        <div class="calendar-orb"><span>♡</span></div>
+        <div class="section-heading compact">
+          <p class="eyebrow">épisode 03 — on bloque le moment</p>
+          <h2 id="scheduleTitle">Quand est-ce<br /><em>que je te vole ?</em></h2>
+          <p class="subcopy">Choisis le créneau qui te donne le plus envie de dire « vivement ».</p>
+        </div>
+        <div class="scheduler">
+          <label class="field-label" for="dateInput">notre date</label>
+          <input id="dateInput" class="date-input" type="date" />
+          <label class="field-label" id="timeLabel" for="timeInput">notre heure</label>
+          <select id="timeInput" class="time-input" disabled>
+            <option value="">Choisis une heure</option>
+          </select>
+        </div>
+        <button class="button button-primary continue-button" id="confirmButton" disabled>Sceller notre date <span>♥</span></button>
+        <button class="text-button back-button" data-back="details">← modifier le programme</button>
+      </section>
+
+      <!-- ÉCRAN 05 : BILLET FINAL ET CONFETTIS -->
+      <section class="screen finale-screen" id="finale" aria-labelledby="finaleTitle">
+        <div class="finale-heart" aria-hidden="true"><span>♥</span></div>
+        <p class="eyebrow">c’est noté ✨</p>
+        <h2 id="finaleTitle">C’est un<br /><em>rencard.</em></h2>
+        <div class="reservation-card">
+          <div class="reservation-top"><span>NOTRE RENDEZ-VOUS</span><b>♥</b></div>
+          <p class="reservation-experience" id="summaryExperience">Dîner aux chandelles</p>
+          <p class="reservation-choice" id="summaryChoice">Cuisine italienne</p>
+          <div class="reservation-divider"></div>
+          <div class="reservation-meta">
+            <span id="summaryDate">Samedi, 16 août</span>
+            <span id="summaryTime">20:30</span>
+          </div>
+        </div>
+        <p class="love-note">
+          J’ai hâte de te retrouver, de te regarder sourire et de transformer une simple soirée en un merveilleux moment. 
+          <strong>Toi + moi, c’est la meilleure idée.</strong>
+        </p>
+        <button class="button button-primary" id="restartButton">Revivre ce petit film <span>↻</span></button>
+      </section>
+    </main>
+
+    <!-- Conteneur de confettis -->
+    <div class="confetti" id="confetti" aria-hidden="true"></div>
+
+    <!-- JavaScript principal -->
+    <script src="script.js"></script>
+  </body>
+</html>
