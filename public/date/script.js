@@ -1,6 +1,6 @@
-// Personalisation du prénom via l'URL (ex: ?name=Sarah ou ?prenom=Sarah)
+// Personalisation du prénom via l'URL (ex: ?name=Daniella ou ?prenom=Daniella) - Par défaut : Daniella
 const urlParams = new URLSearchParams(window.location.search);
-const customName = urlParams.get('name') || urlParams.get('prenom') || '';
+const customName = urlParams.get('name') || urlParams.get('prenom') || 'Daniella';
 
 if (customName) {
   const cleanName = customName.trim();
