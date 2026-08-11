@@ -25,8 +25,8 @@
     <main class="app-shell">
       <!-- Barre supérieure -->
       <div class="topbar">
-        <span class="signature">pour <em id="recipientName">toi</em></span>
-        <span class="step-indicator" id="stepIndicator">00 / 04</span>
+        <span class="signature">pour <em class="name-target">toi</em></span>
+        <span class="step-indicator" id="stepIndicator">00 / 05</span>
       </div>
 
       <!-- ÉCRAN 00 : ACCUEIL & ENVELOPPE 3D -->
@@ -53,11 +53,24 @@
         </div>
       </section>
 
-      <!-- ÉCRAN 01 : LA QUESTION -->
+      <!-- ÉCRAN 01 : VÉRIFICATION CÉLIBAT (NOUVEAU !) -->
+      <section class="screen question-screen" id="singleCheck" aria-labelledby="singleCheckTitle">
+        <div class="mini-envelope"><span>🔒</span></div>
+        <p class="eyebrow">vérification préalable de sécurité</p>
+        <h2 id="singleCheckTitle">Es-tu officiellement<br /><em>célibataire ?</em></h2>
+        <p class="subcopy">Étape obligatoire avant d'accéder à la suite de ce message hautement confidentiel.</p>
+        <div class="answer-row" id="singleAnswerRow">
+          <button class="button button-primary magnetic" id="singleYesButton">100% libre & disponible ↗</button>
+          <button class="button button-ghost" id="singleNoButton">Prise / Compliqué</button>
+        </div>
+        <p class="no-message" id="singleNoMessage" aria-live="polite"></p>
+      </section>
+
+      <!-- ÉCRAN 02 : LA QUESTION -->
       <section class="screen question-screen" id="question" aria-labelledby="questionTitle">
         <div class="mini-envelope"><span>♥</span></div>
-        <p class="eyebrow">la question la plus importante du jour</p>
-        <h2 id="questionTitle">Tu veux sortir<br /><em>avec moi ?</em></h2>
+        <p class="eyebrow">maintenant, la vraie question</p>
+        <h2 id="questionTitle">Tu veux sortir<br /><em>avec moi <span class="name-target-inline"></span>?</em></h2>
         <p class="subcopy">Un vrai rencard. De la complicité, de jolis regards et toi dans ta plus belle énergie.</p>
         <div class="answer-row" id="answerRow">
           <button class="button button-primary magnetic" id="yesButton">Évidemment, oui <span>↗</span></button>
@@ -66,7 +79,7 @@
         <p class="no-message" id="noMessage" aria-live="polite"></p>
       </section>
 
-      <!-- ÉCRAN 02 : CHOIX DU RENDEZ-VOUS -->
+      <!-- ÉCRAN 03 : CHOIX DU RENDEZ-VOUS -->
       <section class="screen choice-screen" id="experience" aria-labelledby="experienceTitle">
         <div class="section-heading">
           <p class="eyebrow">épisode 01 — notre prochain souvenir</p>
@@ -106,7 +119,7 @@
         <button class="text-button back-button" data-back="question">← revenir à la question</button>
       </section>
 
-      <!-- ÉCRAN 03 : CHOIX DE L'OPTION -->
+      <!-- ÉCRAN 04 : CHOIX DE L'OPTION -->
       <section class="screen details-screen" id="details" aria-labelledby="detailsTitle">
         <div class="details-visual" id="detailsVisual" aria-hidden="true"></div>
         <div class="section-heading compact">
@@ -122,7 +135,7 @@
         <button class="text-button back-button" data-back="experience">← changer d’idée</button>
       </section>
 
-      <!-- ÉCRAN 04 : DATE ET HEURE -->
+      <!-- ÉCRAN 05 : DATE ET HEURE -->
       <section class="screen schedule-screen" id="schedule" aria-labelledby="scheduleTitle">
         <div class="calendar-orb"><span>♡</span></div>
         <div class="section-heading compact">
@@ -142,7 +155,7 @@
         <button class="text-button back-button" data-back="details">← modifier le programme</button>
       </section>
 
-      <!-- ÉCRAN 05 : BILLET FINAL ET CONFETTIS -->
+      <!-- ÉCRAN 06 : BILLET FINAL ET CONFETTIS -->
       <section class="screen finale-screen" id="finale" aria-labelledby="finaleTitle">
         <div class="finale-heart" aria-hidden="true"><span>♥</span></div>
         <p class="eyebrow">c’est noté ✨</p>
@@ -159,7 +172,7 @@
         </div>
         <p class="love-note">
           J’ai hâte de te retrouver, de te regarder sourire et de transformer une simple soirée en un merveilleux moment. 
-          <strong>Toi + moi, c’est la meilleure idée.</strong>
+          <strong id="summaryLoveNote">Toi + moi, c’est la meilleure idée.</strong>
         </p>
         <button class="button button-primary" id="restartButton">Revivre ce petit film <span>↻</span></button>
       </section>

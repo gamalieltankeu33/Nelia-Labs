@@ -1,9 +1,13 @@
-// Lecture du paramètre URL "name" pour personnaliser l'invitation (ex: ?name=Chérie)
+// Personalisation du prénom via l'URL (ex: ?name=Sarah ou ?prenom=Sarah)
 const urlParams = new URLSearchParams(window.location.search);
-const customName = urlParams.get('name') || urlParams.get('prenom');
+const customName = urlParams.get('name') || urlParams.get('prenom') || '';
+
 if (customName) {
-  const recipient = document.getElementById('recipientName');
-  if (recipient) recipient.textContent = customName;
+  const cleanName = customName.trim();
+  document.querySelectorAll('.name-target').forEach(el => { el.textContent = cleanName; });
+  document.querySelectorAll('.name-target-inline').forEach(el => { el.textContent = `, ${cleanName}`; });
+  const loveNote = document.getElementById('summaryLoveNote');
+  if (loveNote) loveNote.textContent = `${cleanName} + moi, c’est la meilleure idée.`;
 }
 
 // État global de la réservation
@@ -66,7 +70,13 @@ const experiences = {
   }
 };
 
-// Phrases amusantes pour le bouton Non
+// Phrases amusantes pour les boutons de refus
+const singleNoLines = [
+  'Erreur : cette réponse n’est pas autorisée. Seules les personnes libres ont accès au secret. 😉',
+  'Attends... Tu es sûre ? Laisse-moi vérifier mon radar à nouveau. ✨',
+  'Système bloqué. Ton statut célibataire est obligatoire pour passer à l’étape suivante ! ♡'
+];
+
 const noLines = [
   'Sérieusement, tu ne veux pas ? Même les étoiles ont voté oui. ✨',
   'Alerte : ce « non » vient de s’échapper. Il a sûrement peur de rater notre rencard.',
@@ -82,23 +92,24 @@ function showScreen(id) {
   if (next) next.classList.add('is-active');
 
   const steps = {
-    welcome: '00 / 04',
-    question: '01 / 04',
-    experience: '02 / 04',
-    details: '03 / 04',
-    schedule: '04 / 04',
+    welcome: '00 / 05',
+    singleCheck: '01 / 05',
+    question: '02 / 05',
+    experience: '03 / 05',
+    details: '04 / 05',
+    schedule: '05 / 05',
     finale: '♥ / ♥'
   };
-  document.getElementById('stepIndicator').textContent = steps[id] || '00 / 04';
+  document.getElementById('stepIndicator').textContent = steps[id] || '00 / 05';
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// Animation de l'enveloppe
+// Animation de l'enveloppe -> va à la vérification célibat
 function openEnvelope() {
   const envelope = document.getElementById('envelopeScene');
   if (envelope.classList.contains('opening')) return;
   envelope.classList.add('opening');
-  setTimeout(() => showScreen('question'), 1050);
+  setTimeout(() => showScreen('singleCheck'), 1050);
 }
 
 document.getElementById('envelopeScene').addEventListener('click', openEnvelope);
@@ -109,37 +120,49 @@ document.getElementById('envelopeScene').addEventListener('keydown', event => {
   }
 });
 
-// Bouton OUI
-document.getElementById('yesButton').addEventListener('click', () => showScreen('experience'));
-
-// Bouton NON interactif / esquive
-let noCount = 0;
-const noButton = document.getElementById('noButton');
+// Écran 01 : Vérification Célibat
+let singleNoCount = 0;
+const singleNoButton = document.getElementById('singleNoButton');
 const isMobileViewport = () => window.matchMedia('(hover: none), (pointer: coarse)').matches;
 
-function dodgeNoButton() {
+function dodgeButton(btn) {
   const distanceX = (Math.random() > 0.5 ? 1 : -1) * (75 + Math.random() * 75);
   const distanceY = (Math.random() > 0.5 ? 1 : -1) * (16 + Math.random() * 26);
-  noButton.style.transform = `translate(${distanceX}px, ${distanceY}px) rotate(${distanceX > 0 ? 7 : -7}deg)`;
+  btn.style.transform = `translate(${distanceX}px, ${distanceY}px) rotate(${distanceX > 0 ? 7 : -7}deg)`;
 }
 
-function showNoMessage() {
-  document.getElementById('noMessage').textContent = noLines[noCount % noLines.length];
-  noCount += 1;
-}
+singleNoButton.addEventListener('pointerenter', event => {
+  if (!isMobileViewport() && event.pointerType !== 'touch') dodgeButton(singleNoButton);
+});
+
+singleNoButton.addEventListener('click', event => {
+  event.preventDefault();
+  if (!isMobileViewport()) dodgeButton(singleNoButton);
+  document.getElementById('singleNoMessage').textContent = singleNoLines[singleNoCount % singleNoLines.length];
+  singleNoCount += 1;
+});
+
+document.getElementById('singleYesButton').addEventListener('click', () => showScreen('question'));
+
+// Écran 02 : La Question
+let noCount = 0;
+const noButton = document.getElementById('noButton');
 
 noButton.addEventListener('pointerenter', event => {
-  if (!isMobileViewport() && event.pointerType !== 'touch') dodgeNoButton();
+  if (!isMobileViewport() && event.pointerType !== 'touch') dodgeButton(noButton);
 });
 
 noButton.addEventListener('click', event => {
   event.preventDefault();
-  if (!isMobileViewport()) dodgeNoButton();
-  showNoMessage();
+  if (!isMobileViewport()) dodgeButton(noButton);
+  document.getElementById('noMessage').textContent = noLines[noCount % noLines.length];
+  noCount += 1;
   noButton.textContent = noCount > 2 ? 'Pas si vite…' : 'Non';
 });
 
-// Écran 02 : Sélection d'une expérience
+document.getElementById('yesButton').addEventListener('click', () => showScreen('experience'));
+
+// Écran 03 : Sélection d'une expérience
 document.querySelectorAll('.date-card').forEach(card => {
   card.addEventListener('click', () => {
     state.experience = card.dataset.date;
@@ -163,7 +186,7 @@ document.querySelectorAll('.date-card').forEach(card => {
   });
 });
 
-// Écran 03 : Sélection de l'option
+// Écran 04 : Sélection de l'option
 document.getElementById('optionList').addEventListener('click', event => {
   const button = event.target.closest('button');
   if (!button) return;
@@ -185,7 +208,7 @@ document.getElementById('continueButton').addEventListener('click', () => {
   showScreen('schedule');
 });
 
-// Écran 04 : Sélection date et heure
+// Écran 05 : Sélection date et heure
 const dateInput = document.getElementById('dateInput');
 const localTomorrow = new Date();
 localTomorrow.setDate(localTomorrow.getDate() + 1);
@@ -231,9 +254,12 @@ document.getElementById('restartButton').addEventListener('click', () => {
   Object.assign(state, { experience: null, option: null, date: dateInput.min, time: null });
   document.getElementById('envelopeScene').classList.remove('opening');
   document.getElementById('noMessage').textContent = '';
+  document.getElementById('singleNoMessage').textContent = '';
   noButton.style.transform = '';
+  singleNoButton.style.transform = '';
   noButton.textContent = 'Non';
   noCount = 0;
+  singleNoCount = 0;
   showScreen('welcome');
 });
 
