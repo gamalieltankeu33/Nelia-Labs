@@ -13,6 +13,11 @@
 
 * {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, input, select, .button, .date-card, .envelope-scene, .pill-list button {
+  touch-action: manipulation;
 }
 
 html, body {

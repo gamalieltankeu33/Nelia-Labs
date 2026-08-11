@@ -109,7 +109,7 @@ function openEnvelope() {
   const envelope = document.getElementById('envelopeScene');
   if (envelope.classList.contains('opening')) return;
   envelope.classList.add('opening');
-  setTimeout(() => showScreen('singleCheck'), 1050);
+  setTimeout(() => showScreen('singleCheck'), 900);
 }
 
 document.getElementById('envelopeScene').addEventListener('click', openEnvelope);
@@ -195,20 +195,24 @@ document.getElementById('optionList').addEventListener('click', event => {
   document.getElementById('continueButton').disabled = false;
 });
 
+// Arrivée sur l'écran 05 (Calendrier)
 document.getElementById('continueButton').addEventListener('click', () => {
   const info = experiences[state.experience];
   const timeInput = document.getElementById('timeInput');
-  state.time = null;
-
+  
   document.getElementById('timeLabel').textContent = info.timeLabel;
-  timeInput.innerHTML = `<option value="">Choisis une heure</option>${info.hours.map(time => `<option value="${time}">${time}</option>`).join('')}`;
+  // Définir la première heure par défaut pour que le bouton soit utilisable directement sur mobile !
+  const defaultTime = info.hours[0] || '20:00';
+  state.time = defaultTime;
+  
+  timeInput.innerHTML = info.hours.map(time => `<option value="${time}" ${time === defaultTime ? 'selected' : ''}>${time}</option>`).join('');
   timeInput.disabled = false;
 
   validateSchedule();
   showScreen('schedule');
 });
 
-// Écran 05 : Sélection date et heure
+// Écran 05 : Sélection date et heure (avec écouteurs multiples pour mobile)
 const dateInput = document.getElementById('dateInput');
 const localTomorrow = new Date();
 localTomorrow.setDate(localTomorrow.getDate() + 1);
@@ -216,52 +220,73 @@ dateInput.min = localTomorrow.toISOString().slice(0, 10);
 dateInput.value = dateInput.min;
 state.date = dateInput.value;
 
-dateInput.addEventListener('change', () => {
-  state.date = dateInput.value;
-  validateSchedule();
-});
+['change', 'input', 'blur'].forEach(evtType => {
+  dateInput.addEventListener(evtType, () => {
+    if (dateInput.value) state.date = dateInput.value;
+    validateSchedule();
+  });
 
-document.getElementById('timeInput').addEventListener('change', event => {
-  state.time = event.target.value || null;
-  validateSchedule();
+  document.getElementById('timeInput').addEventListener(evtType, event => {
+    state.time = event.target.value || state.time;
+    validateSchedule();
+  });
 });
 
 function validateSchedule() {
-  document.getElementById('confirmButton').disabled = !(state.date && state.time);
+  const btn = document.getElementById('confirmButton');
+  if (btn) btn.disabled = !(state.date && state.time);
 }
 
 // Confirmation finale
-document.getElementById('confirmButton').addEventListener('click', () => {
-  const info = experiences[state.experience];
+document.getElementById('confirmButton').addEventListener('click', (e) => {
+  e.preventDefault();
+  const info = experiences[state.experience] || experiences.restaurant;
+  const chosenOption = state.option || 'Surprise du chef';
+  const chosenDate = state.date || dateInput.min;
+  const chosenTime = state.time || '20:00';
+
   document.getElementById('summaryExperience').textContent = info.name;
-  document.getElementById('summaryChoice').textContent = state.option;
+  document.getElementById('summaryChoice').textContent = chosenOption;
 
-  const prettyDate = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date(`${state.date}T12:00:00`));
-  const formattedDateStr = prettyDate.charAt(0).toUpperCase() + prettyDate.slice(1);
+  let formattedDateStr = chosenDate;
+  try {
+    const prettyDate = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date(`${chosenDate}T12:00:00`));
+    formattedDateStr = prettyDate.charAt(0).toUpperCase() + prettyDate.slice(1);
+  } catch (err) {}
+
   document.getElementById('summaryDate').textContent = formattedDateStr;
-  document.getElementById('summaryTime').textContent = state.time;
+  document.getElementById('summaryTime').textContent = chosenTime;
 
-  // 1. Sauvegarde locale pour l'espace d'administration
+  // 1. Passage immédiat à l'écran final (sans attendre l'envoi réseau)
+  showScreen('finale');
+  launchConfetti();
+
+  // 2. Préparation du lien WhatsApp pré-rempli
+  const waBtn = document.getElementById('whatsappButton');
+  if (waBtn) {
+    const message = `Coucou ! J'ai choisi notre rencard : ${info.name} (${chosenOption}) le ${formattedDateStr} à ${chosenTime} ! ♥`;
+    waBtn.href = `https://wa.me/?text=${encodeURIComponent(message)}`;
+  }
+
+  // 3. Sauvegarde locale
   const responseData = {
     name: customName || 'Hornella',
     experience: info.name,
-    option: state.option,
+    option: chosenOption,
     date: formattedDateStr,
-    time: state.time,
+    time: chosenTime,
     created_at: new Date().toISOString()
   };
 
   try {
-    const existing = JSON.parse(localStorage.getItem('daniella_date_responses') || '[]');
+    const existing = JSON.parse(localStorage.getItem('hornella_date_responses') || '[]');
     existing.unshift(responseData);
-    localStorage.setItem('daniella_date_responses', JSON.stringify(existing));
-  } catch (e) {
-    console.error('Erreur sauvegarde locale:', e);
-  }
+    localStorage.setItem('hornella_date_responses', JSON.stringify(existing));
+  } catch (e) {}
 
-  // 2. ENVOI AUTOMATIQUE PAR EMAIL (FORMSUBMIT.CO)
+  // 4. ENVOI AUTOMATIQUE PAR EMAIL (FORMSUBMIT.CO) EN ARRIÈRE-PLAN
   try {
-    const userEmail = "gamalielkelman@gmail.com"; // Ton email personnel de réception
+    const userEmail = "gamalielkelman@gmail.com";
     fetch(`https://formsubmit.co/ajax/${userEmail}`, {
       method: 'POST',
       headers: {
@@ -269,31 +294,17 @@ document.getElementById('confirmButton').addEventListener('click', () => {
         'Accept': 'application/json'
       },
       body: JSON.stringify({
-        _subject: "💖 Hornella a accepté ton rendez-vous !",
+        _subject: `💖 ${customName || 'Hornella'} a accepté ton rendez-vous !`,
         _template: "table",
         "Prénom": customName || "Hornella",
         "Rendez-vous": info.name,
-        "Option choisie": state.option,
+        "Option choisie": chosenOption,
         "Date": formattedDateStr,
-        "Heure": state.time,
+        "Heure": chosenTime,
         "Envoyé le": new Date().toLocaleString('fr-FR')
       })
-    }).then(res => res.json())
-      .then(data => console.log('Email envoyé avec succès !', data))
-      .catch(err => console.error('Erreur envoi email:', err));
-  } catch (err) {
-    console.error('Erreur:', err);
-  }
-
-  // 3. Préparation du lien WhatsApp pré-rempli
-  const waBtn = document.getElementById('whatsappButton');
-  if (waBtn) {
-    const message = `Coucou ! J'ai choisi notre rencard : ${info.name} (${state.option}) le ${formattedDateStr} à ${state.time} ! ♥`;
-    waBtn.href = `https://wa.me/?text=${encodeURIComponent(message)}`;
-  }
-
-  showScreen('finale');
-  launchConfetti();
+    }).catch(err => console.error('Background email sync:', err));
+  } catch (err) {}
 });
 
 // Boutons Retour
