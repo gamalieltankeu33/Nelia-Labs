@@ -4,7 +4,7 @@ import { EXCHANGE_RATES } from '../../utils/calculations';
 import type { BlueprintChallenge } from '../../types';
 import { 
   Plus, Trash2, Edit3, Calendar, FileText, CheckCircle, Clock,
-  Sparkles, Sliders, Search
+  Sparkles, Sliders, Search, AlertCircle
 } from 'lucide-react';
 
 export const BlueprintScreen: React.FC = () => {
@@ -21,6 +21,11 @@ export const BlueprintScreen: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showSimulator, setShowSimulator] = useState(false);
   const [editingChallenge, setEditingChallenge] = useState<BlueprintChallenge | null>(null);
+  const [completedNotice, setCompletedNotice] = useState<string | null>(null);
+  const [confirmFinishModalOpen, setConfirmFinishModalOpen] = useState(false);
+
+  // Find the active session (status === 'En cours')
+  const activeSession = blueprintChallenges.find(c => c.status === 'En cours');
 
   // Form state for creating / editing session
   const [formData, setFormData] = useState<{
@@ -36,14 +41,14 @@ export const BlueprintScreen: React.FC = () => {
     notes: string;
   }>({
     title: '',
-    startDate: '2026-03-02',
-    endDate: '2026-03-08',
+    startDate: new Date().toISOString().split('T')[0],
+    endDate: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
     organicPostsCount: 15,
     communityMembersCount: 450,
     paidParticipantsCount: 250,
     registrationFee: 15000,
     currency: 'FCFA',
-    status: 'Planifié',
+    status: 'En cours',
     notes: ''
   });
 
@@ -69,19 +74,50 @@ export const BlueprintScreen: React.FC = () => {
   const openCreateModal = () => {
     setEditingChallenge(null);
     const today = new Date().toISOString().split('T')[0];
+    const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+    const sessionCount = blueprintChallenges.length + 1;
+
     setFormData({
-      title: `Blueprint IA 7J - Session Lancement`,
+      title: `Blueprint IA 7J - Session ${sessionCount}`,
       startDate: today,
-      endDate: today,
-      organicPostsCount: 10,
-      communityMembersCount: 200,
-      paidParticipantsCount: 20,
+      endDate: nextWeek,
+      organicPostsCount: 0,
+      communityMembersCount: 0,
+      paidParticipantsCount: 0,
       registrationFee: 15000,
       currency: 'FCFA',
-      status: 'Planifié',
+      status: 'En cours',
       notes: ''
     });
     setIsModalOpen(true);
+  };
+
+  const handleCreateSessionClick = () => {
+    if (activeSession) {
+      setConfirmFinishModalOpen(true);
+    } else {
+      openCreateModal();
+    }
+  };
+
+  const handleFinishAndCreateNew = () => {
+    if (activeSession) {
+      saveBlueprintChallenge({
+        ...activeSession,
+        status: 'Terminé'
+      });
+      setCompletedNotice(`La session "${activeSession.title}" a été terminée avec succès !`);
+    }
+    setConfirmFinishModalOpen(false);
+    openCreateModal();
+  };
+
+  const updateActiveSessionData = (field: keyof BlueprintChallenge, value: any) => {
+    if (!activeSession) return;
+    saveBlueprintChallenge({
+      ...activeSession,
+      [field]: value
+    });
   };
 
   const openEditModal = (challenge: BlueprintChallenge) => {
@@ -99,6 +135,22 @@ export const BlueprintScreen: React.FC = () => {
       notes: challenge.notes || ''
     });
     setIsModalOpen(true);
+  };
+
+  const handleToggleComplete = (challenge: BlueprintChallenge) => {
+    const isCurrentlyTermine = challenge.status === 'Terminé';
+    const newStatus: 'Planifié' | 'En cours' | 'Terminé' = isCurrentlyTermine ? 'En cours' : 'Terminé';
+
+    saveBlueprintChallenge({
+      ...challenge,
+      status: newStatus
+    });
+
+    if (newStatus === 'Terminé') {
+      setCompletedNotice(`La session "${challenge.title}" a été terminée ! Vous pouvez lancer la prochaine session.`);
+    } else {
+      setCompletedNotice(null);
+    }
   };
 
   const handleFormSubmit = (e: React.FormEvent) => {
@@ -169,14 +221,17 @@ export const BlueprintScreen: React.FC = () => {
           </button>
 
           <button 
-            onClick={openCreateModal} 
+            onClick={handleCreateSessionClick} 
             className="btn btn-primary"
             style={{ 
               borderRadius: '10px',
               padding: '8px 16px',
               fontSize: '12.5px',
               backgroundColor: '#0066CC',
-              boxShadow: 'none'
+              boxShadow: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
             }}
           >
             <Plus className="size-3.5" />
@@ -184,6 +239,350 @@ export const BlueprintScreen: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Completion Notification Banner */}
+      {completedNotice && (
+        <div style={{
+          backgroundColor: '#ECFDF5',
+          border: '1px solid #6EE7B7',
+          borderRadius: '14px',
+          padding: '14px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px',
+          boxShadow: '0 2px 8px rgba(16, 185, 129, 0.08)',
+          animation: 'fadeIn 0.2s ease-in-out'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <CheckCircle className="size-5 text-emerald" style={{ flexShrink: 0 }} />
+            <div>
+              <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#065F46' }}>
+                {completedNotice}
+              </span>
+              <span style={{ fontSize: '12.5px', color: '#047857', marginLeft: '6px' }}>
+                Prêt pour lancer le prochain cours ?
+              </span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              onClick={() => {
+                setCompletedNotice(null);
+                openCreateModal();
+              }}
+              className="btn"
+              style={{
+                borderRadius: '8px',
+                padding: '6px 14px',
+                fontSize: '12px',
+                fontWeight: 600,
+                backgroundColor: '#059669',
+                color: '#FFFFFF',
+                border: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                cursor: 'pointer'
+              }}
+            >
+              <Plus className="size-3.5" />
+              <span>Créer la nouvelle session</span>
+            </button>
+            <button
+              onClick={() => setCompletedNotice(null)}
+              style={{ background: 'none', border: 'none', color: '#047857', cursor: 'pointer', fontSize: '16px', padding: '0 4px' }}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Active Session Cockpit Banner */}
+      {activeSession ? (
+        <div style={{
+          background: 'linear-gradient(135deg, #F0FDF4 0%, #FFFFFF 100%)',
+          border: '1.5px solid #86EFAC',
+          borderRadius: '18px',
+          padding: '20px 24px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '16px',
+          boxShadow: '0 4px 14px rgba(16, 185, 129, 0.06)'
+        }}>
+          {/* Header Row */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '14px',
+                backgroundColor: '#10B981',
+                color: '#FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 700,
+                boxShadow: '0 4px 10px rgba(16, 185, 129, 0.25)',
+                flexShrink: 0
+              }}>
+                <Sparkles className="size-5" />
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#047857' }}>
+                    Session de cours en cours
+                  </span>
+                  <span className="bp-status-pill bp-status-encours">
+                    <span className="bp-status-dot-pulse"></span>
+                    En cours
+                  </span>
+                </div>
+                <h3 style={{ fontSize: '17.5px', fontWeight: 700, color: '#0F172A', margin: '2px 0 0 0' }}>
+                  {activeSession.title}
+                </h3>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => handleToggleComplete(activeSession)}
+                className="btn"
+                style={{
+                  backgroundColor: '#10B981',
+                  color: '#FFFFFF',
+                  borderRadius: '10px',
+                  padding: '10px 20px',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  border: 'none',
+                  boxShadow: '0 3px 10px rgba(16, 185, 129, 0.3)',
+                  cursor: 'pointer'
+                }}
+              >
+                <CheckCircle className="size-4.5" />
+                <span>Terminer cette session</span>
+              </button>
+
+              <button
+                onClick={() => openEditModal(activeSession)}
+                className="btn btn-secondary"
+                style={{
+                  borderRadius: '10px',
+                  padding: '10px 14px',
+                  fontSize: '12.5px',
+                  fontWeight: 600,
+                  backgroundColor: '#FFFFFF',
+                  border: '1px solid #CBD5E1',
+                  color: '#334155',
+                  cursor: 'pointer'
+                }}
+              >
+                <Edit3 className="size-3.5" />
+                <span>Modifier</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Data Entry Cockpit */}
+          <div style={{
+            background: '#FFFFFF',
+            border: '1px solid #D1FAE5',
+            borderRadius: '14px',
+            padding: '14px 18px',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap: '16px',
+            alignItems: 'center'
+          }}>
+            {/* Posts */}
+            <div>
+              <label style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                Posts d'attraction
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={activeSession.organicPostsCount || 0}
+                onChange={(e) => updateActiveSessionData('organicPostsCount', Number(e.target.value))}
+                style={{
+                  width: '100%',
+                  padding: '6px 10px',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  borderRadius: '8px',
+                  border: '1px solid #CBD5E1',
+                  color: '#0F172A'
+                }}
+              />
+            </div>
+
+            {/* Membres */}
+            <div>
+              <label style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                Membres Communauté
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={activeSession.communityMembersCount || 0}
+                onChange={(e) => updateActiveSessionData('communityMembersCount', Number(e.target.value))}
+                style={{
+                  width: '100%',
+                  padding: '6px 10px',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  borderRadius: '8px',
+                  border: '1px solid #CBD5E1',
+                  color: '#0F172A'
+                }}
+              />
+            </div>
+
+            {/* Payés */}
+            <div>
+              <label style={{ fontSize: '11px', fontWeight: 700, color: '#047857', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                Payés (15 000 FCFA)
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={activeSession.paidParticipantsCount || 0}
+                onChange={(e) => updateActiveSessionData('paidParticipantsCount', Number(e.target.value))}
+                style={{
+                  width: '100%',
+                  padding: '6px 10px',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  borderRadius: '8px',
+                  border: '1px solid #10B981',
+                  color: '#047857',
+                  backgroundColor: '#F0FDF4'
+                }}
+              />
+            </div>
+
+            {/* CA Encaissé */}
+            <div>
+              <label style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                Chiffre d'Affaires Encaissé
+              </label>
+              <div style={{ fontSize: '16px', fontWeight: 800, color: '#10B981' }}>
+                {((activeSession.paidParticipantsCount || 0) * ((!activeSession.registrationFee || activeSession.registrationFee === 10000) ? 15000 : activeSession.registrationFee)).toLocaleString('fr-FR')} FCFA
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : blueprintChallenges.length > 0 && (
+        <div style={{
+          background: '#F8FAFC',
+          border: '1px solid #E2E8F0',
+          borderRadius: '16px',
+          padding: '16px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '16px',
+          flexWrap: 'wrap'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <CheckCircle className="size-5 text-emerald" />
+            <div>
+              <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#1E293B' }}>
+                Aucune session active en ce moment.
+              </span>
+              <span style={{ fontSize: '12.5px', color: '#64748B', marginLeft: '6px' }}>
+                Toutes les sessions précédentes sont terminées.
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={openCreateModal}
+            className="btn btn-primary"
+            style={{
+              borderRadius: '10px',
+              padding: '8px 16px',
+              fontSize: '12.5px',
+              backgroundColor: '#0066CC',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <Plus className="size-3.5" />
+            <span>Lancer une nouvelle session</span>
+          </button>
+        </div>
+      )}
+
+      {/* Single Active Session Guard Modal */}
+      {confirmFinishModalOpen && activeSession && (
+        <div className="modal-backdrop">
+          <div className="modal-content" style={{ maxWidth: '480px', borderRadius: '16px', padding: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: '#FEF3C7', color: '#D97706', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <AlertCircle className="size-5" />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+                  Session de cours en cours
+                </h3>
+                <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0 0' }}>
+                  Terminer la session actuelle avant de démarrer la suivante
+                </p>
+              </div>
+            </div>
+
+            <p style={{ fontSize: '13.5px', color: '#334155', lineHeight: 1.5, marginBottom: '20px' }}>
+              La session <strong>"{activeSession.title}"</strong> est actuellement <strong>En cours</strong>. 
+              Une seule session de cours peut être active à la fois. Souhaitez-vous la marquer comme terminée pour ouvrir la nouvelle session ?
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button
+                onClick={handleFinishAndCreateNew}
+                className="btn"
+                style={{
+                  backgroundColor: '#10B981',
+                  color: '#FFFFFF',
+                  borderRadius: '10px',
+                  padding: '10px 16px',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  border: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  cursor: 'pointer'
+                }}
+              >
+                <CheckCircle className="size-4" />
+                <span>Terminer la session & Lancer la nouvelle</span>
+              </button>
+
+              <button
+                onClick={() => setConfirmFinishModalOpen(false)}
+                className="btn btn-secondary"
+                style={{
+                  borderRadius: '10px',
+                  padding: '9px 16px',
+                  fontSize: '12.5px',
+                  color: '#64748B',
+                  cursor: 'pointer',
+                  border: '1px solid #CBD5E1'
+                }}
+              >
+                Continuer la session en cours
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Simulator Drawer (Toggleable) */}
       {showSimulator && (
@@ -369,7 +768,7 @@ export const BlueprintScreen: React.FC = () => {
         {/* Table Toolbar */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
           <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
-            Sessions Blueprint IA (7 Jours)
+            Historique des Sessions Blueprint IA
           </h3>
 
           {/* Filters & Search */}
@@ -446,6 +845,7 @@ export const BlueprintScreen: React.FC = () => {
                   const sessionTotalCA = paidCount * regFee;
                   const sessionTotalEUR = sessionTotalCA * EXCHANGE_RATES.FCFA_TO_EUR;
                   const conversionPct = communityCount > 0 ? (paidCount / communityCount) * 100 : 0;
+                  const isTermine = c.status === 'Terminé';
 
                   return (
                     <tr key={c.id}>
@@ -521,6 +921,53 @@ export const BlueprintScreen: React.FC = () => {
                       {/* Actions */}
                       <td style={{ textAlign: 'right' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
+                          {/* Button "Marquer terminé" / "Rouvrir" */}
+                          {!isTermine ? (
+                            <button
+                              onClick={() => handleToggleComplete(c)}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '5px 10px',
+                                borderRadius: '8px',
+                                fontSize: '11.5px',
+                                fontWeight: 600,
+                                backgroundColor: '#ECFDF5',
+                                color: '#059669',
+                                border: '1px solid #A7F3D0',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease'
+                              }}
+                              title="Marquer cette session comme terminée"
+                            >
+                              <CheckCircle className="size-3.5" />
+                              <span>Marquer terminé</span>
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleToggleComplete(c)}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '5px 8px',
+                                borderRadius: '8px',
+                                fontSize: '11px',
+                                fontWeight: 500,
+                                backgroundColor: '#F1F5F9',
+                                color: '#64748B',
+                                border: '1px solid #CBD5E1',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease'
+                              }}
+                              title="Rouvrir cette session (remettre en cours)"
+                            >
+                              <Clock className="size-3.5" />
+                              <span>Rouvrir</span>
+                            </button>
+                          )}
+
                           <button
                             onClick={() => openEditModal(c)}
                             className="bp-action-btn"
@@ -558,7 +1005,7 @@ export const BlueprintScreen: React.FC = () => {
           <div className="modal-content" style={{ maxWidth: '520px', borderRadius: '16px', padding: '24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', borderBottom: '1px solid #E2E8F0', paddingBottom: '12px' }}>
               <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
-                {editingChallenge ? 'Modifier la Session' : 'Nouvelle Session Blueprint IA'}
+                {editingChallenge ? 'Modifier la Session' : 'Lancer une Nouvelle Session Blueprint IA'}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
