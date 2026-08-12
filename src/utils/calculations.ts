@@ -325,13 +325,15 @@ export function calculateProspectFunnel(
 }
 
 /**
- * Calcule les indicateurs du jour pour l'écran d'accueil
+ * Calcule les indicateurs du jour pour l'écran d'accueil / Aujourd'hui
  */
 export function calculateTodayIndicators(
   todayStr: string,
   contents: PublishedContent[],
   prospects: Prospect[],
-  sales: DigitalSale[]
+  sales: DigitalSale[],
+  collabs: CommercialCollab[] = [],
+  launches: Record<string, MonthlyLaunch> = {}
 ) {
   // Contenus publiés aujourd'hui
   const publishedToday = contents.filter(c => c.date === todayStr).length;
@@ -342,8 +344,7 @@ export function calculateTodayIndicators(
     return firstHistory && firstHistory.date === todayStr && firstHistory.status === '1er DM envoyé';
   }).length;
 
-  // Relances faites aujourd'hui :
-  // Nombre d'historiques "Relancé" datés d'aujourd'hui, PLUS les relances post-appel datées d'aujourd'hui
+  // Relances faites aujourd'hui
   const followupsToday = prospects.reduce((sum, p) => {
     const dailyRelances = p.history.filter(h => 
       h.date === todayStr && (h.status === 'Relancé' || h.status === 'Relancé post-appel')
@@ -351,14 +352,53 @@ export function calculateTodayIndicators(
     return sum + dailyRelances;
   }, 0);
 
-  // Ventes du jour (produits digitaux vendus aujourd'hui)
+  // Ventes du jour (nombre de ventes)
   const salesToday = sales.filter(s => s.date === todayStr).length;
+
+  // CA Produits Digitaux du jour (en EUR)
+  const digitalTodayEUR = sales
+    .filter(s => s.date === todayStr)
+    .reduce((sum, s) => {
+      const currency = s.currency || 'EUR';
+      if (currency === 'USD') return sum + (s.price * EXCHANGE_RATES.USD_TO_EUR);
+      if (currency === 'FCFA') return sum + (s.price * EXCHANGE_RATES.FCFA_TO_EUR);
+      return sum + s.price;
+    }, 0);
+
+  // CA Prospection / Premium Closé Gagné du jour (en EUR)
+  const premiumTodayEUR = prospects
+    .filter(p => p.currentStatus === 'Closé gagné' && p.dealDate === todayStr)
+    .reduce((sum, p) => sum + (p.dealAmount || 0), 0);
+
+  // CA Collabs Payées du jour (en EUR)
+  const collabsTodayEUR = (collabs || [])
+    .filter(c => c.publishDate === todayStr && c.status === 'Payé')
+    .reduce((sum, c) => sum + (c.amount * EXCHANGE_RATES.USD_TO_EUR), 0);
+
+  // CA Lancement du jour (en FCFA)
+  let launchTodayFCFA = 0;
+  Object.values(launches || {}).forEach(l => {
+    if (l.webinarDate === todayStr) {
+      launchTodayFCFA += l.daySalesAmount || 0;
+    }
+    (l.reminders || []).forEach(r => {
+      if (r.date === todayStr) {
+        launchTodayFCFA += r.amount || 0;
+      }
+    });
+  });
+  const launchTodayEUR = launchTodayFCFA * EXCHANGE_RATES.FCFA_TO_EUR;
+
+  const caTodayEUR = digitalTodayEUR + premiumTodayEUR + collabsTodayEUR + launchTodayEUR;
+  const caTodayFCFA = Math.round(caTodayEUR * EXCHANGE_RATES.EUR_TO_FCFA);
 
   return {
     publishedToday,
     dmsToday,
     followupsToday,
-    salesToday
+    salesToday,
+    caTodayEUR,
+    caTodayFCFA
   };
 }
 

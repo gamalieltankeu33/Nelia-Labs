@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { calculateTodayIndicators } from '../../utils/calculations';
-import { FileText, Users, ShoppingBag, PlusCircle, Check, AlertTriangle } from 'lucide-react';
+import { FileText, Users, ShoppingBag, PlusCircle, Check, AlertTriangle, DollarSign } from 'lucide-react';
 
 export const TodayScreen: React.FC = () => {
   const { 
     contents, 
     prospects, 
     sales, 
+    collabs,
+    launches,
     addContent, 
     addProspect, 
     addDigitalSale 
@@ -16,7 +18,7 @@ export const TodayScreen: React.FC = () => {
   const todayStr = new Date().toISOString().split('T')[0];
 
   // Métriques du jour
-  const todayStats = calculateTodayIndicators(todayStr, contents, prospects, sales);
+  const todayStats = calculateTodayIndicators(todayStr, contents, prospects, sales, collabs, launches);
 
   const getStagnationDays = (history: { date: string }[]) => {
     if (history.length === 0) return 0;
@@ -124,8 +126,39 @@ export const TodayScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* Grid de 4 indicateurs */}
-      <div className="grid-cols-4" style={{ marginTop: '24px', marginBottom: '32px' }}>
+      {/* Grid d'indicateurs du jour */}
+      <div style={{ marginTop: '24px', marginBottom: '32px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+        {/* Carte 1 : CA Encaissé du jour */}
+        <div className="card stat-card" style={{ borderLeft: '4px solid #0066FF', backgroundColor: 'rgba(0, 102, 255, 0.03)' }}>
+          <div className="stat-icon-wrapper sale-icon" style={{ backgroundColor: 'rgba(0, 102, 255, 0.12)' }}>
+            <DollarSign className="stat-icon" style={{ color: '#0066FF' }} />
+          </div>
+          <div className="stat-meta">
+            <span className="stat-label" style={{ fontWeight: 600, color: '#0066FF' }}>CA Encaissé du jour</span>
+            <span className="stat-val" style={{ fontSize: '1.45rem', fontWeight: 700, color: '#0066FF' }}>
+              {todayStats.caTodayEUR.toLocaleString('fr-FR')} €
+            </span>
+            <span style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>
+              {todayStats.caTodayFCFA.toLocaleString('fr-FR')} FCFA
+            </span>
+          </div>
+        </div>
+
+        {/* Carte 2 : Ventes du jour */}
+        <div className="card stat-card">
+          <div className="stat-icon-wrapper sale-icon">
+            <ShoppingBag className="stat-icon text-success" />
+          </div>
+          <div className="stat-meta">
+            <span className="stat-label">Ventes du jour</span>
+            <span className="stat-val">{todayStats.salesToday}</span>
+            <span style={{ fontSize: '0.75rem', color: '#64748B' }}>
+              {todayStats.caTodayEUR > 0 ? `${todayStats.caTodayEUR.toLocaleString('fr-FR')} € encaissés` : '0 € aujourd\'hui'}
+            </span>
+          </div>
+        </div>
+
+        {/* Carte 3 : Contenus publiés */}
         <div className="card stat-card">
           <div className="stat-icon-wrapper content-icon">
             <FileText className="stat-icon" />
@@ -136,6 +169,7 @@ export const TodayScreen: React.FC = () => {
           </div>
         </div>
 
+        {/* Carte 4 : 1ers DM envoyés */}
         <div className="card stat-card">
           <div className="stat-icon-wrapper dm-icon">
             <Users className="stat-icon" />
@@ -146,6 +180,7 @@ export const TodayScreen: React.FC = () => {
           </div>
         </div>
 
+        {/* Carte 5 : Relances faites */}
         <div className="card stat-card">
           <div className="stat-icon-wrapper relance-icon">
             <Users className="stat-icon text-orange" />
@@ -153,16 +188,6 @@ export const TodayScreen: React.FC = () => {
           <div className="stat-meta">
             <span className="stat-label">Relances faites</span>
             <span className="stat-val">{todayStats.followupsToday}</span>
-          </div>
-        </div>
-
-        <div className="card stat-card">
-          <div className="stat-icon-wrapper sale-icon">
-            <ShoppingBag className="stat-icon text-success" />
-          </div>
-          <div className="stat-meta">
-            <span className="stat-label">Ventes du jour</span>
-            <span className="stat-val">{todayStats.salesToday}</span>
           </div>
         </div>
       </div>

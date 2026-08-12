@@ -11,6 +11,7 @@ import {
   calculateTotalContractedCA,
   calculateTotalCollectedCA,
   calculateDailyProspectingActivity,
+  calculateTodayIndicators,
   getYearMonth,
   EXCHANGE_RATES
 } from '../../utils/calculations';
@@ -784,19 +785,21 @@ export const DashboardScreen: React.FC = () => {
   // Filtrer les collaborations
   const monthlyCollabsList = collabs.filter(c => isDateInTimeFrame(c.publishDate));
 
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStats = calculateTodayIndicators(todayStr, contents, prospects, sales, collabs, launches);
+
   return (
     <div className="fade-in">
-      <div className="screen-header">
+      <div className="screen-header flex-between" style={{ flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 className="screen-title">
             <PieChart className="screen-title-icon" /> Tableau de Bord
           </h1>
-          <p className="screen-subtitle">Analysez les performances et la rentabilité globale de votre structure</p>
+          <p className="screen-subtitle">Analyse financière et indicateurs de performance</p>
         </div>
 
-        {/* Sélecteur de période Stripe Soft UI */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div className="timeframe-tabs">
+        <div className="dashboard-controls" style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="timeframe-selector-tabs">
             <button 
               className={`timeframe-tab ${timeFrame === 'monthly' ? 'active' : ''}`}
               onClick={() => setTimeFrame('monthly')}
@@ -855,9 +858,27 @@ export const DashboardScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* Grid de 4 indicateurs financiers */}
-      <div className="grid-cols-4" style={{ marginTop: '24px' }}>
-        {/* CA Card */}
+      {/* Grid d'indicateurs financiers + CA du jour */}
+      <div style={{ marginTop: '24px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+        {/* CA Encaissé du jour Card */}
+        <div className="card stat-card" style={{ borderLeft: '4px solid #0066FF', backgroundColor: 'rgba(0, 102, 255, 0.03)' }}>
+          <div className="stat-icon-wrapper sale-icon" style={{ backgroundColor: 'rgba(0, 102, 255, 0.12)' }}>
+            <DollarSign className="stat-icon" style={{ color: '#0066FF' }} />
+          </div>
+          <div className="stat-meta">
+            <span className="stat-label" style={{ fontWeight: 600, color: '#0066FF' }}>CA Encaissé du jour</span>
+            <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap' }}>
+              <span className="stat-val" style={{ color: '#0066FF', fontSize: '1.45rem', fontWeight: 700 }}>
+                {todayStats.caTodayEUR.toLocaleString('fr-FR')} €
+              </span>
+            </div>
+            <span className="stat-subtext" style={{ fontWeight: 600, color: '#64748B' }}>
+              {todayStats.caTodayFCFA.toLocaleString('fr-FR')} FCFA · {todayStats.salesToday} vente{todayStats.salesToday > 1 ? 's' : ''}
+            </span>
+          </div>
+        </div>
+
+        {/* CA Card (Période) */}
         <div className="card stat-card relative">
           <div className="stat-icon-wrapper sale-icon">
             <TrendingUp className="stat-icon text-success" />
