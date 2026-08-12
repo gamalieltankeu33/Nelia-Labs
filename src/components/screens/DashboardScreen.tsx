@@ -110,7 +110,7 @@ export const DashboardScreen: React.FC = () => {
     });
   };
 
-  const [timeFrame, setTimeFrame] = useState<'monthly' | '3-months' | '6-months' | 'yearly' | 'all-time'>('monthly');
+  const [timeFrame, setTimeFrame] = useState<'daily' | 'monthly' | '3-months' | '6-months' | 'yearly' | 'all-time'>('monthly');
   const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear().toString());
 
   const [isEditingObjective, setIsEditingObjective] = useState(false);
@@ -170,8 +170,8 @@ export const DashboardScreen: React.FC = () => {
 
   const launch = launches[selectedMonth];
 
-  if (timeFrame === 'monthly' || timeFrame === '3-months' || timeFrame === '6-months') {
-    const months = timeFrame === 'monthly' 
+  if (timeFrame === 'daily' || timeFrame === 'monthly' || timeFrame === '3-months' || timeFrame === '6-months') {
+    const months = (timeFrame === 'monthly' || timeFrame === 'daily') 
       ? [selectedMonth] 
       : timeFrame === '3-months'
         ? getMonthsInWindow(selectedMonth, 3)
@@ -226,7 +226,22 @@ export const DashboardScreen: React.FC = () => {
       ...stats
     }));
 
-    if (timeFrame === 'monthly') {
+    if (timeFrame === 'daily') {
+      const [year, month] = selectedMonth.split('-').map(Number);
+      const daysInMonth = new Date(year, month, 0).getDate();
+      barChartLabels = Array.from({ length: daysInMonth }, (_, i) => `J${i + 1}`);
+
+      barChartCollectedData = Array.from({ length: daysInMonth }, (_, i) => {
+        const dayStr = `${selectedMonth}-${String(i + 1).padStart(2, '0')}`;
+        return calculateTodayIndicators(dayStr, contents, prospects, sales, collabs, launches).caTodayEUR;
+      });
+      barChartContractedData = barChartCollectedData;
+      barChartObjectiveData = Array.from({ length: daysInMonth }, () => (objectives[selectedMonth] || 5000) / daysInMonth);
+
+      const monthLabelName = new Date(selectedMonth + '-02').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+      chartTitle = `Chiffre d'Affaires Journalier — Jour par Jour (${monthLabelName.charAt(0).toUpperCase() + monthLabelName.slice(1)})`;
+      breakdownTitle = `Sources de Revenu (${monthLabelName.charAt(0).toUpperCase() + monthLabelName.slice(1)})`;
+    } else if (timeFrame === 'monthly') {
       const year = selectedMonth.split('-')[0];
       const monthNum = parseInt(selectedMonth.split('-')[1], 10);
       const isSecondSemester = monthNum >= 7;
@@ -801,6 +816,12 @@ export const DashboardScreen: React.FC = () => {
         <div className="dashboard-controls" style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           <div className="timeframe-selector-tabs">
             <button 
+              className={`timeframe-tab ${timeFrame === 'daily' ? 'active' : ''}`}
+              onClick={() => setTimeFrame('daily')}
+            >
+              Jour par jour
+            </button>
+            <button 
               className={`timeframe-tab ${timeFrame === 'monthly' ? 'active' : ''}`}
               onClick={() => setTimeFrame('monthly')}
             >
@@ -832,7 +853,7 @@ export const DashboardScreen: React.FC = () => {
             </button>
           </div>
 
-          {(timeFrame === 'monthly' || timeFrame === '3-months' || timeFrame === '6-months') && (
+          {(timeFrame === 'daily' || timeFrame === 'monthly' || timeFrame === '3-months' || timeFrame === '6-months') && (
             <select 
               value={selectedMonth}
               onChange={e => setSelectedMonth(e.target.value)}

@@ -15,10 +15,17 @@ export const TodayScreen: React.FC = () => {
     addDigitalSale 
   } = useStore();
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const actualTodayStr = new Date().toISOString().split('T')[0];
+  const [selectedDate, setSelectedDate] = useState(actualTodayStr);
 
-  // Métriques du jour
-  const todayStats = calculateTodayIndicators(todayStr, contents, prospects, sales, collabs, launches);
+  const getYesterdayStr = () => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().split('T')[0];
+  };
+
+  // Métriques de la date sélectionnée
+  const todayStats = calculateTodayIndicators(selectedDate, contents, prospects, sales, collabs, launches);
 
   const getStagnationDays = (history: { date: string }[]) => {
     if (history.length === 0) return 0;
@@ -70,7 +77,7 @@ export const TodayScreen: React.FC = () => {
     if (!contentForm.title) return;
     
     addContent({
-      date: todayStr,
+      date: selectedDate,
       platform: contentForm.platform,
       type: contentForm.type,
       title: contentForm.title,
@@ -90,7 +97,7 @@ export const TodayScreen: React.FC = () => {
     e.preventDefault();
     if (!prospectForm.name) return;
     
-    addProspect(prospectForm.name, todayStr);
+    addProspect(prospectForm.name, selectedDate);
     setProspectForm({ name: '' });
     triggerSuccess('prospect');
   };
@@ -101,7 +108,7 @@ export const TodayScreen: React.FC = () => {
     if (!saleForm.product || isNaN(priceNum)) return;
     
     addDigitalSale({
-      date: todayStr,
+      date: selectedDate,
       product: saleForm.product,
       price: priceNum,
       channel: saleForm.channel,
@@ -117,12 +124,57 @@ export const TodayScreen: React.FC = () => {
     triggerSuccess('sale');
   };
 
+  const formattedSelectedDate = new Date(selectedDate + 'T12:00:00').toLocaleDateString('fr-FR', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
   return (
     <div className="fade-in">
-      <div className="screen-header">
+      <div className="screen-header flex-between" style={{ flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 className="screen-title">Aujourd'hui</h1>
-          <p className="screen-subtitle">Suivi rapide de vos actions du jour — {new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          <h1 className="screen-title">
+            {selectedDate === actualTodayStr ? "Aujourd'hui" : "Suivi par Date"}
+          </h1>
+          <p className="screen-subtitle">
+            Indicateurs & CA du {formattedSelectedDate.charAt(0).toUpperCase() + formattedSelectedDate.slice(1)}
+          </p>
+        </div>
+
+        {/* Sélecteur de date journalier */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <button
+            className={`timeframe-tab ${selectedDate === actualTodayStr ? 'active' : ''}`}
+            onClick={() => setSelectedDate(actualTodayStr)}
+            style={{ padding: '6px 12px', fontSize: '12px' }}
+          >
+            Aujourd'hui
+          </button>
+          <button
+            className={`timeframe-tab ${selectedDate === getYesterdayStr() ? 'active' : ''}`}
+            onClick={() => setSelectedDate(getYesterdayStr())}
+            style={{ padding: '6px 12px', fontSize: '12px' }}
+          >
+            Hier
+          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--bg-card)', padding: '4px 8px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600 }}>Date :</span>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => e.target.value && setSelectedDate(e.target.value)}
+              style={{
+                border: 'none',
+                background: 'transparent',
+                color: 'var(--text-primary)',
+                fontSize: '12px',
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            />
+          </div>
         </div>
       </div>
 
