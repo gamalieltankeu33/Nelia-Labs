@@ -10,7 +10,13 @@ import {
   X, 
   Calendar,
   FileText,
-  ChevronDown
+  ChevronDown,
+  DollarSign,
+  Rocket,
+  Video,
+  CheckSquare,
+  MessageSquare,
+
 } from 'lucide-react';
 import type { GoalCategory, MonthlyGoal } from '../../types';
 
@@ -29,19 +35,17 @@ export const ObjectivesMemoScreen: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<MonthlyGoal | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [expandedNotesId, setExpandedNotesId] = useState<string | null>(null);
 
-  // Form State
+  // Form State pour objectif sous forme de phrase + commentaire
   const [formData, setFormData] = useState({
     title: '',
-    category: 'financier' as GoalCategory,
+    category: 'projet' as GoalCategory,
     description: '',
-    targetValue: 1,
-    currentValue: 0,
-    unit: 'actions',
     notes: ''
   });
 
-  // Notes de bilan mensuel (Mémo global du mois)
+  // Notes globales du mois (Bilan personnel)
   const [monthlyNotes, setMonthlyNotes] = useState<Record<string, string>>(() => {
     try {
       const saved = localStorage.getItem('nextia_monthly_memos');
@@ -69,14 +73,14 @@ export const ObjectivesMemoScreen: React.FC = () => {
 
   const currentMonthLabel = formatMonthLabel(selectedMonth);
 
-  // Génération des 12 mois pour le sélecteur
+  // Options des 12 mois pour le sélecteur
   const monthOptions = Array.from({ length: 12 }, (_, i) => {
     const m = i + 1 < 10 ? `0${i + 1}` : `${i + 1}`;
     const key = `2026-${m}`;
     return { key, label: formatMonthLabel(key) };
   });
 
-  // Filtre des objectifs du mois courant
+  // Filtrage des objectifs
   const goalsForMonth = monthlyGoals.filter((g: MonthlyGoal) => g.month === selectedMonth);
   const filteredGoals = goalsForMonth.filter((g: MonthlyGoal) => {
     if (filterCategory === 'all') return true;
@@ -86,11 +90,12 @@ export const ObjectivesMemoScreen: React.FC = () => {
   // Évaluation automatique de la performance
   const totalCount = goalsForMonth.length;
   const completedCount = goalsForMonth.filter((g: MonthlyGoal) => g.completed).length;
+  const uncompletedCount = totalCount - completedCount;
   const performanceScore = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   // Appréciation de l'algorithme
   const getEvaluationTag = (score: number) => {
-    if (totalCount === 0) return { label: 'Aucun objectif fixé', color: '#8E8E93', bg: '#F2F2F7' };
+    if (totalCount === 0) return { label: 'Aucun objectif défini', color: '#8E8E93', bg: '#F2F2F7' };
     if (score >= 80) return { label: 'Excellente réalisation (Objectifs atteints)', color: '#10B981', bg: 'rgba(16, 185, 129, 0.1)' };
     if (score >= 50) return { label: 'Progression moyenne (En bonne voie)', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.1)' };
     return { label: 'Objectif non atteint (À intensifier)', color: '#EF4444', bg: 'rgba(239, 68, 68, 0.1)' };
@@ -104,9 +109,6 @@ export const ObjectivesMemoScreen: React.FC = () => {
       title: '',
       category: 'projet',
       description: '',
-      targetValue: 1,
-      currentValue: 0,
-      unit: 'actions',
       notes: ''
     });
     setIsModalOpen(true);
@@ -118,9 +120,6 @@ export const ObjectivesMemoScreen: React.FC = () => {
       title: goal.title,
       category: goal.category,
       description: goal.description || '',
-      targetValue: goal.targetValue || 1,
-      currentValue: goal.currentValue || 0,
-      unit: goal.unit || 'actions',
       notes: goal.notes || ''
     });
     setIsModalOpen(true);
@@ -130,41 +129,36 @@ export const ObjectivesMemoScreen: React.FC = () => {
     e.preventDefault();
     if (editingGoal) {
       updateMonthlyGoal(editingGoal.id, {
-        ...formData,
-        completed: formData.currentValue >= formData.targetValue
+        ...formData
       });
     } else {
       addMonthlyGoal({
         ...formData,
         month: selectedMonth,
-        completed: formData.currentValue >= formData.targetValue
+        completed: false
       });
     }
     setIsModalOpen(false);
   };
 
-  const handleIncrement = (goal: MonthlyGoal, delta: number) => {
-    const nextVal = Math.max(0, (goal.currentValue || 0) + delta);
-    const target = goal.targetValue || 1;
-    updateMonthlyGoal(goal.id, {
-      currentValue: nextVal,
-      completed: nextVal >= target
-    });
+  // Mise à jour rapide du commentaire individuel par objectif
+  const handleGoalNoteUpdate = (id: string, notes: string) => {
+    updateMonthlyGoal(id, { notes });
   };
 
   return (
     <div className="memo-container">
       
-      {/* Header avec sélecteur de mois */}
+      {/* Header avec sélecteur de mois sans émoji */}
       <div className="memo-header-card">
         <div className="memo-header-left">
           <div className="memo-badge">
             <Target className="w-4 h-4 text-blue-500" />
-            <span>Module Routine & Suivi</span>
+            <span>Routine & Suivi des Objectifs</span>
           </div>
           <h1 className="memo-title">Objectifs du mois — {currentMonthLabel}</h1>
-          <p className="memo-[#8E8E93] text-xs mt-1">
-            Notez vos objectifs mensuels, vos réalisations et laissez l'algorithme évaluer votre taux de réussite.
+          <p className="memo-sub">
+            Rédigez vos objectifs sous forme de phrases, cochez ce qui est accompli et commentez votre progression.
           </p>
         </div>
 
@@ -184,15 +178,15 @@ export const ObjectivesMemoScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* Évaluation Automatique de Performance & Jauge */}
+      {/* Carte d'Évaluation Algorithmique de Performance */}
       <div className="memo-eval-grid">
         
         {/* Score & Jauge Principale */}
         <div className="memo-eval-card main">
           <div className="eval-top">
             <div>
-              <span className="eval-label">ÉVALUATION ALGORITHMIQUE DE PERFORMANCE</span>
-              <h2 className="eval-score-text">{performanceScore}% de réalisation</h2>
+              <span className="eval-label">ANALYSE ALGORITHMIQUE DE PERFORMANCE</span>
+              <h2 className="eval-score-text">{performanceScore}% des actions réalisées</h2>
             </div>
             <div className="eval-tag" style={{ color: evalTag.color, background: evalTag.bg }}>
               {evalTag.label}
@@ -211,25 +205,25 @@ export const ObjectivesMemoScreen: React.FC = () => {
           </div>
 
           <div className="eval-foot">
-            <span>{completedCount} sur {totalCount} objectif(s) validé(s) ce mois-ci</span>
-            <span>{totalCount - completedCount} restant(s)</span>
+            <span><strong>{completedCount}</strong> sur <strong>{totalCount}</strong> phrase(s) cochee(s)</span>
+            <span><strong>{uncompletedCount}</strong> objectif(s) en cours d'avancement</span>
           </div>
         </div>
 
-        {/* Bouton d'ajout rapide */}
+        {/* Bouton d'ajout d'objectif */}
         <div className="memo-eval-card action flex-col-between">
           <div>
-            <span className="eval-label">ACTIONS DU MOIS</span>
-            <p className="eval-desc">Ajoutez un projet, une vidéo TikTok, ou un objectif financier à accomplir.</p>
+            <span className="eval-label">NOUVEAU BUT DU MOIS</span>
+            <p className="eval-desc">Rédigez la phrase de votre objectif à accomplir ce mois-ci.</p>
           </div>
           <button onClick={openCreateModal} className="memo-add-btn">
             <Plus className="w-4 h-4" />
-            <span>Ajouter un objectif</span>
+            <span>Rédiger un objectif</span>
           </button>
         </div>
       </div>
 
-      {/* Chips de filtres par catégories */}
+      {/* Chips de filtres avec icônes vectorielles Lucide (SANS ÉMOJIS) */}
       <div className="memo-filter-chips">
         <button 
           onClick={() => setFilterCategory('all')} 
@@ -241,183 +235,175 @@ export const ObjectivesMemoScreen: React.FC = () => {
           onClick={() => setFilterCategory('financier')} 
           className={`chip ${filterCategory === 'financier' ? 'active' : ''}`}
         >
-          💰 Financier & CA
+          <DollarSign className="w-3.5 h-3.5" />
+          <span>Financier & CA</span>
         </button>
         <button 
           onClick={() => setFilterCategory('projet')} 
           className={`chip ${filterCategory === 'projet' ? 'active' : ''}`}
         >
-          🚀 Projets & Dev UCL
+          <Rocket className="w-3.5 h-3.5" />
+          <span>Projets & Dev UCL</span>
         </button>
         <button 
           onClick={() => setFilterCategory('contenu')} 
           className={`chip ${filterCategory === 'contenu' ? 'active' : ''}`}
         >
-          🎬 Créatives & TikTok
+          <Video className="w-3.5 h-3.5" />
+          <span>Créatives & TikTok</span>
         </button>
         <button 
           onClick={() => setFilterCategory('routine')} 
           className={`chip ${filterCategory === 'routine' ? 'active' : ''}`}
         >
-          🏆 Habitudes & Routine
+          <CheckSquare className="w-3.5 h-3.5" />
+          <span>Habitudes & Routine</span>
         </button>
       </div>
 
-      {/* Liste des Objectifs du mois */}
-      <div className="memo-[#FFFFFF] bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+      {/* Liste des Objectifs & Commentaires */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
         {filteredGoals.length === 0 ? (
           <div className="memo-empty-box">
             <Target className="w-10 h-10 text-gray-300 mb-2" />
-            <h3>Aucun objectif noté pour {currentMonthLabel}</h3>
-            <p>Cliquez sur "Ajouter un objectif" pour consigner vos projets, vidéos et buts du mois.</p>
+            <h3>Aucun objectif rédigé pour {currentMonthLabel}</h3>
+            <p>Cliquez sur "Rédiger un objectif" pour noter vos phrases d'objectifs du mois.</p>
           </div>
         ) : (
           <div className="memo-goals-list">
             {filteredGoals.map((goal: MonthlyGoal) => (
-              <div key={goal.id} className={`memo-goal-row ${goal.completed ? 'completed' : ''}`}>
+              <div key={goal.id} className={`memo-goal-card ${goal.completed ? 'completed' : ''}`}>
                 
-                {/* Checkbox interactif */}
-                <button 
-                  onClick={() => toggleMonthlyGoal(goal.id)}
-                  className="memo-checkbox-btn"
-                >
-                  {goal.completed ? (
-                    <CheckCircle2 className="w-6 h-6 text-emerald-500 fill-emerald-50" />
-                  ) : (
-                    <Circle className="w-6 h-6 text-gray-300 hover:text-blue-500" />
-                  )}
-                </button>
+                <div className="goal-main-row">
+                  {/* Case à cocher interactive */}
+                  <button 
+                    onClick={() => toggleMonthlyGoal(goal.id)}
+                    className="memo-checkbox-btn"
+                  >
+                    {goal.completed ? (
+                      <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+                    ) : (
+                      <Circle className="w-6 h-6 text-gray-300 hover:text-blue-500" />
+                    )}
+                  </button>
 
-                {/* Info de l'objectif */}
-                <div className="goal-info flex-1">
-                  <div className="goal-title-line">
-                    <span className={`goal-title ${goal.completed ? 'line-through text-gray-400' : ''}`}>
-                      {goal.title}
-                    </span>
-                    <span className="goal-cat-tag">{goal.category}</span>
+                  {/* Phrase de l'objectif */}
+                  <div className="goal-content-box flex-1">
+                    <div className="goal-title-line">
+                      <span className={`goal-title ${goal.completed ? 'completed-text' : ''}`}>
+                        {goal.title}
+                      </span>
+                      <span className="goal-cat-tag">{goal.category}</span>
+                    </div>
+                    {goal.description && <p className="goal-desc">{goal.description}</p>}
                   </div>
-                  {goal.description && <p className="goal-desc">{goal.description}</p>}
+
+                  {/* Bouton déplier commentaire */}
+                  <button 
+                    onClick={() => setExpandedNotesId(expandedNotesId === goal.id ? null : goal.id)}
+                    className={`btn-toggle-notes ${goal.notes ? 'has-notes' : ''}`}
+                    title="Ajouter ou voir un commentaire"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    <span>{goal.notes ? 'Avis / Note' : 'Ajouter un avis'}</span>
+                  </button>
+
+                  {/* Actions Modifier / Supprimer */}
+                  <div className="goal-actions">
+                    <button onClick={() => openEditModal(goal)} className="action-icon"><Edit3 className="w-4 h-4" /></button>
+                    <button onClick={() => setDeleteTargetId(goal.id)} className="action-icon danger"><Trash2 className="w-4 h-4" /></button>
+                  </div>
                 </div>
 
-                {/* Compteur d'avancement (+ / -) */}
-                <div className="goal-counter-box">
-                  <button onClick={() => handleIncrement(goal, -1)} className="counter-btn">-</button>
-                  <span className="counter-val">{goal.currentValue || 0} / {goal.targetValue || 1} {goal.unit || ''}</span>
-                  <button onClick={() => handleIncrement(goal, 1)} className="counter-btn">+</button>
-                </div>
-
-                {/* Actions Modifier / Supprimer */}
-                <div className="goal-actions">
-                  <button onClick={() => openEditModal(goal)} className="action-icon"><Edit3 className="w-4 h-4" /></button>
-                  <button onClick={() => setDeleteTargetId(goal.id)} className="action-icon danger"><Trash2 className="w-4 h-4" /></button>
-                </div>
+                {/* Zone de Commentaire / Avis individuel par objectif */}
+                {(expandedNotesId === goal.id || goal.notes) && (
+                  <div className="goal-notes-box">
+                    <div className="notes-box-header">
+                      <MessageSquare className="w-3.5 h-3.5 text-[#0071E3]" />
+                      <span>Commentaire / Où j'en suis sur cet objectif :</span>
+                    </div>
+                    <textarea 
+                      value={goal.notes || ''}
+                      onChange={(e) => handleGoalNoteUpdate(goal.id, e.target.value)}
+                      placeholder="Notez votre progression, ce qui est fait ou ce qu'il reste à accomplir..."
+                      rows={2}
+                      className="goal-notes-textarea"
+                    />
+                  </div>
+                )}
               </div>
             ))}
           </div>
         )}
       </div>
 
-      {/* Zone Mémo & Retours d'Expérience Mensuels */}
+      {/* Zone Mémo & Bilan Personnel du mois */}
       <div className="memo-notes-card">
         <div className="notes-header">
           <FileText className="w-5 h-5 text-[#0071E3]" />
           <div>
-            <h3>Mémo & Bilan personnel de {currentMonthLabel}</h3>
-            <p>Consignez vos notes, avis, bilans de projets et réflexions stratégiques du mois.</p>
+            <h3>Mémo & Bilan général de {currentMonthLabel}</h3>
+            <p>Rédigez vos réflexions d'ensemble, vos apprentissages et le bilan du mois.</p>
           </div>
         </div>
 
         <textarea 
           value={monthlyNotes[selectedMonth] || ''}
           onChange={(e) => handleNotesChange(e.target.value)}
-          placeholder={`Notes et mémo du mois de ${currentMonthLabel}... (Ex: Ce mois-ci, les créatives TikTok ont bien fonctionné, le projet UCL a avancé de 80%, prévoir de doubler la prospection en fin de mois...)`}
-          rows={5}
+          placeholder={`Bilan général de ${currentMonthLabel}... (Notes stratégiques, retours sur le mois...)`}
+          rows={4}
           className="memo-textarea"
         />
       </div>
 
-      {/* Modal Formulaire */}
+      {/* Modal Rédiger / Modifier Objectif sans émoji */}
       {isModalOpen && (
         <div className="memo-modal-overlay">
           <div className="memo-modal-card">
             <div className="modal-header">
-              <h3>{editingGoal ? "Modifier l'objectif" : "Ajouter un objectif du mois"}</h3>
+              <h3>{editingGoal ? "Modifier l'objectif" : "Rédiger un objectif du mois"}</h3>
               <button onClick={() => setIsModalOpen(false)} className="close-btn"><X className="w-5 h-5" /></button>
             </div>
 
             <form onSubmit={handleFormSubmit} className="memo-form">
               <div className="form-group">
-                <label>Titre de l'objectif *</label>
-                <input 
-                  type="text"
+                <label>Phrase de l'objectif *</label>
+                <textarea 
                   required
-                  placeholder="Ex: Tourner 15 vidéos TikTok / Atteindre 10M FCFA..."
+                  rows={2}
+                  placeholder="Ex: Réaliser le développement de l'UCL et tourner 15 vidéos TikTok ce mois-ci..."
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  className="memo-form-textarea"
                 />
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Catégorie</label>
-                  <select 
-                    value={formData.category}
-                    onChange={(e: any) => setFormData({ ...formData, category: e.target.value })}
-                  >
-                    <option value="financier">💰 Financier & CA</option>
-                    <option value="projet">🚀 Projet & Dev UCL</option>
-                    <option value="contenu">🎬 Créative & Vidéo</option>
-                    <option value="routine">🏆 Routine & Habitude</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>Unité de mesure</label>
-                  <input 
-                    type="text"
-                    placeholder="ex: vidéos, €, FCFA, projets"
-                    value={formData.unit}
-                    onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Cible (Objectif à atteindre)</label>
-                  <input 
-                    type="number"
-                    min="1"
-                    required
-                    value={formData.targetValue}
-                    onChange={(e) => setFormData({ ...formData, targetValue: Number(e.target.value) })}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Réalisé (Actuel)</label>
-                  <input 
-                    type="number"
-                    min="0"
-                    value={formData.currentValue}
-                    onChange={(e) => setFormData({ ...formData, currentValue: Number(e.target.value) })}
-                  />
-                </div>
+              <div className="form-group">
+                <label>Catégorie</label>
+                <select 
+                  value={formData.category}
+                  onChange={(e: any) => setFormData({ ...formData, category: e.target.value })}
+                >
+                  <option value="financier">Financier & CA</option>
+                  <option value="projet">Projet & Dev UCL</option>
+                  <option value="contenu">Créative & TikTok</option>
+                  <option value="routine">Habitude & Routine</option>
+                </select>
               </div>
 
               <div className="form-group">
-                <label>Description / Détails</label>
+                <label>Commentaire initial / Avis (optionnel)</label>
                 <input 
                   type="text"
-                  placeholder="Détails complémentaires..."
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Où vous en êtes actuellement..."
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 />
               </div>
 
               <div className="form-actions">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="btn-cancel">Annuler</button>
-                <button type="submit" className="btn-submit">{editingGoal ? 'Enregistrer' : 'Ajouter'}</button>
+                <button type="submit" className="btn-submit">{editingGoal ? 'Enregistrer' : 'Rédiger'}</button>
               </div>
             </form>
           </div>
@@ -473,6 +459,7 @@ export const ObjectivesMemoScreen: React.FC = () => {
         }
 
         .memo-title { font-size: 24px; font-weight: 800; margin: 0; }
+        .memo-sub { color: #8E8E93; font-size: 12.5px; margin: 4px 0 0 0; }
 
         .memo-month-select-wrapper {
           display: flex;
@@ -568,6 +555,9 @@ export const ObjectivesMemoScreen: React.FC = () => {
         }
 
         .chip {
+          display: flex;
+          align-items: center;
+          gap: 6px;
           padding: 8px 16px;
           border-radius: 99px;
           background: #FFFFFF;
@@ -596,58 +586,91 @@ export const ObjectivesMemoScreen: React.FC = () => {
         .memo-goals-list {
           display: flex;
           flex-direction: column;
-          gap: 10px;
+          gap: 12px;
         }
 
-        .memo-goal-row {
+        .memo-goal-card {
           display: flex;
-          align-items: center;
-          gap: 14px;
-          padding: 14px;
-          border-radius: 14px;
+          flex-direction: column;
+          padding: 16px;
+          border-radius: 16px;
           background: #F8FAFC;
-          border: 1px solid rgba(0,0,0,0.04);
+          border: 1px solid rgba(0,0,0,0.05);
           transition: all 0.2s ease;
         }
 
-        .memo-goal-row.completed {
+        .memo-goal-card.completed {
           background: #F0FDF4;
-          border-color: rgba(16, 185, 129, 0.15);
+          border-color: rgba(16, 185, 129, 0.2);
+        }
+
+        .goal-main-row {
+          display: flex;
+          align-items: center;
+          gap: 14px;
         }
 
         .memo-checkbox-btn { background: none; border: none; cursor: pointer; display: flex; align-items: center; }
 
         .goal-title-line { display: flex; align-items: center; gap: 8px; }
-        .goal-title { font-size: 14px; font-weight: 700; }
-        .goal-cat-tag { font-size: 10px; font-weight: 800; text-transform: uppercase; background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 6px; color: #6E6E73; }
-        .goal-desc { font-size: 11.5px; color: #8E8E93; margin: 2px 0 0 0; }
+        .goal-title { font-size: 14.5px; font-weight: 700; color: #1D1D1F; line-height: 1.4; }
+        .goal-title.completed-text { text-decoration: line-through; color: #8E8E93; }
+        
+        .goal-cat-tag { font-size: 10px; font-weight: 800; text-transform: uppercase; background: rgba(0,0,0,0.06); padding: 2px 8px; border-radius: 6px; color: #6E6E73; }
+        .goal-desc { font-size: 12px; color: #8E8E93; margin: 3px 0 0 0; }
 
-        .goal-counter-box {
+        .btn-toggle-notes {
           display: flex;
           align-items: center;
-          gap: 8px;
-          background: #FFFFFF;
-          border: 1px solid rgba(0,0,0,0.08);
+          gap: 6px;
+          padding: 6px 12px;
           border-radius: 10px;
-          padding: 4px 10px;
-        }
-
-        .counter-btn {
-          width: 24px;
-          height: 24px;
-          border-radius: 6px;
+          background: rgba(0, 113, 227, 0.08);
+          color: #0071E3;
+          font-size: 11.5px;
+          font-weight: 700;
           border: none;
-          background: #F2F2F7;
-          font-weight: 800;
           cursor: pointer;
         }
 
-        .counter-val { font-size: 11.5px; font-weight: 800; color: #1D1D1F; min-width: 80px; text-align: center; }
+        .btn-toggle-notes.has-notes {
+          background: rgba(16, 185, 129, 0.1);
+          color: #10B981;
+        }
 
         .goal-actions { display: flex; gap: 6px; }
         .action-icon { background: none; border: none; color: #8E8E93; cursor: pointer; padding: 6px; border-radius: 8px; }
         .action-icon:hover { background: #E5E5EA; color: #1D1D1F; }
         .action-icon.danger:hover { background: rgba(239, 68, 68, 0.1); color: #EF4444; }
+
+        .goal-notes-box {
+          margin-top: 12px;
+          padding-top: 12px;
+          border-top: 1px solid rgba(0,0,0,0.06);
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .notes-box-header {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 11.5px;
+          font-weight: 700;
+          color: #515154;
+        }
+
+        .goal-notes-textarea {
+          width: 100%;
+          border-radius: 10px;
+          border: 1px solid rgba(0,0,0,0.1);
+          background: #FFFFFF;
+          padding: 10px;
+          font-size: 12.5px;
+          outline: none;
+          resize: vertical;
+        }
 
         .memo-notes-card {
           background: #FFFFFF;
@@ -672,6 +695,17 @@ export const ObjectivesMemoScreen: React.FC = () => {
           resize: vertical;
         }
 
+        .memo-form-textarea {
+          width: 100%;
+          border-radius: 10px;
+          border: 1px solid rgba(0,0,0,0.1);
+          background: #F8FAFC;
+          padding: 10px;
+          font-size: 12.5px;
+          outline: none;
+          resize: vertical;
+        }
+
         .memo-modal-overlay {
           position: fixed;
           inset: 0;
@@ -688,7 +722,7 @@ export const ObjectivesMemoScreen: React.FC = () => {
           background: #FFFFFF;
           border-radius: 20px;
           width: 100%;
-          max-width: 460px;
+          max-width: 480px;
           padding: 24px;
         }
 
@@ -708,7 +742,6 @@ export const ObjectivesMemoScreen: React.FC = () => {
           outline: none;
         }
 
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .form-actions { display: flex; gap: 10px; margin-top: 10px; }
         .btn-cancel { flex: 1; padding: 10px; border-radius: 10px; background: #F2F2F7; border: none; font-weight: 700; cursor: pointer; }
         .btn-submit { flex: 1; padding: 10px; border-radius: 10px; background: #0071E3; color: #FFFFFF; border: none; font-weight: 700; cursor: pointer; }
