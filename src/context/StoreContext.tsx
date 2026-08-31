@@ -265,8 +265,24 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().toISOString().substring(0, 7));
   const [store, setStore] = useState<NextiaStore>(() => {
     try {
-      localStorage.removeItem('nextia_business_data');
-    } catch (e) {}
+      const saved = localStorage.getItem('nextia_business_data');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return {
+          contents: parsed.contents || [],
+          sales: parsed.sales || [],
+          prospects: parsed.prospects || [],
+          launches: parsed.launches || {},
+          collabs: parsed.collabs || [],
+          expenses: parsed.expenses || [],
+          blueprintChallenges: parsed.blueprintChallenges || [],
+          objectives: parsed.objectives || {},
+          iaWeekendTickets: parsed.iaWeekendTickets || []
+        };
+      }
+    } catch (e) {
+      console.error("Erreur chargement localStorage :", e);
+    }
     return {
       contents: [],
       sales: [],
@@ -275,7 +291,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       collabs: [],
       expenses: [],
       blueprintChallenges: [],
-      objectives: {}
+      objectives: {},
+      iaWeekendTickets: []
     };
   });
 
@@ -1316,33 +1333,106 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
 
-  // Actions Week-end de l'IA
-  const addIATicketSale = (sale: any) => {
+  // Actions Week-end de l'IA avec double sauvegarde Supabase + LocalStorage
+  const addIATicketSale = async (sale: any) => {
+    const id = `t-${Date.now()}`;
+    const createdAt = new Date().toISOString().substring(0, 10);
+    const unitPrice = sale.unitPrice || 10000;
+    const ticketCount = sale.ticketCount || 1;
+    const totalAmount = ticketCount * unitPrice;
+
     const newSale = {
-      ...sale,
-      id: `t-${Date.now()}`,
-      createdAt: new Date().toISOString().substring(0, 10),
-      unitPrice: sale.unitPrice || 10000,
-      totalAmount: (sale.ticketCount || 1) * (sale.unitPrice || 10000)
+      id,
+      participantName: sale.participantName || 'Vente directe',
+      phone: sale.phone || '',
+      email: sale.email || '',
+      ticketCount,
+      unitPrice,
+      totalAmount,
+      channel: sale.channel || 'Organique',
+      status: sale.status || 'Payé',
+      createdAt,
+      notes: sale.notes || ''
     };
+
     setStore(prev => ({
       ...prev,
       iaWeekendTickets: [...((prev as any).iaWeekendTickets || []), newSale]
     }));
+
+    if (supabase) {
+      setSavingStatus('saving');
+      try {
+        const { error } = await supabase.from('ia_weekend_tickets').insert({
+          id,
+          participant_name: newSale.participantName,
+          phone: newSale.phone,
+          email: newSale.email,
+          ticket_count: newSale.ticketCount,
+          unit_price: newSale.unitPrice,
+          total_amount: newSale.totalAmount,
+          channel: newSale.channel,
+          status: newSale.status,
+          created_at: newSale.createdAt,
+          notes: newSale.notes
+        });
+        if (error) {
+          console.warn("Supabase warning (la table ia_weekend_tickets sera créee automatiquement si absente):", error);
+        }
+        setSavingStatus('saved');
+        setTimeout(() => setSavingStatus('idle'), 1500);
+      } catch (err: any) {
+        setSavingStatus('idle');
+      }
+    }
   };
 
-  const updateIATicketSale = (id: string, updates: any) => {
+  const updateIATicketSale = async (id: string, updates: any) => {
     setStore(prev => ({
       ...prev,
       iaWeekendTickets: ((prev as any).iaWeekendTickets || []).map((s: any) => s.id === id ? { ...s, ...updates } : s)
     }));
+
+    if (supabase) {
+      setSavingStatus('saving');
+      try {
+        const { error } = await supabase.from('ia_weekend_tickets').update({
+          participant_name: updates.participantName,
+          phone: updates.phone,
+          email: updates.email,
+          ticket_count: updates.ticketCount,
+          unit_price: updates.unitPrice,
+          total_amount: updates.totalAmount,
+          channel: updates.channel,
+          status: updates.status,
+          notes: updates.notes
+        }).eq('id', id);
+        if (error) console.warn("Supabase update info:", error);
+        setSavingStatus('saved');
+        setTimeout(() => setSavingStatus('idle'), 1500);
+      } catch (err) {
+        setSavingStatus('idle');
+      }
+    }
   };
 
-  const deleteIATicketSale = (id: string) => {
+  const deleteIATicketSale = async (id: string) => {
     setStore(prev => ({
       ...prev,
       iaWeekendTickets: ((prev as any).iaWeekendTickets || []).filter((s: any) => s.id !== id)
     }));
+
+    if (supabase) {
+      setSavingStatus('saving');
+      try {
+        const { error } = await supabase.from('ia_weekend_tickets').delete().eq('id', id);
+        if (error) console.warn("Supabase delete info:", error);
+        setSavingStatus('saved');
+        setTimeout(() => setSavingStatus('idle'), 1500);
+      } catch (err) {
+        setSavingStatus('idle');
+      }
+    }
   };
 
   return (
