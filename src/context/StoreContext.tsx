@@ -262,26 +262,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().toISOString().substring(0, 7));
   const [store, setStore] = useState<NextiaStore>(() => {
     try {
-      const saved = localStorage.getItem('nextia_business_data');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (!parsed.objectives) {
-          parsed.objectives = DEFAULT_OBJECTIVES;
-        }
-        if (!parsed.blueprintChallenges || parsed.blueprintChallenges.length === 0) {
-          parsed.blueprintChallenges = getDemoData().blueprintChallenges;
-        } else {
-          // Migration automatique de tous les anciens prix (10 000 FCFA -> 15 000 FCFA)
-          parsed.blueprintChallenges = parsed.blueprintChallenges.map((c: any) => ({
-            ...c,
-            registrationFee: (!c.registrationFee || c.registrationFee === 10000) ? 15000 : Number(c.registrationFee)
-          }));
-        }
-        return parsed;
-      }
-    } catch (e) {
-      console.error("Erreur lors du chargement des données locales :", e);
-    }
+      localStorage.removeItem('nextia_business_data');
+    } catch (e) {}
     return {
       contents: [],
       sales: [],
@@ -290,7 +272,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       collabs: [],
       expenses: [],
       blueprintChallenges: [],
-      objectives: DEFAULT_OBJECTIVES
+      objectives: {}
     };
   });
 
