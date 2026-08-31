@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { 
-  Ticket, 
   Clock, 
   DollarSign, 
   Plus, 
@@ -10,7 +9,8 @@ import {
   Trash2, 
   Edit, 
   X,
-  Sparkles
+  Sparkles,
+  Ticket
 } from 'lucide-react';
 import type { IATicketSale } from '../../types';
 import { EXCHANGE_RATES } from '../../utils/calculations';
@@ -35,13 +35,12 @@ export const IAWeekendScreen: React.FC = () => {
     notes: ''
   });
 
-  // Target event configuration
+  // Configuration événement
   const EVENT_DATE = '2026-11-14';
   const TARGET_TICKETS = 300;
   const TICKET_PRICE = 10000; // FCFA
-  // Target 3M FCFA
 
-  // Calculate days remaining until Nov 14, 2026
+  // Compte à rebours
   const getDaysRemaining = () => {
     const today = new Date();
     const eventDay = new Date(EVENT_DATE);
@@ -52,7 +51,7 @@ export const IAWeekendScreen: React.FC = () => {
 
   const daysRemaining = getDaysRemaining();
 
-  // Metrics calculations
+  // Metrics
   const paidSales = iaWeekendTickets.filter((s: IATicketSale) => s.status === 'Payé');
   const totalTicketsSold = paidSales.reduce((sum: number, s: IATicketSale) => sum + s.ticketCount, 0);
   const ticketsRemaining = Math.max(0, TARGET_TICKETS - totalTicketsSold);
@@ -61,7 +60,7 @@ export const IAWeekendScreen: React.FC = () => {
   const totalCollectedFCFA = paidSales.reduce((sum: number, s: IATicketSale) => sum + (s.totalAmount || s.ticketCount * TICKET_PRICE), 0);
   const totalCollectedEUR = Math.round(totalCollectedFCFA * EXCHANGE_RATES.FCFA_TO_EUR);
 
-  // Quick ticket adder
+  // Vente rapide
   const handleQuickAdd = (count: number) => {
     addIATicketSale({
       participantName: `Vente rapide x${count}`,
@@ -73,7 +72,7 @@ export const IAWeekendScreen: React.FC = () => {
     });
   };
 
-  // Channel breakdown
+  // Stats canaux
   const channelStats = ['Organique', 'Ads Facebook/TikTok', 'WhatsApp Direct', 'Partenariats'].map(channel => {
     const channelSales = paidSales.filter((s: IATicketSale) => s.channel === channel);
     const count = channelSales.reduce((sum: number, s: IATicketSale) => sum + s.ticketCount, 0);
@@ -81,7 +80,7 @@ export const IAWeekendScreen: React.FC = () => {
     return { channel, count, amount };
   });
 
-  // Filtered sales list
+  // Liste filtrée
   const filteredSales = iaWeekendTickets.filter((s: IATicketSale) => {
     const matchesSearch = s.participantName.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           (s.phone && s.phone.includes(searchQuery)) ||
@@ -137,156 +136,123 @@ export const IAWeekendScreen: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="iaw-container">
       
-      {/* Event Main Banner */}
-      <div className="bg-gradient-to-r from-[#0071E3] via-[#005BB5] to-[#1D1D1F] rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-        <div className="absolute right-0 top-0 translate-x-12 -translate-y-12 w-64 h-64 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-        
-        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-xs font-bold uppercase tracking-wider mb-3">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Grand Événement IA du S2</span>
-            </div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">Le Week-end de l'IA</h1>
-            <p className="text-blue-100 text-sm mt-1 max-w-xl">
-              Samedi 14 Novembre 2026 — Remplissage des <strong className="text-white font-black">300 places</strong> à <strong className="text-white font-black">10 000 FCFA</strong> / place.
-            </p>
+      {/* Banner Principal */}
+      <div className="iaw-hero-banner">
+        <div className="iaw-hero-content">
+          <div className="iaw-badge">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Grand Événement IA du S2</span>
           </div>
+          <h1 className="iaw-hero-title">Le Week-end de l'IA</h1>
+          <p className="iaw-hero-subtitle">
+            Samedi 14 Novembre 2026 — Remplissage des <strong>300 places</strong> à <strong>10 000 FCFA</strong> / place.
+          </p>
+        </div>
 
-          {/* Days Countdown Badge */}
-          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-white">
-              <Clock className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="text-2xl font-black">{daysRemaining} Jours</div>
-              <div className="text-xs text-blue-200 font-medium">Compte à rebours J- (14 Nov 2026)</div>
-            </div>
+        {/* Badge Compte à rebours */}
+        <div className="iaw-countdown-box">
+          <div className="iaw-icon-circle">
+            <Clock className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="iaw-cd-val">{daysRemaining} Jours</div>
+            <div className="iaw-cd-lbl">Compte à rebours J- (14 Nov 2026)</div>
           </div>
         </div>
       </div>
 
-      {/* Progress Gauge & KPI Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Cartes KPI et Jauge */}
+      <div className="iaw-metrics-grid">
         
-        {/* Main Filling Gauge Card */}
-        <div className="md:col-span-2 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col justify-between">
-          <div className="flex justify-between items-center mb-4">
+        {/* Card Jauge principale */}
+        <div className="iaw-card iaw-gauge-card">
+          <div className="iaw-card-header">
             <div>
-              <span className="text-xs font-bold text-[#8E8E93] uppercase tracking-wider">Taux de Remplissage</span>
-              <h3 className="text-xl font-bold text-[#1D1D1F]">{totalTicketsSold} / {TARGET_TICKETS} Places Vendues</h3>
+              <span className="iaw-card-label">TAUX DE REMPLISSAGE</span>
+              <h3 className="iaw-card-value">{totalTicketsSold} / {TARGET_TICKETS} Places Vendues</h3>
             </div>
-            <span className="text-2xl font-black text-[#0071E3]">{fillPercentage}%</span>
+            <span className="iaw-gauge-percent">{fillPercentage}%</span>
           </div>
 
-          {/* Progress Bar Track */}
-          <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden mb-4 p-0.5 border border-gray-200">
-            <div 
-              className="h-full bg-gradient-to-r from-[#0071E3] to-[#10B981] rounded-full transition-all duration-500" 
-              style={{ width: `${fillPercentage}%` }} 
-            />
+          <div className="iaw-progress-track">
+            <div className="iaw-progress-fill" style={{ width: `${fillPercentage}%` }} />
           </div>
 
-          <div className="flex justify-between text-xs text-[#8E8E93] font-semibold">
-            <span>Reste : <strong className="text-[#1D1D1F]">{ticketsRemaining} places</strong></span>
-            <span>Objectif : <strong className="text-[#1D1D1F]">3 000 000 FCFA</strong></span>
+          <div className="iaw-gauge-footer">
+            <span>Places restantes : <strong>{ticketsRemaining} places</strong></span>
+            <span>Objectif total : <strong>3 000 000 FCFA</strong></span>
           </div>
         </div>
 
-        {/* Total Collected Revenue */}
-        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-[#8E8E93] uppercase tracking-wider">CA Encaissé Billets</span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+        {/* Card CA Encaissé */}
+        <div className="iaw-card">
+          <div className="iaw-card-header">
+            <span className="iaw-card-label">CA ENCAISSÉ BILLETS</span>
+            <div className="iaw-icon-pill bg-emerald">
               <DollarSign className="w-4 h-4" />
             </div>
           </div>
-          <div>
-            <div className="text-2xl font-black text-[#10B981]">{totalCollectedFCFA.toLocaleString('fr-FR')} FCFA</div>
-            <div className="text-xs text-[#8E8E93] font-medium mt-1">≈ {totalCollectedEUR.toLocaleString('fr-FR')} €</div>
-          </div>
-          <div className="text-[11px] text-gray-400 mt-2">Prix fixe : 10 000 FCFA / place</div>
+          <div className="iaw-main-number color-emerald">{totalCollectedFCFA.toLocaleString('fr-FR')} FCFA</div>
+          <div className="iaw-sub-number">≈ {totalCollectedEUR.toLocaleString('fr-FR')} €</div>
+          <div className="iaw-foot-info">Prix fixe : 10 000 FCFA / place</div>
         </div>
 
-        {/* Quick Add Actions */}
-        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col justify-between">
-          <span className="text-xs font-bold text-[#8E8E93] uppercase tracking-wider mb-2 block">Vente Rapide</span>
-          <div className="grid grid-cols-3 gap-2 my-auto">
-            <button 
-              onClick={() => handleQuickAdd(1)}
-              className="py-2.5 px-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#0071E3] text-xs font-bold transition-all border border-blue-100"
-            >
-              +1 Place
-            </button>
-            <button 
-              onClick={() => handleQuickAdd(5)}
-              className="py-2.5 px-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#0071E3] text-xs font-bold transition-all border border-blue-100"
-            >
-              +5 Places
-            </button>
-            <button 
-              onClick={() => handleQuickAdd(10)}
-              className="py-2.5 px-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-sm"
-            >
-              +10 Places
-            </button>
+        {/* Card Vente Rapide */}
+        <div className="iaw-card flex-col-between">
+          <span className="iaw-card-label">VENTE RAPIDE DE BILLETS</span>
+          <div className="iaw-quick-buttons">
+            <button onClick={() => handleQuickAdd(1)} className="iaw-btn-quick">+1 Place</button>
+            <button onClick={() => handleQuickAdd(5)} className="iaw-btn-quick">+5 Places</button>
+            <button onClick={() => handleQuickAdd(10)} className="iaw-btn-quick primary">+10 Places</button>
           </div>
-          <button 
-            onClick={openCreateModal}
-            className="w-full py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-[#1D1D1F] text-xs font-bold transition-all flex items-center justify-center gap-1.5"
-          >
+          <button onClick={openCreateModal} className="iaw-btn-outline">
             <Plus className="w-3.5 h-3.5" />
             <span>Saisie détaillée</span>
           </button>
         </div>
       </div>
 
-      {/* Acquisition Channels Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Grille Canaux d'Acquisition */}
+      <div className="iaw-channels-grid">
         {channelStats.map((item, idx) => (
-          <div key={idx} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex items-center justify-between">
+          <div key={idx} className="iaw-channel-card">
             <div>
-              <div className="text-xs text-[#8E8E93] font-semibold">{item.channel}</div>
-              <div className="text-lg font-bold text-[#1D1D1F]">{item.count} place(s)</div>
-              <div className="text-xs text-[#10B981] font-bold">{item.amount.toLocaleString('fr-FR')} FCFA</div>
+              <div className="iaw-channel-lbl">{item.channel}</div>
+              <div className="iaw-channel-val">{item.count} place(s)</div>
+              <div className="iaw-channel-amount">{item.amount.toLocaleString('fr-FR')} FCFA</div>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-gray-50 text-gray-500 flex items-center justify-center font-bold text-xs">
+            <div className="iaw-channel-pct">
               {totalTicketsSold > 0 ? Math.round((item.count / totalTicketsSold) * 100) : 0}%
             </div>
           </div>
         ))}
       </div>
 
-      {/* Participants & Sales Directory Table */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        
-        {/* Table Controls Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+      {/* Table des Participants */}
+      <div className="iaw-card iaw-table-card">
+        <div className="iaw-table-header">
           <div>
-            <h2 className="text-lg font-bold text-[#1D1D1F]">Participants & Ventes de Billets</h2>
-            <p className="text-xs text-[#8E8E93]">Liste nominative et suivi des encaissements</p>
+            <h2 className="iaw-table-title">Participants & Ventes de Billets</h2>
+            <p className="iaw-table-subtitle">Liste nominative et suivi des encaissements</p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-            {/* Search Bar */}
-            <div className="relative flex-1 sm:w-64">
-              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <div className="iaw-table-controls">
+            <div className="iaw-search-input">
+              <Search className="w-4 h-4 text-gray-400" />
               <input 
                 type="text" 
-                placeholder="Rechercher nom, tel..." 
+                placeholder="Rechercher un participant..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 rounded-xl bg-gray-50 border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#0071E3]"
               />
             </div>
 
-            {/* Channel Filter */}
             <select 
               value={selectedChannel}
               onChange={(e) => setSelectedChannel(e.target.value)}
-              className="py-2 px-3 rounded-xl bg-gray-50 border border-gray-200 text-xs font-semibold text-[#1D1D1F] focus:outline-none"
+              className="iaw-select-filter"
             >
               <option value="all">Tous les canaux</option>
               <option value="Organique">Organique</option>
@@ -295,76 +261,53 @@ export const IAWeekendScreen: React.FC = () => {
               <option value="Partenariats">Partenariats</option>
             </select>
 
-            {/* Add Ticket Button */}
-            <button 
-              onClick={openCreateModal}
-              className="px-4 py-2 rounded-xl bg-[#0071E3] hover:bg-[#005BB5] text-white text-xs font-bold flex items-center gap-2 shadow-md transition-all"
-            >
+            <button onClick={openCreateModal} className="iaw-btn-primary">
               <Plus className="w-4 h-4" />
               <span>Nouveau Billet</span>
             </button>
           </div>
         </div>
 
-        {/* Table Content */}
         {filteredSales.length === 0 ? (
-          <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-            <Ticket className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <h3 className="text-sm font-bold text-[#1D1D1F]">Aucun billet enregistré pour le moment</h3>
-            <p className="text-xs text-[#8E8E93] mt-1 max-w-sm mx-auto">
-              Utilisez les boutons de vente rapide ci-dessus pour commencer à remplir vos 300 places !
-            </p>
+          <div className="iaw-empty-state">
+            <Ticket className="w-10 h-10 text-gray-300 mb-2" />
+            <h3>Aucun billet enregistré pour le moment</h3>
+            <p>Utilisez les boutons de vente rapide ci-dessus pour commencer à remplir vos 300 places !</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+          <div className="iaw-table-responsive">
+            <table className="iaw-data-table">
               <thead>
-                <tr className="border-b border-gray-100 text-[#8E8E93] font-bold uppercase tracking-wider">
-                  <th className="py-3 px-4">Participant</th>
-                  <th className="py-3 px-4">Contact</th>
-                  <th className="py-3 px-4 text-center">Places</th>
-                  <th className="py-3 px-4">Canal</th>
-                  <th className="py-3 px-4">Montant</th>
-                  <th className="py-3 px-4">Statut</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
+                <tr>
+                  <th>Participant</th>
+                  <th>Contact</th>
+                  <th style={{ textAlign: 'center' }}>Places</th>
+                  <th>Canal</th>
+                  <th>Montant</th>
+                  <th>Statut</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 text-[#1D1D1F] font-medium">
+              <tbody>
                 {filteredSales.map((sale: IATicketSale) => (
-                  <tr key={sale.id} className="hover:bg-gray-50/80 transition-colors">
-                    <td className="py-3.5 px-4 font-bold">{sale.participantName}</td>
-                    <td className="py-3.5 px-4 text-gray-500">{sale.phone || sale.email || '—'}</td>
-                    <td className="py-3.5 px-4 text-center font-bold">
-                      <span className="inline-block py-1 px-2.5 bg-blue-50 text-[#0071E3] rounded-lg font-black">
-                        x{sale.ticketCount}
-                      </span>
+                  <tr key={sale.id}>
+                    <td><strong>{sale.participantName}</strong></td>
+                    <td className="color-sub">{sale.phone || sale.email || '—'}</td>
+                    <td style={{ textAlign: 'center' }}>
+                      <span className="iaw-ticket-badge">x{sale.ticketCount}</span>
                     </td>
-                    <td className="py-3.5 px-4 text-gray-600">{sale.channel}</td>
-                    <td className="py-3.5 px-4 font-bold text-emerald-600">
-                      {sale.totalAmount.toLocaleString('fr-FR')} FCFA
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span className={`inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-[11px] font-bold ${
-                        sale.status === 'Payé' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
-                      }`}>
+                    <td>{sale.channel}</td>
+                    <td className="color-emerald font-bold">{sale.totalAmount.toLocaleString('fr-FR')} FCFA</td>
+                    <td>
+                      <span className={`iaw-status-badge ${sale.status === 'Payé' ? 'paye' : 'reserve'}`}>
                         <CheckCircle2 className="w-3 h-3" />
                         {sale.status}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button 
-                          onClick={() => openEditModal(sale)}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button 
-                          onClick={() => setDeleteTargetId(sale.id)}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                    <td style={{ textAlign: 'right' }}>
+                      <div className="iaw-action-buttons">
+                        <button onClick={() => openEditModal(sale)} className="iaw-action-icon"><Edit className="w-4 h-4" /></button>
+                        <button onClick={() => setDeleteTargetId(sale.id)} className="iaw-action-icon danger"><Trash2 className="w-4 h-4" /></button>
                       </div>
                     </td>
                   </tr>
@@ -375,63 +318,55 @@ export const IAWeekendScreen: React.FC = () => {
         )}
       </div>
 
-      {/* Modal Saisie / Édition Billet */}
+      {/* Modal Formulaire */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-gray-100">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-bold text-[#1D1D1F]">
-                {editingSale ? 'Modifier le Billet' : 'Enregistrer une Vente de Billet'}
-              </h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="w-5 h-5" />
-              </button>
+        <div className="iaw-modal-overlay">
+          <div className="iaw-modal-card">
+            <div className="iaw-modal-header">
+              <h3>{editingSale ? 'Modifier le Billet' : 'Enregistrer une Vente de Billet'}</h3>
+              <button onClick={() => setIsModalOpen(false)} className="iaw-close-btn"><X className="w-5 h-5" /></button>
             </div>
 
-            <form onSubmit={handleFormSubmit} className="space-y-4 text-xs">
-              <div>
-                <label className="block font-bold text-gray-700 mb-1">Nom du Participant *</label>
+            <form onSubmit={handleFormSubmit} className="iaw-form">
+              <div className="iaw-form-group">
+                <label>Nom du Participant *</label>
                 <input 
                   type="text"
                   required
                   placeholder="Ex: Jean Dupont"
                   value={formData.participantName}
                   onChange={(e) => setFormData({ ...formData, participantName: e.target.value })}
-                  className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#0071E3]"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-gray-700 mb-1">Téléphone / WhatsApp</label>
+              <div className="iaw-form-row">
+                <div className="iaw-form-group">
+                  <label>Téléphone / WhatsApp</label>
                   <input 
                     type="text"
                     placeholder="+237 ..."
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#0071E3]"
                   />
                 </div>
-                <div>
-                  <label className="block font-bold text-gray-700 mb-1">Nombre de Places *</label>
+                <div className="iaw-form-group">
+                  <label>Nombre de Places *</label>
                   <input 
                     type="number"
                     min="1"
                     required
                     value={formData.ticketCount}
                     onChange={(e) => setFormData({ ...formData, ticketCount: Number(e.target.value) })}
-                    className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#0071E3]"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-gray-700 mb-1">Canal d'Acquisition</label>
+              <div className="iaw-form-row">
+                <div className="iaw-form-group">
+                  <label>Canal d'Acquisition</label>
                   <select 
                     value={formData.channel}
                     onChange={(e: any) => setFormData({ ...formData, channel: e.target.value })}
-                    className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 text-xs font-semibold focus:outline-none"
                   >
                     <option value="Organique">Organique</option>
                     <option value="Ads Facebook/TikTok">Ads Facebook/TikTok</option>
@@ -440,12 +375,11 @@ export const IAWeekendScreen: React.FC = () => {
                     <option value="Autre">Autre</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block font-bold text-gray-700 mb-1">Statut Paiement</label>
+                <div className="iaw-form-group">
+                  <label>Statut Paiement</label>
                   <select 
                     value={formData.status}
                     onChange={(e: any) => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 text-xs font-semibold focus:outline-none"
                   >
                     <option value="Payé">Payé (10 000 FCFA)</option>
                     <option value="Réservé">Réservé</option>
@@ -454,57 +388,477 @@ export const IAWeekendScreen: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-blue-50 p-3 rounded-xl flex justify-between items-center text-xs text-[#0071E3] font-bold">
+              <div className="iaw-total-box">
                 <span>Montant Total Encaissé :</span>
-                <span className="text-sm">{(formData.ticketCount * formData.unitPrice).toLocaleString('fr-FR')} FCFA</span>
+                <strong>{(formData.ticketCount * formData.unitPrice).toLocaleString('fr-FR')} FCFA</strong>
               </div>
 
-              <div className="flex gap-3 pt-2">
-                <button 
-                  type="button" 
-                  onClick={() => setIsModalOpen(false)}
-                  className="w-1/2 py-3 rounded-xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200"
-                >
-                  Annuler
-                </button>
-                <button 
-                  type="submit" 
-                  className="w-1/2 py-3 rounded-xl bg-[#0071E3] text-white font-bold hover:bg-[#005BB5] shadow-md"
-                >
-                  {editingSale ? 'Mettre à jour' : 'Enregistrer'}
-                </button>
+              <div className="iaw-form-actions">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="iaw-btn-cancel">Annuler</button>
+                <button type="submit" className="iaw-btn-submit">{editingSale ? 'Mettre à jour' : 'Enregistrer'}</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Modal Suppression */}
       {deleteTargetId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-gray-100 text-center">
-            <h3 className="text-base font-bold text-[#1D1D1F] mb-1">Supprimer ce billet ?</h3>
-            <p className="text-xs text-[#8E8E93] mb-6">Cette action est irréversible.</p>
-            <div className="flex gap-3 justify-center">
-              <button 
-                onClick={() => setDeleteTargetId(null)}
-                className="px-4 py-2.5 rounded-xl bg-gray-100 text-gray-700 text-xs font-bold hover:bg-gray-200 flex-1"
-              >
-                Annuler
-              </button>
-              <button 
-                onClick={() => {
-                  deleteIATicketSale(deleteTargetId);
-                  setDeleteTargetId(null);
-                }}
-                className="px-4 py-2.5 rounded-xl bg-red-600 text-white text-xs font-bold hover:bg-red-700 shadow-md flex-1"
-              >
-                Supprimer
-              </button>
+        <div className="iaw-modal-overlay">
+          <div className="iaw-confirm-card">
+            <h3>Supprimer ce billet ?</h3>
+            <p>Cette action est irréversible.</p>
+            <div className="iaw-confirm-actions">
+              <button onClick={() => setDeleteTargetId(null)} className="iaw-btn-cancel">Annuler</button>
+              <button onClick={() => { deleteIATicketSale(deleteTargetId); setDeleteTargetId(null); }} className="iaw-btn-danger">Supprimer</button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Scoped Embedded CSS Styling */}
+      <style>{`
+        .iaw-container {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+          color: #1D1D1F;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        .iaw-hero-banner {
+          background: linear-gradient(135deg, #0071E3 0%, #005BB5 50%, #1D1D1F 100%);
+          border-radius: 24px;
+          padding: 28px 32px;
+          color: #FFFFFF;
+          box-shadow: 0 12px 32px rgba(0, 113, 227, 0.2);
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 24px;
+        }
+
+        .iaw-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 4px 12px;
+          border-radius: 99px;
+          background: rgba(255, 255, 255, 0.2);
+          font-size: 11px;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          margin-bottom: 10px;
+        }
+
+        .iaw-hero-title {
+          font-size: 32px;
+          font-weight: 800;
+          margin: 0 0 6px 0;
+          letter-spacing: -0.02em;
+        }
+
+        .iaw-hero-subtitle {
+          font-size: 13.5px;
+          color: rgba(255,255,255,0.85);
+          margin: 0;
+        }
+
+        .iaw-countdown-box {
+          background: rgba(255, 255, 255, 0.15);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid rgba(255, 255, 255, 0.25);
+          border-radius: 18px;
+          padding: 14px 20px;
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          min-width: 220px;
+        }
+
+        .iaw-icon-circle {
+          width: 44px;
+          height: 44px;
+          border-radius: 12px;
+          background: rgba(255, 255, 255, 0.2);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .iaw-cd-val {
+          font-size: 22px;
+          font-weight: 900;
+        }
+
+        .iaw-cd-lbl {
+          font-size: 11px;
+          color: rgba(255,255,255,0.8);
+        }
+
+        .iaw-metrics-grid {
+          display: grid;
+          grid-template-columns: 2fr 1fr 1fr;
+          gap: 16px;
+        }
+
+        .iaw-card {
+          background: #FFFFFF;
+          border-radius: 20px;
+          border: 1px solid rgba(0,0,0,0.06);
+          padding: 20px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+        }
+
+        .iaw-gauge-card {
+          grid-column: span 1;
+        }
+
+        .iaw-card-header {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          margin-bottom: 12px;
+        }
+
+        .iaw-card-label {
+          font-size: 10px;
+          font-weight: 800;
+          color: #8E8E93;
+          letter-spacing: 0.05em;
+        }
+
+        .iaw-card-value {
+          font-size: 18px;
+          font-weight: 800;
+          color: #1D1D1F;
+          margin-top: 2px;
+        }
+
+        .iaw-gauge-percent {
+          font-size: 26px;
+          font-weight: 900;
+          color: #0071E3;
+        }
+
+        .iaw-progress-track {
+          width: 100%;
+          height: 12px;
+          background: #F2F2F7;
+          border-radius: 99px;
+          overflow: hidden;
+          margin: 12px 0;
+          border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .iaw-progress-fill {
+          height: 100%;
+          background: linear-gradient(90deg, #0071E3 0%, #10B981 100%);
+          border-radius: 99px;
+          transition: width 0.4s ease;
+        }
+
+        .iaw-gauge-footer {
+          display: flex;
+          justify-content: space-between;
+          font-size: 11.5px;
+          color: #8E8E93;
+        }
+
+        .iaw-icon-pill {
+          width: 32px;
+          height: 32px;
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .iaw-icon-pill.bg-emerald {
+          background: rgba(16, 185, 129, 0.1);
+          color: #10B981;
+        }
+
+        .iaw-main-number {
+          font-size: 22px;
+          font-weight: 900;
+          margin-bottom: 2px;
+        }
+
+        .color-emerald { color: #10B981; }
+
+        .iaw-sub-number {
+          font-size: 12px;
+          color: #8E8E93;
+        }
+
+        .iaw-foot-info {
+          font-size: 11px;
+          color: #A1A1A6;
+          margin-top: 10px;
+        }
+
+        .iaw-quick-buttons {
+          display: flex;
+          gap: 8px;
+          margin: 10px 0;
+        }
+
+        .iaw-btn-quick {
+          flex: 1;
+          padding: 8px;
+          border-radius: 10px;
+          background: rgba(0, 113, 227, 0.08);
+          color: #0071E3;
+          font-size: 11px;
+          font-weight: 700;
+          border: none;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .iaw-btn-quick.primary {
+          background: #0071E3;
+          color: #FFFFFF;
+        }
+
+        .iaw-btn-quick:hover {
+          transform: translateY(-1px);
+        }
+
+        .iaw-btn-outline {
+          width: 100%;
+          padding: 8px;
+          border-radius: 10px;
+          background: #F2F2F7;
+          color: #1D1D1F;
+          font-size: 11.5px;
+          font-weight: 700;
+          border: none;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+        }
+
+        .iaw-channels-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 16px;
+        }
+
+        .iaw-channel-card {
+          background: #FFFFFF;
+          border-radius: 16px;
+          border: 1px solid rgba(0,0,0,0.06);
+          padding: 14px 18px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .iaw-channel-lbl { font-size: 11px; color: #8E8E93; font-weight: 600; }
+        .iaw-channel-val { font-size: 15px; font-weight: 800; color: #1D1D1F; }
+        .iaw-channel-amount { font-size: 11px; font-weight: 700; color: #10B981; }
+
+        .iaw-channel-pct {
+          width: 36px;
+          height: 36px;
+          border-radius: 10px;
+          background: #F2F2F7;
+          font-size: 11px;
+          font-weight: 800;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .iaw-table-card {
+          padding: 24px;
+        }
+
+        .iaw-table-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+          gap: 16px;
+        }
+
+        .iaw-table-title { font-size: 17px; font-weight: 800; margin: 0; }
+        .iaw-table-subtitle { font-size: 12px; color: #8E8E93; margin: 2px 0 0 0; }
+
+        .iaw-table-controls {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .iaw-search-input {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          background: #F2F2F7;
+          border-radius: 12px;
+          padding: 8px 14px;
+        }
+
+        .iaw-search-input input {
+          border: none;
+          background: transparent;
+          font-size: 12px;
+          outline: none;
+          width: 160px;
+        }
+
+        .iaw-select-filter {
+          background: #F2F2F7;
+          border: none;
+          border-radius: 12px;
+          padding: 8px 12px;
+          font-size: 12px;
+          font-weight: 600;
+          outline: none;
+        }
+
+        .iaw-btn-primary {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          background: #0071E3;
+          color: #FFFFFF;
+          border-radius: 12px;
+          padding: 8px 16px;
+          font-size: 12px;
+          font-weight: 700;
+          border: none;
+          cursor: pointer;
+        }
+
+        .iaw-empty-state {
+          text-align: center;
+          padding: 40px 20px;
+          background: #F8FAFC;
+          border-radius: 16px;
+          border: 1px dashed rgba(0,0,0,0.1);
+        }
+
+        .iaw-data-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 12.5px;
+        }
+
+        .iaw-data-table th, .iaw-data-table td {
+          padding: 12px 14px;
+          border-bottom: 1px solid rgba(0,0,0,0.06);
+        }
+
+        .iaw-data-table th {
+          color: #8E8E93;
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+        }
+
+        .iaw-ticket-badge {
+          display: inline-block;
+          padding: 4px 10px;
+          border-radius: 8px;
+          background: rgba(0, 113, 227, 0.08);
+          color: #0071E3;
+          font-weight: 800;
+        }
+
+        .iaw-status-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          padding: 3px 10px;
+          border-radius: 99px;
+          font-size: 11px;
+          font-weight: 700;
+        }
+
+        .iaw-status-badge.paye { background: rgba(16, 185, 129, 0.1); color: #10B981; }
+        .iaw-status-badge.reserve { background: rgba(245, 158, 11, 0.1); color: #F59E0B; }
+
+        .iaw-action-buttons { display: flex; gap: 6px; justify-content: flex-end; }
+        .iaw-action-icon { background: none; border: none; color: #8E8E93; cursor: pointer; padding: 4px; border-radius: 6px; }
+        .iaw-action-icon:hover { color: #1D1D1F; background: #F2F2F7; }
+        .iaw-action-icon.danger:hover { color: #EF4444; background: rgba(239, 68, 68, 0.08); }
+
+        .iaw-modal-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.5);
+          backdrop-filter: blur(6px);
+          z-index: 2000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+        }
+
+        .iaw-modal-card {
+          background: #FFFFFF;
+          border-radius: 20px;
+          width: 100%;
+          max-width: 440px;
+          padding: 24px;
+          box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .iaw-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .iaw-modal-header h3 { font-size: 16px; font-weight: 800; margin: 0; }
+        .iaw-close-btn { background: none; border: none; color: #8E8E93; cursor: pointer; }
+
+        .iaw-form { display: flex; flex-direction: column; gap: 14px; font-size: 12px; }
+        .iaw-form-group { display: flex; flex-direction: column; gap: 4px; }
+        .iaw-form-group label { font-weight: 700; color: #1D1D1F; }
+        .iaw-form-group input, .iaw-form-group select {
+          padding: 10px 12px;
+          border-radius: 10px;
+          border: 1px solid rgba(0,0,0,0.1);
+          background: #F8FAFC;
+          font-size: 12px;
+          outline: none;
+        }
+
+        .iaw-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        .iaw-total-box {
+          background: rgba(0, 113, 227, 0.08);
+          border-radius: 12px;
+          padding: 12px;
+          display: flex;
+          justify-content: space-between;
+          color: #0071E3;
+          font-weight: 700;
+        }
+
+        .iaw-form-actions { display: flex; gap: 10px; margin-top: 10px; }
+        .iaw-btn-cancel { flex: 1; padding: 10px; border-radius: 10px; background: #F2F2F7; border: none; font-weight: 700; cursor: pointer; }
+        .iaw-btn-submit { flex: 1; padding: 10px; border-radius: 10px; background: #0071E3; color: #FFFFFF; border: none; font-weight: 700; cursor: pointer; }
+        .iaw-btn-danger { flex: 1; padding: 10px; border-radius: 10px; background: #EF4444; color: #FFFFFF; border: none; font-weight: 700; cursor: pointer; }
+
+        .iaw-confirm-card {
+          background: #FFFFFF;
+          border-radius: 20px;
+          padding: 24px;
+          text-align: center;
+          max-width: 320px;
+          width: 100%;
+        }
+
+        .iaw-confirm-actions { display: flex; gap: 10px; margin-top: 16px; }
+      `}</style>
     </div>
   );
 };
