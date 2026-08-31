@@ -150,3 +150,19 @@ export interface IATicketSale {
   createdAt: string;
   notes?: string;
 }
+
+export type GoalCategory = 'financier' | 'projet' | 'contenu' | 'routine';
+
+export interface MonthlyGoal {
+  id: string;
+  month: string;
+  title: string;
+  category: GoalCategory;
+  description?: string;
+  completed: boolean;
+  targetValue?: number;
+  currentValue?: number;
+  unit?: string;
+  notes?: string;
+  createdAt: string;
+}

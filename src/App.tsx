@@ -3,6 +3,7 @@ import { StoreProvider } from './context/StoreContext';
 import { Sidebar } from './components/Sidebar';
 import { HomeScreen } from './components/screens/HomeScreen';
 import { TodayScreen } from './components/screens/TodayScreen';
+import { ObjectivesMemoScreen } from './components/screens/ObjectivesMemoScreen';
 import { ContentScreen } from './components/screens/ContentScreen';
 import { ProspectsScreen } from './components/screens/ProspectsScreen';
 import { LaunchScreen } from './components/screens/LaunchScreen';
@@ -66,6 +67,8 @@ const AppContent: React.FC = () => {
         return <HomeScreen setActiveScreen={setActiveScreen} />;
       case 'today':
         return <TodayScreen />;
+      case 'memo':
+        return <ObjectivesMemoScreen />;
       case 'content':
         return <ContentScreen />;
       case 'prospects':

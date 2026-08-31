@@ -69,6 +69,10 @@ interface StoreContextType {
   addIATicketSale?: (sale: any) => void;
   updateIATicketSale?: (id: string, updates: any) => void;
   deleteIATicketSale?: (id: string) => void;
+  addMonthlyGoal?: (goal: any) => void;
+  toggleMonthlyGoal?: (id: string) => void;
+  updateMonthlyGoal?: (id: string, updates: any) => void;
+  deleteMonthlyGoal?: (id: string) => void;
   importData: (jsonData: string) => boolean;
   exportData: () => string;
   resetToDemoData: () => void;
@@ -1435,8 +1439,56 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+
+  // Actions Mémo & Objectifs du Mois
+  const addMonthlyGoal = (goal: any) => {
+    const newGoal = {
+      ...goal,
+      id: `mg-${Date.now()}`,
+      createdAt: new Date().toISOString().substring(0, 10)
+    };
+    setStore(prev => ({
+      ...prev,
+      monthlyGoals: [...((prev as any).monthlyGoals || []), newGoal]
+    }));
+  };
+
+  const toggleMonthlyGoal = (id: string) => {
+    setStore(prev => ({
+      ...prev,
+      monthlyGoals: ((prev as any).monthlyGoals || []).map((g: any) => {
+        if (g.id !== id) return g;
+        const nextCompleted = !g.completed;
+        const target = g.targetValue || 1;
+        return {
+          ...g,
+          completed: nextCompleted,
+          currentValue: nextCompleted ? target : 0
+        };
+      })
+    }));
+  };
+
+  const updateMonthlyGoal = (id: string, updates: any) => {
+    setStore(prev => ({
+      ...prev,
+      monthlyGoals: ((prev as any).monthlyGoals || []).map((g: any) => g.id === id ? { ...g, ...updates } : g)
+    }));
+  };
+
+  const deleteMonthlyGoal = (id: string) => {
+    setStore(prev => ({
+      ...prev,
+      monthlyGoals: ((prev as any).monthlyGoals || []).filter((g: any) => g.id !== id)
+    }));
+  };
+
   return (
     <StoreContext.Provider value={{
+      addMonthlyGoal,
+      toggleMonthlyGoal,
+      updateMonthlyGoal,
+      deleteMonthlyGoal,
       addIATicketSale,
       updateIATicketSale,
       deleteIATicketSale,
