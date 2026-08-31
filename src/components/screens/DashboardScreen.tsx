@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { MonthlyReportModal } from '../MonthlyReportModal';
 import { useStore } from '../../context/StoreContext';
 import { 
   calculateLaunchCA, 
@@ -54,6 +55,7 @@ ChartJS.register(
 );
 
 export const DashboardScreen: React.FC = () => {
+  const [isReportOpen, setIsReportOpen] = useState(false);
   const { 
     contents, 
     sales, 
@@ -1980,6 +1982,7 @@ export const DashboardScreen: React.FC = () => {
         }
 
       `}</style>
+      <MonthlyReportModal isOpen={isReportOpen} onClose={() => setIsReportOpen(false)} />
     </div>
   );
 };

@@ -1,4 +1,6 @@
 import React from 'react';
+import { MonthlyReportModal } from './MonthlyReportModal';
+import { useState } from 'react';
 import { 
   Home,
   Calendar, 
@@ -59,6 +61,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setSelectedMonth
   } = useStore();
 
+  const [isReportOpen, setIsReportOpen] = useState(false);
   const availableMonths = getAvailableMonths(launches, sales, collabs, expenses, prospects, blueprintChallenges);
 
   const [selectedYear, selectedMonthNum] = selectedMonth.split('-');
@@ -219,6 +222,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           </div>
         </div>
+
+        {/* PDF Monthly Report Button */}
+        <button 
+          onClick={() => setIsReportOpen(true)}
+          className="sidebar-nav-link-btn"
+          style={{ 
+            backgroundColor: 'rgba(0, 113, 227, 0.08)', 
+            color: '#0071E3',
+            marginBottom: '12px',
+            fontWeight: 700
+          }}
+        >
+          <FileText className="nav-link-icon" style={{ color: '#0071E3' }} />
+          <span>Rapport Mensuel (PDF)</span>
+        </button>
 
         {/* Footer controls */}
         <div className="sidebar-controls-footer">
@@ -615,6 +633,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           }
         }
       `}</style>
+      <MonthlyReportModal isOpen={isReportOpen} onClose={() => setIsReportOpen(false)} />
     </>
   );
 };
