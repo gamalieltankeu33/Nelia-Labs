@@ -17,7 +17,15 @@ import {
   X, 
   TrendingUp, 
   TrendingDown, 
-
+  Target, 
+  CheckCircle2,
+  DollarSign,
+  Rocket,
+  Ticket,
+  Briefcase,
+  Users,
+  ShieldCheck,
+  Award
 } from 'lucide-react';
 
 interface MonthlyReportModalProps {
@@ -28,24 +36,22 @@ interface MonthlyReportModalProps {
 export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ isOpen, onClose }) => {
   const { 
     selectedMonth, 
-    sales, 
-    prospects, 
-    launches, 
-    collabs, 
-    expenses, 
-    blueprintChallenges,
-    objectives,
-    monthlyGoals
+    sales = [], 
+    prospects = [], 
+    launches = {}, 
+    collabs = [], 
+    expenses = [], 
+    blueprintChallenges = [],
+        monthlyGoals = [],
+    iaWeekendTickets = []
   } = useStore() as any;
 
   if (!isOpen) return null;
 
-  // Calcul du mois précédent (YYYY-MM)
+  // Calcul mois précédent (YYYY-MM)
   const getPreviousMonth = (m: string) => {
     const [year, month] = m.split('-').map(Number);
-    if (month === 1) {
-      return `${year - 1}-12`;
-    }
+    if (month === 1) return `${year - 1}-12`;
     const prevMonth = month - 1 < 10 ? `0${month - 1}` : `${month - 1}`;
     return `${year}-${prevMonth}`;
   };
@@ -55,7 +61,7 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ isOpen, 
   // Formater libellé mois (ex: Septembre 2026)
   const formatMonthName = (m: string) => {
     const [year, month] = m.split('-').map(Number);
-    const date = new Date(year, month - 1, 1);
+    const date = new Date(year, month - 1, 15);
     const name = date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
     return name.charAt(0).toUpperCase() + name.slice(1);
   };
@@ -63,7 +69,7 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ isOpen, 
   const currentMonthLabel = formatMonthName(selectedMonth);
   const prevMonthLabel = formatMonthName(prevMonth);
 
-  // Calculs Mois Courant
+  // Calculs Financiers Mois Courant
   const launchCurrent = launches[selectedMonth];
   const launchCA_Current = calculateLaunchCA(launchCurrent);
   const blueprintCA_Current = calculateBlueprintCA(blueprintChallenges, selectedMonth);
@@ -73,8 +79,13 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ isOpen, 
   const collabsContracted_Current = calculateCollabsContractedCA(collabs, selectedMonth);
   const charges_Current = calculateChargesForMonth(expenses, selectedMonth);
 
-  const totalCollectedCA_Current = (launchCA_Current * EXCHANGE_RATES.FCFA_TO_EUR) + blueprintCA_Current + premiumCA_Current + digitalCA_Current + (collabsCollected_Current * EXCHANGE_RATES.USD_TO_EUR);
-  const totalContractedCA_Current = (launchCA_Current * EXCHANGE_RATES.FCFA_TO_EUR) + blueprintCA_Current + premiumCA_Current + digitalCA_Current + (collabsContracted_Current * EXCHANGE_RATES.USD_TO_EUR);
+  // Billets Week-end de l'IA
+  const iaTicketsPaid = (iaWeekendTickets || []).filter((t: any) => t.status === 'Payé');
+  const iaTicketsCA_FCFA = iaTicketsPaid.reduce((sum: number, t: any) => sum + (t.totalAmount || t.ticketCount * 10000), 0);
+  const iaTicketsCA_EUR = Math.round(iaTicketsCA_FCFA * EXCHANGE_RATES.FCFA_TO_EUR);
+
+  const totalCollectedCA_Current = (launchCA_Current * EXCHANGE_RATES.FCFA_TO_EUR) + blueprintCA_Current + premiumCA_Current + digitalCA_Current + (collabsCollected_Current * EXCHANGE_RATES.USD_TO_EUR) + iaTicketsCA_EUR;
+  const totalContractedCA_Current = (launchCA_Current * EXCHANGE_RATES.FCFA_TO_EUR) + blueprintCA_Current + premiumCA_Current + digitalCA_Current + (collabsContracted_Current * EXCHANGE_RATES.USD_TO_EUR) + iaTicketsCA_EUR;
   const netProfit_Current = totalCollectedCA_Current - charges_Current;
 
   // Calculs Mois Précédent
@@ -84,7 +95,6 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ isOpen, 
   const premiumCA_Prev = calculatePremiumCA(prospects, prevMonth);
   const digitalCA_Prev = calculateDigitalCA(sales, prevMonth);
   const collabsCollected_Prev = calculateCollabsCollectedCA(collabs, prevMonth);
-  
 
   const totalCollectedCA_Prev = (launchCA_Prev * EXCHANGE_RATES.FCFA_TO_EUR) + blueprintCA_Prev + premiumCA_Prev + digitalCA_Prev + (collabsCollected_Prev * EXCHANGE_RATES.USD_TO_EUR);
 
@@ -94,359 +104,431 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ isOpen, 
     : (totalCollectedCA_Current > 0 ? 100 : 0);
 
   // Objectif financier
-  const currentObjectiveEUR = objectives[selectedMonth] || 0;
-  const objectiveCompletionRate = currentObjectiveEUR > 0 
-    ? Math.min(100, Math.round((totalCollectedCA_Current / currentObjectiveEUR) * 100))
-    : 0;
+  
+  
 
-  // Statistiques Prospection
+  // Statistiques Prospection CRM
   const prospectStats = calculateMonthlyProspectStats(prospects, selectedMonth);
 
-  // Objectifs de Routine
-  const currentMonthGoalsList = ((monthlyGoals as any[]) || []).filter((g: any) => g.month === selectedMonth);
-  const totalGoals = currentMonthGoalsList.length;
-  const completedGoals = currentMonthGoalsList.filter((g: any) => g.completed).length;
+  // Routine & Objectifs rédigés
+  const goalsForMonth = (monthlyGoals || []).filter((g: any) => g.month === selectedMonth);
+  const totalGoals = goalsForMonth.length;
+  const completedGoals = goalsForMonth.filter((g: any) => g.completed).length;
   const routineCompletionRate = totalGoals > 0 ? Math.round((completedGoals / totalGoals) * 100) : 0;
 
-  // Ventes digitales filtrées
-  const currentSales = sales.filter((s: any) => s.date.startsWith(selectedMonth));
+  // Mémo général du mois
+  let monthlyNotesText = '';
+  try {
+    const savedMemos = localStorage.getItem('nextia_monthly_memos');
+    if (savedMemos) {
+      const parsed = JSON.parse(savedMemos);
+      monthlyNotesText = parsed[selectedMonth] || '';
+    }
+  } catch (e) {}
 
-  // Collaborations filtrées
-  const currentCollabs = collabs.filter((c: any) => c.publishDate.startsWith(selectedMonth));
+  // Listes filtrées
+  const currentSales = sales.filter((s: any) => s.date && s.date.startsWith(selectedMonth));
+  const currentCollabs = collabs.filter((c: any) => c.publishDate && c.publishDate.startsWith(selectedMonth));
+  const currentExpenses = expenses.filter((e: any) => e.date && e.date.startsWith(selectedMonth));
 
   const handlePrintPDF = () => {
     window.print();
   };
 
   return (
-    <div className="report-modal-overlay">
-      <div className="report-modal-card">
+    <div className="pdf-modal-overlay">
+      <div className="pdf-modal-card">
         
-        {/* Header bar controls (hidden in print) */}
-        <div className="modal-top-action-bar no-print">
-          <div className="action-bar-title">
-            <FileText className="w-5 h-5 text-blue-500" />
-            <span>Aperçu du Rapport Mensuel</span>
+        {/* Navigation Bar (Masquée lors de l'impression PDF) */}
+        <div className="pdf-top-bar no-print">
+          <div className="bar-title">
+            <FileText className="w-5 h-5 text-[#0071E3]" />
+            <span>Aperçu du Rapport Exécutif PDF — {currentMonthLabel}</span>
           </div>
-          <div className="action-bar-buttons">
-            <button onClick={handlePrintPDF} className="print-pdf-btn">
+          <div className="bar-buttons">
+            <button onClick={handlePrintPDF} className="btn-print-action">
               <Printer className="w-4 h-4" />
               <span>Télécharger le Rapport (PDF)</span>
             </button>
-            <button onClick={onClose} className="close-modal-btn">
+            <button onClick={onClose} className="btn-close-action">
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Printable PDF Report Document */}
-        <div className="pdf-report-document" id="printable-report">
+        {/* Document Officiel PDF Imprimable */}
+        <div className="pdf-document" id="printable-report">
           
-          {/* Document Header */}
-          <div className="pdf-header-row">
+          {/* Header Exécutif de Haute Qualité */}
+          <div className="pdf-exec-header">
             <div>
-              <div className="pdf-brand-logo">NEXT IA LABS</div>
-              <h1 className="pdf-doc-title">Rapport d'Activité Mensuel</h1>
-              <p className="pdf-doc-subtitle">Bilan complet des performances, revenus et réalisations de {currentMonthLabel}</p>
+              <div className="pdf-brand-tag">
+                <ShieldCheck className="w-4 h-4 text-[#0071E3]" />
+                <span>NEXT IA LABS — SYNTÈSE EXÉCUTIVE</span>
+              </div>
+              <h1 className="pdf-title">Rapport d'Activité Mensuel</h1>
+              <p className="pdf-[#8E8E93] text-xs mt-1">Bilan consolidé des performances, ventes et réalisations de <strong>{currentMonthLabel}</strong></p>
             </div>
-            <div className="pdf-meta-box">
-              <div className="meta-item"><span className="meta-lbl">Période :</span> <strong>{currentMonthLabel}</strong></div>
-              <div className="meta-item"><span className="meta-lbl">Date d'édition :</span> {new Date().toLocaleDateString('fr-FR')}</div>
-              <div className="meta-item"><span className="meta-lbl">Statut :</span> <strong style={{ color: '#0071E3' }}>Officiel</strong></div>
+
+            <div className="pdf-meta-pill shadow-sm">
+              <div className="meta-row"><span>Période :</span> <strong>{currentMonthLabel}</strong></div>
+              <div className="meta-row"><span>Émission :</span> <strong>{new Date().toLocaleDateString('fr-FR')}</strong></div>
+              <div className="meta-row"><span>Réf. Cockpit :</span> <strong>NX-{selectedMonth.replace('-', '')}</strong></div>
             </div>
           </div>
 
-          <hr className="pdf-divider" />
-
-          {/* Executive Summary Cards */}
+          {/* Grille des KPIs Financiers Principaux */}
           <div className="pdf-kpi-grid">
-            <div className="pdf-kpi-card highlight">
-              <span className="kpi-card-title">CA ENCAISSÉ TOTAL</span>
-              <div className="kpi-card-value">{Math.round(totalCollectedCA_Current).toLocaleString('fr-FR')} €</div>
-              <div className="kpi-card-sub">
+            <div className="pdf-kpi-box primary">
+              <span className="kpi-label">CHIFFRE D'AFFAIRES ENCAISSÉ</span>
+              <div className="kpi-value">{Math.round(totalCollectedCA_Current).toLocaleString('fr-FR')} €</div>
+              <div className="kpi-sub font-mono">
                 {Math.round(totalCollectedCA_Current * EXCHANGE_RATES.EUR_TO_FCFA).toLocaleString('fr-FR')} FCFA
               </div>
             </div>
 
-            <div className="pdf-kpi-card">
-              <span className="kpi-card-title">CA CONTRACTÉ TOTAL</span>
-              <div className="kpi-card-value">{Math.round(totalContractedCA_Current).toLocaleString('fr-FR')} €</div>
-              <div className="kpi-card-sub">Encaissé + Engagé</div>
+            <div className="pdf-kpi-box">
+              <span className="kpi-label">CA CONTRACTÉ</span>
+              <div className="kpi-value">{Math.round(totalContractedCA_Current).toLocaleString('fr-FR')} €</div>
+              <div className="kpi-sub">Encaissé + Engagé</div>
             </div>
 
-            <div className="pdf-kpi-card">
-              <span className="kpi-card-title">CHARGES & DÉPENSES</span>
-              <div className="kpi-card-value" style={{ color: '#EF4444' }}>{Math.round(charges_Current).toLocaleString('fr-FR')} €</div>
-              <div className="kpi-card-sub">{expenses.filter((e: any) => e.date.startsWith(selectedMonth)).length} poste(s) de coût</div>
+            <div className="pdf-kpi-box">
+              <span className="kpi-label">TOTAL DÉPENSES</span>
+              <div className="kpi-value text-red-500">{Math.round(charges_Current).toLocaleString('fr-FR')} €</div>
+              <div className="kpi-sub">{currentExpenses.length} poste(s) de charges</div>
             </div>
 
-            <div className="pdf-kpi-card">
-              <span className="kpi-card-title">PROFIT NET DU MOIS</span>
-              <div className="kpi-card-value" style={{ color: netProfit_Current >= 0 ? '#10B981' : '#EF4444' }}>
+            <div className="pdf-kpi-box">
+              <span className="kpi-label">PROFIT NET DU MOIS</span>
+              <div className={`kpi-value ${netProfit_Current >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                 {Math.round(netProfit_Current).toLocaleString('fr-FR')} €
               </div>
-              <div className="kpi-card-sub">CA Encaissé - Dépenses</div>
+              <div className="kpi-sub">Marge nette dégagée</div>
             </div>
           </div>
 
-          {/* Monthly Comparison Banner */}
-          <div className="pdf-comparison-banner">
-            <div className="comp-left">
-              <span className="comp-title">Comparaison vs Mois Précédent ({prevMonthLabel})</span>
-              <p className="comp-desc">
-                Chiffre d'affaires encaissé le mois dernier : <strong>{Math.round(totalCollectedCA_Prev).toLocaleString('fr-FR')} €</strong>
+          {/* Bandeau d'Évolution & Croissance */}
+          <div className="pdf-banner-growth">
+            <div className="banner-left">
+              <span className="banner-title">Comparatif de Croissance Mensuelle</span>
+              <p className="banner-desc">
+                Chiffre d'affaires encaissé au mois de {prevMonthLabel} : <strong>{Math.round(totalCollectedCA_Prev).toLocaleString('fr-FR')} €</strong>
               </p>
             </div>
-            <div className="comp-right">
-              <div className={`growth-pill ${growthPercent >= 0 ? 'positive' : 'negative'}`}>
+            <div className="banner-right">
+              <div className={`growth-tag ${growthPercent >= 0 ? 'up' : 'down'}`}>
                 {growthPercent >= 0 ? <TrendingUp className="w-4 h-4 inline mr-1" /> : <TrendingDown className="w-4 h-4 inline mr-1" />}
                 {growthPercent >= 0 ? `+${growthPercent}%` : `${growthPercent}%`}
               </div>
             </div>
           </div>
 
-          {/* Financial & Routine Goal Progress */}
+          {/* Section Bilan des Objectifs & Routine du Mois */}
           <div className="pdf-section">
-            <h3 className="section-heading">🎯 Atteinte des Objectifs de {currentMonthLabel}</h3>
-            <div className="goals-progress-row">
-              <div className="goal-prog-box flex-1">
-                <div className="prog-header">
-                  <span>Objectif Financier Visé</span>
-                  <strong>{objectiveCompletionRate}%</strong>
-                </div>
-                <div className="prog-bar-track">
-                  <div className="prog-bar-fill" style={{ width: `${objectiveCompletionRate}%`, backgroundColor: '#0071E3' }} />
-                </div>
-                <div className="prog-foot">
-                  Actuel : {Math.round(totalCollectedCA_Current).toLocaleString('fr-FR')} € / Cible : {currentObjectiveEUR.toLocaleString('fr-FR')} €
-                </div>
-              </div>
+            <div className="section-header">
+              <Target className="w-4 h-4 text-[#0071E3]" />
+              <h2 className="section-title">Réalisations & Routine de {currentMonthLabel}</h2>
+            </div>
 
-              <div className="goal-prog-box flex-1">
-                <div className="prog-header">
-                  <span>Routine & Actions Réalisées</span>
+            <div className="pdf-goals-summary-grid">
+              <div className="summary-card">
+                <div className="card-top">
+                  <span>Taux de Réalisation des Objectifs</span>
                   <strong>{routineCompletionRate}%</strong>
                 </div>
-                <div className="prog-bar-track">
-                  <div className="prog-bar-fill" style={{ width: `${routineCompletionRate}%`, backgroundColor: '#10B981' }} />
+                <div className="progress-track">
+                  <div className="progress-fill" style={{ width: `${routineCompletionRate}%` }} />
                 </div>
-                <div className="prog-foot">
-                  {completedGoals} sur {totalGoals} objectifs validés ce mois-ci
+                <div className="card-bottom">
+                  {completedGoals} sur {totalGoals} phrase(s) d'objectifs validée(s) ce mois-ci
                 </div>
               </div>
+
+              {goalsForMonth.length > 0 && (
+                <div className="goals-phrases-list">
+                  {goalsForMonth.map((goal: any, idx: number) => (
+                    <div key={idx} className={`phrase-item ${goal.completed ? 'done' : ''}`}>
+                      <CheckCircle2 className={`w-3.5 h-3.5 flex-shrink-0 ${goal.completed ? 'text-emerald-500' : 'text-gray-300'}`} />
+                      <span className="phrase-text">{goal.title}</span>
+                      {goal.notes && <span className="phrase-note">— {goal.notes}</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
+
+            {/* Extrait du Mémo / Bilan personnel */}
+            {monthlyNotesText && (
+              <div className="pdf-memo-notes-box">
+                <span className="notes-box-title">Mémo & Réflexion Stratégique du Mois :</span>
+                <p className="notes-box-content">"{monthlyNotesText}"</p>
+              </div>
+            )}
           </div>
 
-          {/* Channel Revenue Breakdown */}
+          {/* Répartition par Canaux d'Activité */}
           <div className="pdf-section">
-            <h3 className="section-heading">💰 Répartition du Chiffre d'Affaires par Canal</h3>
-            <table className="pdf-data-table">
+            <div className="section-header">
+              <DollarSign className="w-4 h-4 text-[#0071E3]" />
+              <h2 className="section-title">Synthèse des Revenus par Canal d'Activité</h2>
+            </div>
+
+            <table className="pdf-exec-table">
               <thead>
                 <tr>
-                  <th>Canal d'Activité</th>
-                  <th>Éléments / Inscriptions</th>
+                  <th>Canal / Projet</th>
+                  <th>Détails d'Activité</th>
                   <th>CA Encaissé (€)</th>
                   <th>CA Encaissé (FCFA)</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td><strong>Lancements & Webinaires</strong></td>
-                  <td>{launchCurrent ? `${launchCurrent.registered} inscrits / ${launchCurrent.live} en live` : 'Aucun lancement'}</td>
-                  <td>{Math.round(launchCA_Current * EXCHANGE_RATES.FCFA_TO_EUR).toLocaleString('fr-FR')} €</td>
-                  <td>{launchCA_Current.toLocaleString('fr-FR')} FCFA</td>
+                  <td>
+                    <div className="table-cell-title">
+                      <Rocket className="w-3.5 h-3.5 text-blue-500 inline mr-1.5" />
+                      <strong>Lancements & Webinaires</strong>
+                    </div>
+                  </td>
+                  <td>{launchCurrent ? `${launchCurrent.registered} inscrits / ${launchCurrent.live} en live` : 'Aucun lancement enregistré'}</td>
+                  <td><strong>{Math.round(launchCA_Current * EXCHANGE_RATES.FCFA_TO_EUR).toLocaleString('fr-FR')} €</strong></td>
+                  <td className="color-sub">{launchCA_Current.toLocaleString('fr-FR')} FCFA</td>
                 </tr>
+
                 <tr>
-                  <td><strong>Accompagnements Blueprint IA</strong></td>
-                  <td>Challenge 7 Jours</td>
-                  <td>{Math.round(blueprintCA_Current).toLocaleString('fr-FR')} €</td>
-                  <td>{Math.round(blueprintCA_Current * EXCHANGE_RATES.EUR_TO_FCFA).toLocaleString('fr-FR')} FCFA</td>
+                  <td>
+                    <div className="table-cell-title">
+                      <Award className="w-3.5 h-3.5 text-purple-500 inline mr-1.5" />
+                      <strong>Blueprint IA (Challenge 7J)</strong>
+                    </div>
+                  </td>
+                  <td>Accompagnements 7 jours</td>
+                  <td><strong>{Math.round(blueprintCA_Current).toLocaleString('fr-FR')} €</strong></td>
+                  <td className="color-sub">{Math.round(blueprintCA_Current * EXCHANGE_RATES.EUR_TO_FCFA).toLocaleString('fr-FR')} FCFA</td>
                 </tr>
+
                 <tr>
-                  <td><strong>Prospection & Closing Premium</strong></td>
+                  <td>
+                    <div className="table-cell-title">
+                      <Ticket className="w-3.5 h-3.5 text-emerald-500 inline mr-1.5" />
+                      <strong>Le Week-end de l'IA (14 Nov)</strong>
+                    </div>
+                  </td>
+                  <td>{iaTicketsPaid.reduce((sum: number, t: any) => sum + t.ticketCount, 0)} place(s) vendue(s)</td>
+                  <td><strong>{iaTicketsCA_EUR.toLocaleString('fr-FR')} €</strong></td>
+                  <td className="color-sub">{iaTicketsCA_FCFA.toLocaleString('fr-FR')} FCFA</td>
+                </tr>
+
+                <tr>
+                  <td>
+                    <div className="table-cell-title">
+                      <Users className="w-3.5 h-3.5 text-amber-500 inline mr-1.5" />
+                      <strong>Prospection & Closing Premium</strong>
+                    </div>
+                  </td>
                   <td>{prospectStats.closedWon} prospect(s) closé(s)</td>
-                  <td>{Math.round(premiumCA_Current).toLocaleString('fr-FR')} €</td>
-                  <td>{Math.round(premiumCA_Current * EXCHANGE_RATES.EUR_TO_FCFA).toLocaleString('fr-FR')} FCFA</td>
+                  <td><strong>{Math.round(premiumCA_Current).toLocaleString('fr-FR')} €</strong></td>
+                  <td className="color-sub">{Math.round(premiumCA_Current * EXCHANGE_RATES.EUR_TO_FCFA).toLocaleString('fr-FR')} FCFA</td>
                 </tr>
+
                 <tr>
-                  <td><strong>Ventes Digitales (Notion / Ebooks)</strong></td>
-                  <td>{currentSales.length} produit(s) vendu(s)</td>
-                  <td>{Math.round(digitalCA_Current).toLocaleString('fr-FR')} €</td>
-                  <td>{Math.round(digitalCA_Current * EXCHANGE_RATES.EUR_TO_FCFA).toLocaleString('fr-FR')} FCFA</td>
-                </tr>
-                <tr>
-                  <td><strong>Collaborations & Sponsoring</strong></td>
+                  <td>
+                    <div className="table-cell-title">
+                      <Briefcase className="w-3.5 h-3.5 text-indigo-500 inline mr-1.5" />
+                      <strong>Collaborations & Sponsoring</strong>
+                    </div>
+                  </td>
                   <td>{currentCollabs.length} marque(s) partenaire(s)</td>
-                  <td>{Math.round(collabsCollected_Current * EXCHANGE_RATES.USD_TO_EUR).toLocaleString('fr-FR')} €</td>
-                  <td>{Math.round(collabsCollected_Current * EXCHANGE_RATES.USD_TO_EUR * EXCHANGE_RATES.EUR_TO_FCFA).toLocaleString('fr-FR')} FCFA</td>
+                  <td><strong>{Math.round(collabsCollected_Current * EXCHANGE_RATES.USD_TO_EUR).toLocaleString('fr-FR')} €</strong></td>
+                  <td className="color-sub">{Math.round(collabsCollected_Current * EXCHANGE_RATES.USD_TO_EUR * EXCHANGE_RATES.EUR_TO_FCFA).toLocaleString('fr-FR')} FCFA</td>
+                </tr>
+
+                <tr>
+                  <td>
+                    <div className="table-cell-title">
+                      <FileText className="w-3.5 h-3.5 text-teal-500 inline mr-1.5" />
+                      <strong>Ventes Digitales (Ebooks & Notion)</strong>
+                    </div>
+                  </td>
+                  <td>{currentSales.length} transaction(s)</td>
+                  <td><strong>{Math.round(digitalCA_Current).toLocaleString('fr-FR')} €</strong></td>
+                  <td className="color-sub">{Math.round(digitalCA_Current * EXCHANGE_RATES.EUR_TO_FCFA).toLocaleString('fr-FR')} FCFA</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-          {/* Prospecting & CRM Activity Summary */}
+          {/* Funnel Prospection & CRM */}
           <div className="pdf-section">
-            <h3 className="section-heading">👥 Activité de Prospection & Conversion</h3>
-            <div className="prospect-summary-grid">
-              <div className="p-sum-card">
-                <span className="p-sum-label">Nouveaux DM Initiés</span>
-                <span className="p-sum-value">{prospectStats.newProspects}</span>
+            <div className="section-header">
+              <Users className="w-4 h-4 text-[#0071E3]" />
+              <h2 className="section-title">Performances Prospection & Conversion CRM</h2>
+            </div>
+
+            <div className="pdf-crm-grid">
+              <div className="crm-box">
+                <span className="crm-label">Nouveaux DM</span>
+                <span className="crm-value">{prospectStats.newProspects}</span>
               </div>
-              <div className="p-sum-card">
-                <span className="p-sum-label">Appels Bookés</span>
-                <span className="p-sum-value">{prospectStats.callsBooked}</span>
+              <div className="crm-box">
+                <span className="crm-label">Appels Bookés</span>
+                <span className="crm-value">{prospectStats.callsBooked}</span>
               </div>
-              <div className="p-sum-card">
-                <span className="p-sum-label">Closés Gagnés</span>
-                <span className="p-sum-value">{prospectStats.closedWon}</span>
+              <div className="crm-box">
+                <span className="crm-label">Closés Gagnés</span>
+                <span className="crm-value text-emerald-600">{prospectStats.closedWon}</span>
               </div>
-              <div className="p-sum-card">
-                <span className="p-sum-label">Taux de Conversion</span>
-                <span className="p-sum-value" style={{ color: '#0071E3' }}>{prospectStats.conversionRate.toFixed(1)}%</span>
+              <div className="crm-box">
+                <span className="crm-label">Taux de Conversion</span>
+                <span className="crm-value text-[#0071E3]">{prospectStats.conversionRate.toFixed(1)}%</span>
               </div>
             </div>
           </div>
 
-          {/* Footer Signature */}
-          <div className="pdf-footer">
-            <p>Rapport généré automatiquement par le Cockpit NEXT IA LABS le {new Date().toLocaleDateString('fr-FR')} à {new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}.</p>
+          {/* Footer Officiel du Rapport */}
+          <div className="pdf-footer-section">
+            <div className="footer-left">
+              <span>NEXT IA LABS COCKPIT — DOCUMENT D'ACTIVITÉ CONFIDENTIEL</span>
+            </div>
+            <div className="footer-right">
+              <span>Édité le {new Date().toLocaleDateString('fr-FR')} à {new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
           </div>
+
         </div>
       </div>
 
-      {/* Embedded CSS Styling */}
+      {/* Embedded High-Quality UX/UI Styling */}
       <style>{`
-        .report-modal-overlay {
+        .pdf-modal-overlay {
           position: fixed;
           inset: 0;
-          background-color: rgba(0, 0, 0, 0.6);
+          background: rgba(0, 0, 0, 0.65);
           backdrop-filter: blur(8px);
-          z-index: 2000;
+          -webkit-backdrop-filter: blur(8px);
+          z-index: 2500;
           display: flex;
           align-items: center;
           justify-content: center;
           padding: 24px;
-          overflow-y: auto;
         }
 
-        .report-modal-card {
-          background-color: #FFFFFF;
-          border-radius: 20px;
+        .pdf-modal-card {
+          background: #FFFFFF;
+          border-radius: 24px;
           width: 100%;
-          max-width: 900px;
-          max-height: 90vh;
-          box-shadow: 0 24px 48px rgba(0,0,0,0.2);
+          max-width: 940px;
+          max-height: 92vh;
+          box-shadow: 0 32px 64px rgba(0, 0, 0, 0.25);
           display: flex;
           flex-direction: column;
           overflow: hidden;
+          font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
         }
 
-        .modal-top-action-bar {
+        .pdf-top-bar {
           display: flex;
           align-items: center;
           justify-content: space-between;
           padding: 16px 24px;
-          background-color: #F8FAFC;
-          border-bottom: 1px solid rgba(0,0,0,0.08);
+          background: #F8FAFC;
+          border-bottom: 1px solid rgba(0,0,0,0.06);
         }
 
-        .action-bar-title {
+        .bar-title {
           display: flex;
           align-items: center;
           gap: 10px;
-          font-weight: 800;
+          font-[#1D1D1F] font-weight: 800;
           font-size: 15px;
-          color: #1D1D1F;
         }
 
-        .action-bar-buttons {
+        .bar-buttons {
           display: flex;
           align-items: center;
           gap: 12px;
         }
 
-        .print-pdf-btn {
+        .btn-print-action {
           display: inline-flex;
           align-items: center;
           gap: 8px;
-          padding: 10px 18px;
-          border-radius: 10px;
-          background-color: #0071E3;
+          padding: 10px 20px;
+          border-radius: 12px;
+          background: #0071E3;
           color: #FFFFFF;
           font-size: 13px;
           font-weight: 700;
           border: none;
           cursor: pointer;
           transition: all 0.2s ease;
+          box-shadow: 0 4px 12px rgba(0, 113, 227, 0.25);
         }
 
-        .print-pdf-btn:hover {
-          background-color: #005BB5;
+        .btn-print-action:hover {
+          background: #005BB5;
         }
 
-        .close-modal-btn {
+        .btn-close-action {
           background: none;
           border: none;
           color: #8E8E93;
           cursor: pointer;
+          padding: 4px;
         }
 
-        .pdf-report-document {
-          padding: 36px 40px;
+        .pdf-document {
+          padding: 40px 48px;
           overflow-y: auto;
-          background-color: #FFFFFF;
+          background: #FFFFFF;
           color: #1D1D1F;
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
-        .pdf-header-row {
+        .pdf-exec-header {
           display: flex;
           justify-content: space-between;
           align-items: flex-start;
-          margin-bottom: 16px;
+          margin-bottom: 24px;
+          padding-bottom: 20px;
+          border-bottom: 2px solid #F2F2F7;
         }
 
-        .pdf-brand-logo {
-          font-size: 12px;
+        .pdf-brand-tag {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 11px;
           font-weight: 800;
-          letter-spacing: 0.1em;
+          letter-spacing: 0.08em;
           color: #0071E3;
-          margin-bottom: 4px;
+          margin-bottom: 6px;
         }
 
-        .pdf-doc-title {
-          font-size: 26px;
-          font-weight: 800;
+        .pdf-title {
+          font-size: 28px;
+          font-weight: 900;
+          letter-spacing: -0.02em;
           color: #1D1D1F;
-          margin: 0 0 4px 0;
-
-        }
-
-        .pdf-doc-subtitle {
-          font-size: 13px;
-          color: #6E6E73;
           margin: 0;
         }
 
-        .pdf-meta-box {
-          background-color: #F8FAFC;
+        .pdf-meta-pill {
+          background: #F8FAFC;
           border: 1px solid rgba(0,0,0,0.06);
-          border-radius: 12px;
-          padding: 12px 16px;
+          border-radius: 14px;
+          padding: 12px 18px;
           font-size: 12px;
           display: flex;
           flex-direction: column;
           gap: 4px;
+          min-width: 180px;
         }
 
-        .meta-lbl {
-          color: #8E8E93;
-        }
-
-        .pdf-divider {
-          border: none;
-          border-top: 1px solid rgba(0,0,0,0.08);
-          margin: 20px 0;
+        .meta-row {
+          display: flex;
+          justify-content: space-between;
+          color: #6E6E73;
         }
 
         .pdf-kpi-grid {
@@ -456,31 +538,28 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ isOpen, 
           margin-bottom: 24px;
         }
 
-        .pdf-kpi-card {
-          background-color: #FAFAFA;
+        .pdf-kpi-box {
+          background: #FAFAFA;
           border: 1px solid rgba(0,0,0,0.06);
-          border-radius: 14px;
-          padding: 16px;
+          border-radius: 16px;
+          padding: 18px;
           display: flex;
           flex-direction: column;
         }
 
-        .pdf-kpi-card.highlight {
+        .pdf-kpi-box.primary {
           background: linear-gradient(135deg, #0071E3 0%, #005BB5 100%);
           color: #FFFFFF;
           border: none;
+          box-shadow: 0 8px 20px rgba(0, 113, 227, 0.2);
         }
 
-        .pdf-kpi-card.highlight .kpi-card-title,
-        .pdf-kpi-card.highlight .kpi-card-sub {
+        .pdf-kpi-box.primary .kpi-label,
+        .pdf-kpi-box.primary .kpi-sub {
           color: rgba(255,255,255,0.8);
         }
 
-        .pdf-kpi-card.highlight .kpi-card-value {
-          color: #FFFFFF;
-        }
-
-        .kpi-card-title {
+        .kpi-label {
           font-size: 10px;
           font-weight: 800;
           color: #8E8E93;
@@ -488,21 +567,21 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ isOpen, 
           margin-bottom: 6px;
         }
 
-        .kpi-card-value {
+        .kpi-value {
           font-size: 22px;
-          font-weight: 800;
-          margin-bottom: 4px;
+          font-weight: 900;
+          margin-bottom: 2px;
         }
 
-        .kpi-card-sub {
+        .kpi-sub {
           font-size: 11px;
           color: #8E8E93;
         }
 
-        .pdf-comparison-banner {
-          background-color: #F8FAFC;
+        .pdf-banner-growth {
+          background: #F8FAFC;
           border: 1px solid rgba(0,0,0,0.06);
-          border-radius: 14px;
+          border-radius: 16px;
           padding: 16px 20px;
           display: flex;
           align-items: center;
@@ -510,148 +589,148 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ isOpen, 
           margin-bottom: 28px;
         }
 
-        .comp-title {
-          font-size: 13px;
-          font-weight: 700;
-          color: #1D1D1F;
-        }
+        .banner-title { font-size: 13.5px; font-weight: 800; color: #1D1D1F; }
+        .banner-desc { font-size: 12px; color: #6E6E73; margin: 2px 0 0 0; }
 
-        .comp-desc {
-          font-size: 12px;
-          color: #6E6E73;
-          margin: 2px 0 0 0;
-        }
-
-        .growth-pill {
-          padding: 6px 14px;
+        .growth-tag {
+          padding: 6px 16px;
           border-radius: 99px;
           font-size: 14px;
           font-weight: 800;
         }
 
-        .growth-pill.positive {
-          background-color: rgba(16, 185, 129, 0.12);
-          color: #10B981;
-        }
+        .growth-tag.up { background: rgba(16, 185, 129, 0.12); color: #10B981; }
+        .growth-tag.down { background: rgba(239, 68, 68, 0.12); color: #EF4444; }
 
-        .growth-pill.negative {
-          background-color: rgba(239, 68, 68, 0.12);
-          color: #EF4444;
-        }
+        .pdf-section { margin-bottom: 32px; }
 
-        .pdf-section {
-          margin-bottom: 28px;
-        }
-
-        .section-heading {
-          font-size: 15px;
-          font-weight: 800;
-          color: #1D1D1F;
-          margin: 0 0 14px 0;
-        }
-
-        .goals-progress-row {
+        .section-header {
           display: flex;
-          gap: 16px;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 14px;
         }
 
-        .goal-prog-box {
-          background-color: #FAFAFA;
+        .section-title { font-size: 16px; font-weight: 800; color: #1D1D1F; margin: 0; }
+
+        .pdf-goals-summary-grid {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .summary-card {
+          background: #FAFAFA;
           border: 1px solid rgba(0,0,0,0.06);
-          border-radius: 12px;
-          padding: 14px 16px;
+          border-radius: 14px;
+          padding: 16px;
         }
 
-        .flex-1 { flex: 1; }
+        .card-top { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; margin-bottom: 8px; }
 
-        .prog-header {
-          display: flex;
-          justify-content: space-between;
-          font-size: 13px;
-          font-weight: 700;
-          margin-bottom: 8px;
-        }
-
-        .prog-bar-track {
+        .progress-track {
           width: 100%;
           height: 8px;
-          background-color: rgba(0,0,0,0.06);
+          background: rgba(0,0,0,0.06);
           border-radius: 99px;
           overflow: hidden;
           margin-bottom: 8px;
         }
 
-        .prog-bar-fill {
-          height: 100%;
-          border-radius: 99px;
+        .progress-fill { height: 100%; background: #0071E3; border-radius: 99px; }
+
+        .card-bottom { font-size: 11.5px; color: #8E8E93; }
+
+        .goals-phrases-list {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          background: #F8FAFC;
+          border-radius: 14px;
+          padding: 14px;
+          border: 1px solid rgba(0,0,0,0.04);
         }
 
-        .prog-foot {
-          font-size: 11.5px;
-          color: #8E8E93;
+        .phrase-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 12px;
         }
 
-        .pdf-data-table {
+        .phrase-item.done { color: #1D1D1F; font-weight: 600; }
+        .phrase-text { flex: 1; }
+        .phrase-note { font-size: 11px; color: #8E8E93; font-style: italic; }
+
+        .pdf-memo-notes-box {
+          background: rgba(0, 113, 227, 0.04);
+          border-left: 3px solid #0071E3;
+          border-radius: 0 12px 12px 0;
+          padding: 14px;
+          margin-top: 12px;
+        }
+
+        .notes-box-title { font-size: 11.5px; font-weight: 800; color: #0071E3; display: block; margin-bottom: 4px; }
+        .notes-box-content { font-size: 12.5px; color: #1D1D1F; margin: 0; font-style: italic; }
+
+        .pdf-exec-table {
           width: 100%;
           border-collapse: collapse;
-          font-size: 12.5px;
+          font-size: 12px;
         }
 
-        .pdf-data-table th, .pdf-data-table td {
-          padding: 10px 14px;
-          text-align: left;
+        .pdf-exec-table th, .pdf-exec-table td {
+          padding: 12px 16px;
           border-bottom: 1px solid rgba(0,0,0,0.06);
+          text-align: left;
         }
 
-        .pdf-data-table th {
-          background-color: #F8FAFC;
-          font-weight: 700;
+        .pdf-exec-table th {
+          background: #F8FAFC;
+          font-weight: 800;
           color: #515154;
+          text-transform: uppercase;
+          font-size: 10.5px;
+          letter-spacing: 0.05em;
         }
 
-        .prospect-summary-grid {
+        .color-sub { color: #8E8E93; }
+
+        .pdf-crm-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
           gap: 12px;
         }
 
-        .p-sum-card {
-          background-color: #FAFAFA;
+        .crm-box {
+          background: #FAFAFA;
           border: 1px solid rgba(0,0,0,0.06);
-          border-radius: 12px;
-          padding: 12px 16px;
+          border-radius: 14px;
+          padding: 14px 16px;
           display: flex;
           flex-direction: column;
           gap: 4px;
         }
 
-        .p-sum-label {
-          font-size: 11px;
-          font-weight: 600;
-          color: #8E8E93;
-        }
+        .crm-label { font-size: 11px; font-weight: 700; color: #8E8E93; }
+        .crm-value { font-size: 18px; font-weight: 900; }
 
-        .p-sum-value {
-          font-size: 18px;
-          font-weight: 800;
-          color: #1D1D1F;
-        }
-
-        .pdf-footer {
-          margin-top: 40px;
-          border-top: 1px solid rgba(0,0,0,0.06);
-          padding-top: 16px;
-          font-size: 11px;
+        .pdf-footer-section {
+          display: flex;
+          justify-content: space-between;
+          border-top: 1px solid rgba(0,0,0,0.08);
+          padding-top: 20px;
+          font-size: 10.5px;
           color: #A1A1A6;
-          text-align: center;
+          margin-top: 40px;
         }
 
-        /* PRINT STYLES */
+        /* STYLES SPÉCIFIQUES IMPRESSION ET TÉLÉCHARGEMENT PDF */
         @media print {
           body * {
             visibility: hidden;
           }
-          .report-modal-overlay {
+          .pdf-modal-overlay {
             position: absolute;
             left: 0;
             top: 0;
@@ -660,7 +739,7 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ isOpen, 
             background: none;
             padding: 0;
           }
-          .report-modal-card {
+          .pdf-modal-card {
             max-width: 100%;
             max-height: none;
             box-shadow: none;
@@ -677,7 +756,7 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ isOpen, 
             left: 0;
             top: 0;
             width: 100%;
-            padding: 20px;
+            padding: 24px;
           }
         }
       `}</style>
