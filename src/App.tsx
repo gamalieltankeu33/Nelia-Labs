@@ -67,6 +67,9 @@ const AppContent: React.FC = () => {
         return <HomeScreen setActiveScreen={setActiveScreen} />;
       case 'today':
         return <TodayScreen />;
+      case 'goals':
+      case 'memo':
+        return <ObjectivesMemoScreen />;
       case 'memo':
         return <ObjectivesMemoScreen />;
       case 'content':

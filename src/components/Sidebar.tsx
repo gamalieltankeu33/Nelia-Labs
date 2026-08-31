@@ -5,6 +5,7 @@ import { Ticket } from 'lucide-react';
 import { 
   Home,
   Calendar, 
+  Target, 
   FileText, 
   Users, 
   Send,
@@ -87,6 +88,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const menuItems = [
     { id: 'home', name: 'Accueil', icon: Home },
     { id: 'today', name: "Aujourd'hui", icon: Calendar },
+    { id: 'goals', name: 'Objectifs du mois', icon: Target },
     { id: 'content', name: 'Contenu', icon: FileText },
     { id: 'prospects', name: 'Prospection', icon: Users },
     { id: 'launch', name: 'Lancement', icon: Send },

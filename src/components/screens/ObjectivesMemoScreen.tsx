@@ -160,9 +160,9 @@ export const ObjectivesMemoScreen: React.FC = () => {
         <div className="memo-header-left">
           <div className="memo-badge">
             <Target className="w-4 h-4 text-blue-500" />
-            <span>Objectifs & Mémo de Routine</span>
+            <span>Module Routine & Suivi</span>
           </div>
-          <h1 className="memo-title">Bilan & Objectifs — {currentMonthLabel}</h1>
+          <h1 className="memo-title">Objectifs du mois — {currentMonthLabel}</h1>
           <p className="memo-[#8E8E93] text-xs mt-1">
             Notez vos objectifs mensuels, vos réalisations et laissez l'algorithme évaluer votre taux de réussite.
           </p>
