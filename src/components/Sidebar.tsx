@@ -1,6 +1,7 @@
 import React from 'react';
 import { MonthlyReportModal } from './MonthlyReportModal';
 import { useState } from 'react';
+import { Ticket } from 'lucide-react';
 import { 
   Home,
   Calendar, 
@@ -90,6 +91,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'prospects', name: 'Prospection', icon: Users },
     { id: 'launch', name: 'Lancement', icon: Send },
     { id: 'blueprint', name: 'Blueprint IA', icon: Sparkles },
+    { id: 'ia-weekend', name: "Week-end de l'IA", icon: Ticket },
     { id: 'collabs', name: 'Collabs', icon: Briefcase },
     { id: 'expenses', name: 'Charges', icon: DollarSign },
     { id: 'dashboard', name: 'Tableau de bord', icon: PieChart },

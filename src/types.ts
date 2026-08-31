@@ -136,3 +136,17 @@ export const PROSPECT_STATUS_COLORS = [
   "#D97706", // Relancé post-appel - Ocre
   "#3FBF8F"  // Closé gagné - Vert succès (ou Vert)
 ];
+
+export interface IATicketSale {
+  id: string;
+  participantName: string;
+  phone?: string;
+  email?: string;
+  ticketCount: number;
+  unitPrice: number; // default 10000 FCFA
+  totalAmount: number;
+  channel: 'Organique' | 'Ads Facebook/TikTok' | 'WhatsApp Direct' | 'Partenariats' | 'Autre';
+  status: 'Payé' | 'Réservé' | 'Annulé';
+  createdAt: string;
+  notes?: string;
+}

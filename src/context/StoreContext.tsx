@@ -66,6 +66,9 @@ interface StoreContextType {
   
   updateObjective: (month: string, amount: number) => void;
   
+  addIATicketSale?: (sale: any) => void;
+  updateIATicketSale?: (id: string, updates: any) => void;
+  deleteIATicketSale?: (id: string) => void;
   importData: (jsonData: string) => boolean;
   exportData: () => string;
   resetToDemoData: () => void;
@@ -1312,8 +1315,41 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+
+  // Actions Week-end de l'IA
+  const addIATicketSale = (sale: any) => {
+    const newSale = {
+      ...sale,
+      id: `t-${Date.now()}`,
+      createdAt: new Date().toISOString().substring(0, 10),
+      unitPrice: sale.unitPrice || 10000,
+      totalAmount: (sale.ticketCount || 1) * (sale.unitPrice || 10000)
+    };
+    setStore(prev => ({
+      ...prev,
+      iaWeekendTickets: [...((prev as any).iaWeekendTickets || []), newSale]
+    }));
+  };
+
+  const updateIATicketSale = (id: string, updates: any) => {
+    setStore(prev => ({
+      ...prev,
+      iaWeekendTickets: ((prev as any).iaWeekendTickets || []).map((s: any) => s.id === id ? { ...s, ...updates } : s)
+    }));
+  };
+
+  const deleteIATicketSale = (id: string) => {
+    setStore(prev => ({
+      ...prev,
+      iaWeekendTickets: ((prev as any).iaWeekendTickets || []).filter((s: any) => s.id !== id)
+    }));
+  };
+
   return (
     <StoreContext.Provider value={{
+      addIATicketSale,
+      updateIATicketSale,
+      deleteIATicketSale,
       ...store,
       savingStatus,
       savingError,

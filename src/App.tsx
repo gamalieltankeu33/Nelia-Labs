@@ -8,6 +8,7 @@ import { ProspectsScreen } from './components/screens/ProspectsScreen';
 import { LaunchScreen } from './components/screens/LaunchScreen';
 import { BlueprintScreen } from './components/screens/BlueprintScreen';
 import { CollabsScreen } from './components/screens/CollabsScreen';
+import { IAWeekendScreen } from './components/screens/IAWeekendScreen';
 import { ExpensesScreen } from './components/screens/ExpensesScreen';
 import { DashboardScreen } from './components/screens/DashboardScreen';
 import { LockScreen } from './components/LockScreen';
@@ -73,6 +74,8 @@ const AppContent: React.FC = () => {
         return <LaunchScreen />;
       case 'blueprint':
         return <BlueprintScreen />;
+      case 'ia-weekend':
+        return <IAWeekendScreen />;
       case 'collabs':
         return <CollabsScreen />;
       case 'expenses':
