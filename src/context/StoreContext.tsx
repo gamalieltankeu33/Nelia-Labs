@@ -281,6 +281,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           expenses: parsed.expenses || [],
           blueprintChallenges: parsed.blueprintChallenges || [],
           objectives: parsed.objectives || {},
+          monthlyGoals: parsed.monthlyGoals || [],
           iaWeekendTickets: parsed.iaWeekendTickets || []
         };
       }
@@ -296,6 +297,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       expenses: [],
       blueprintChallenges: [],
       objectives: {},
+      monthlyGoals: [],
       iaWeekendTickets: []
     };
   });
