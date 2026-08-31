@@ -211,11 +211,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="progress-summary-details">
             <div className="p-sum-detail-row">
               <span className="p-sum-lbl">Encaissé</span>
-              <span className="p-sum-val">{totalCollectedCA.toLocaleString('fr-FR')} €</span>
+              <span className="p-sum-val">{Math.round(totalCollectedCA).toLocaleString('fr-FR')} €</span>
             </div>
             <div className="p-sum-detail-row">
               <span className="p-sum-lbl">Contracté</span>
-              <span className="p-sum-val">{totalContractedCA.toLocaleString('fr-FR')} €</span>
+              <span className="p-sum-val">{Math.round(totalContractedCA).toLocaleString('fr-FR')} €</span>
             </div>
           </div>
         </div>
@@ -423,8 +423,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         .p-sum-detail-row {
           display: flex;
+          align-items: center;
           justify-content: space-between;
-          font-size: 10px;
+          font-size: 11px;
+          gap: 8px;
+          padding: 2px 0;
+        }
+
+        .p-sum-lbl {
+          color: #8E8E93;
+          font-weight: 600;
+          white-space: nowrap;
+        }
+
+        .p-sum-val {
+          color: #1D1D1F;
+          font-weight: 800;
+          white-space: nowrap;
         }
 
         .p-sum-lbl {
