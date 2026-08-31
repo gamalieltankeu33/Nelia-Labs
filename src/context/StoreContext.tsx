@@ -427,105 +427,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           (!resExpenses.data || resExpenses.data.length === 0);
 
         if (isDbEmpty) {
-          console.log("Base de données Supabase vide. Début de la migration des données actuelles...");
-          
-          // 1. Contents
-          if (store.contents.length > 0) {
-            await supabase.from('contents').insert(store.contents.map(c => ({
-              id: c.id,
-              date: c.date,
-              platform: c.platform,
-              type: c.type,
-              title: c.title,
-              link: c.link
-            })));
-          }
+          console.log("Supabase est vide. Conservation intégrale des données du localStorage.");
+          setSavingStatus('idle');
+          return;
+        }
 
-          // 2. Sales
-          if (store.sales.length > 0) {
-            await supabase.from('sales').insert(store.sales.map(s => ({
-              id: s.id,
-              date: s.date,
-              product: `${s.product} [${s.currency || 'EUR'}]`,
-              price: s.price,
-              channel: s.channel
-            })));
-          }
-
-          // 3. Prospects
-          if (store.prospects.length > 0) {
-            await supabase.from('prospects').insert(store.prospects.map(p => ({
-              id: p.id,
-              name: p.name,
-              current_status: p.currentStatus,
-              max_index: p.maxIndex,
-              lost: p.lost,
-              deal_amount: p.dealAmount,
-              deal_date: p.dealDate,
-              history: p.history
-            })));
-          }
-
-          // 4. Launches
-          const launchesList = Object.values(store.launches);
-          if (launchesList.length > 0) {
-            await supabase.from('launches').insert(launchesList.map((l: any) => {
-              const cleanReminders = (l.reminders || []).filter((r: any) => r.id !== 'metadata_launch_completed');
-              const remindersToSave = l.status === 'Terminé'
-                ? [...cleanReminders, { id: 'metadata_launch_completed', date: '', count: 0, amount: 0 }]
-                : cleanReminders;
-              return {
-                id: l.id,
-                month: l.month,
-                launch_type: l.launchType,
-                comm_start_date: l.commStartDate,
-                webinar_date: l.webinarDate,
-                ads_budget: l.adsBudget,
-                ads_spent: l.adsSpent,
-                registered: l.registered,
-                live: l.live,
-                day_sales_count: l.daySalesCount,
-                day_sales_amount: l.daySalesAmount,
-                reminders: remindersToSave
-              };
-            }));
-          }
-
-          // 5. Collabs
-          if (store.collabs.length > 0) {
-            await supabase.from('collabs').insert(store.collabs.map(c => ({
-              id: c.id,
-              brand: c.brand,
-              amount: c.amount,
-              publish_date: c.publishDate,
-              status: c.status
-            })));
-          }
-
-          // 6. Expenses
-          if (store.expenses.length > 0) {
-            await supabase.from('expenses').insert(store.expenses.map(e => ({
-              id: e.id,
-              name: e.name,
-              amount: e.amount,
-              frequency: e.frequency,
-              date: e.date
-            })));
-          }
-
-          // 7. Objectives
-          if (Object.keys(store.objectives).length > 0) {
-            await supabase.from('objectives').insert(Object.entries(store.objectives).map(([month, amount]) => ({
-              month,
-              amount
-            })));
-          }
-
-          console.log("Migration vers Supabase réussie !");
-          setSavingStatus('saved');
-          setTimeout(() => setSavingStatus('idle'), 1500);
-        } else {
-          const parsedSalesList: DigitalSale[] = (resSales.data || []).map((s: any) => {
+        const parsedSalesList: DigitalSale[] = (resSales.data || []).map((s: any) => {
             const match = s.product.match(/(.*)\s\[(EUR|USD|FCFA)\]$/);
             return {
               id: s.id,
@@ -551,7 +458,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
           setSavingStatus('saved');
           setTimeout(() => setSavingStatus('idle'), 1500);
-        }
       } catch (err: any) {
         console.error("Erreur d'initialisation Supabase :", err);
         setSavingStatus('error');
