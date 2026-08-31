@@ -444,17 +444,18 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             };
           });
 
-          const rawStore: NextiaStore = {
-            contents: resContents.data || [],
-            sales: parsedSalesList,
-            prospects: prospectsList,
-            launches: launchesMap,
-            collabs: collabsList,
-            expenses: expensesList,
-            blueprintChallenges: [],
-            objectives: Object.keys(objectivesMap).length > 0 ? objectivesMap : DEFAULT_OBJECTIVES
-          };
-          setStore(rawStore);
+          setStore(prev => ({
+            contents: (resContents.data && resContents.data.length > 0) ? (resContents.data as any) : prev.contents,
+            sales: (parsedSalesList && parsedSalesList.length > 0) ? parsedSalesList : prev.sales,
+            prospects: (prospectsList && prospectsList.length > 0) ? prospectsList : prev.prospects,
+            launches: (launchesMap && Object.keys(launchesMap).length > 0) ? launchesMap : prev.launches,
+            collabs: (collabsList && collabsList.length > 0) ? collabsList : prev.collabs,
+            expenses: (expensesList && expensesList.length > 0) ? expensesList : prev.expenses,
+            blueprintChallenges: prev.blueprintChallenges || [],
+            objectives: (objectivesMap && Object.keys(objectivesMap).length > 0) ? objectivesMap : prev.objectives,
+            monthlyGoals: prev.monthlyGoals || [],
+            iaWeekendTickets: prev.iaWeekendTickets || []
+          }));
 
           setSavingStatus('saved');
           setTimeout(() => setSavingStatus('idle'), 1500);

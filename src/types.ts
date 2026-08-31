@@ -109,6 +109,8 @@ export interface NextiaStore {
   expenses: Expense[];
   blueprintChallenges: BlueprintChallenge[];
   objectives: Record<string, number>; // Clé: YYYY-MM
+  monthlyGoals?: MonthlyGoal[];
+  iaWeekendTickets?: IATicketSale[];
 }
 
 export const PROSPECT_STATUSES = [
