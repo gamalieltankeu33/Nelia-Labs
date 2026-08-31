@@ -5,6 +5,7 @@ import type { CommercialCollab } from '../../types';
 
 export const CollabsScreen: React.FC = () => {
   const { collabs, addCollab, updateCollabStatus, deleteCollab, selectedMonth } = useStore();
+  const [deleteCollabId, setDeleteCollabId] = useState<string | null>(null);
 
   const getDefaultDate = () => {
     const today = new Date().toISOString().split('T')[0];
@@ -177,9 +178,7 @@ export const CollabsScreen: React.FC = () => {
                         <button 
                           className="btn btn-danger btn-icon-only"
                           onClick={() => {
-                            if (window.confirm("Supprimer cette collaboration ?")) {
-                              deleteCollab(c.id);
-                            }
+                            setDeleteCollabId(c.id);
                           }}
                         >
                           <Trash2 className="size-4" />
@@ -249,6 +248,38 @@ export const CollabsScreen: React.FC = () => {
           color: var(--accent-gold);
         }
       `}</style>
+
+      {/* Modal confirmation suppression non-bloquante */}
+      {deleteCollabId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-gray-100 text-center animate-in fade-in zoom-in duration-200">
+            <div className="w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </div>
+            <h3 className="text-base font-bold text-[#1D1D1F] mb-1">Supprimer cette collaboration ?</h3>
+            <p className="text-xs text-[#8E8E93] mb-6">Cette action est irréversible et supprimera le contrat de votre cockpit.</p>
+            <div className="flex gap-3 justify-center">
+              <button 
+                onClick={() => setDeleteCollabId(null)}
+                className="px-4 py-2.5 rounded-xl bg-gray-100 text-gray-700 text-xs font-bold hover:bg-gray-200 transition-all flex-1"
+              >
+                Annuler
+              </button>
+              <button 
+                onClick={() => {
+                  deleteCollab(deleteCollabId);
+                  setDeleteCollabId(null);
+                }}
+                className="px-4 py-2.5 rounded-xl bg-red-600 text-white text-xs font-bold hover:bg-red-700 shadow-md transition-all flex-1"
+              >
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

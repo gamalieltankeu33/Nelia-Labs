@@ -1715,7 +1715,7 @@ export const LaunchScreen: React.FC = () => {
                                 disabled={isLocked}
                                 style={isLocked ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                                 onClick={() => {
-                                  if (window.confirm("Supprimer cette relance ?")) {
+                                  if (true) {
                                     deleteReminderFromLaunch(selectedMonth, rem.id);
                                   }
                                 }}

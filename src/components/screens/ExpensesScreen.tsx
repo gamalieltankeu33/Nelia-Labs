@@ -82,7 +82,7 @@ export const ExpensesScreen: React.FC = () => {
     const currentMonthStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
     const newDate = `${currentMonthStr}-01`;
     
-    if (window.confirm(`Déplacer la charge "${exp.name}" de ${exp.amount} € vers le mois en cours (${newDate}) ?`)) {
+    if (true) {
       await deleteExpense(exp.id);
       await addExpense({
         name: exp.name,
@@ -342,7 +342,7 @@ export const ExpensesScreen: React.FC = () => {
                           <button 
                             className="btn btn-danger btn-icon-only"
                             onClick={() => {
-                              if (window.confirm("Supprimer cette charge ?")) {
+                              if (true) {
                                 deleteExpense(exp.id);
                               }
                             }}

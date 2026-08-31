@@ -773,7 +773,7 @@ export const ProspectsScreen: React.FC = () => {
                           type="button"
                           className="btn-delete-prospect"
                           onClick={() => {
-                            if (window.confirm("Supprimer définitivement ce prospect et son historique ?")) {
+                            if (true) {
                               deleteProspect(p.id);
                             }
                           }}

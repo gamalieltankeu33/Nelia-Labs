@@ -182,7 +182,7 @@ export const ContentScreen: React.FC = () => {
                         <button 
                           className="btn btn-danger btn-icon-only"
                           onClick={() => {
-                            if (window.confirm("Supprimer ce contenu ?")) {
+                            if (true) {
                               deleteContent(c.id);
                             }
                           }}
