@@ -93,177 +93,18 @@ const DEFAULT_OBJECTIVES: Record<string, number> = {
 
 const getDemoData = (): NextiaStore => {
   return {
-    contents: [
-      { id: 'c-1', date: '2026-07-10', platform: 'Instagram', type: 'Post', title: 'Comment doubler son efficacité avec l\'IA' },
-      { id: 'c-2', date: '2026-07-12', platform: 'TikTok', type: 'Vidéo courte', title: '3 prompts secrets pour ChatGPT' },
-      { id: 'c-3', date: '2026-07-14', platform: 'YouTube', type: 'Vidéo courte', title: 'Tutoriel complet Make + OpenAI' },
-      { id: 'c-4', date: '2026-07-15', platform: 'Facebook', type: 'Post', title: 'Rejoignez le Club IA dès aujourd\'hui' },
-      { id: 'c-5', date: '2026-06-15', platform: 'Instagram', type: 'Story', title: 'Coulisses du lancement du Club IA' },
-      { id: 'c-6', date: '2026-06-20', platform: 'YouTube', type: 'Autre', title: 'Live Q&A sur l\'automatisation' },
-    ],
-    sales: [
-      { id: 's-1', date: '2026-07-05', product: 'Ebook IA Débutant', price: 29, channel: 'Instagram' },
-      { id: 's-2', date: '2026-07-08', product: 'Notion Template Pro', price: 49, channel: 'Facebook' },
-      { id: 's-3', date: '2026-07-12', product: 'Ebook IA Débutant', price: 29, channel: 'Instagram' },
-      { id: 's-4', date: '2026-07-15', product: 'Pack Prompts Experts', price: 79, channel: 'Autre' },
-      { id: 's-5', date: '2026-06-12', product: 'Notion Template Pro', price: 49, channel: 'Instagram' },
-      { id: 's-6', date: '2026-06-25', product: 'Ebook IA Débutant', price: 29, channel: 'Facebook' },
-    ],
-    prospects: [
-      {
-        id: 'p-1',
-        name: '@alex_tech',
-        currentStatus: '1er DM envoyé',
-        maxIndex: 0,
-        lost: false,
-        history: [{ status: '1er DM envoyé', date: '2026-07-16' }]
-      },
-      {
-        id: 'p-2',
-        name: '@julie_crea',
-        currentStatus: 'Conversation déclenchée',
-        maxIndex: 2,
-        lost: false,
-        history: [
-          { status: '1er DM envoyé', date: '2026-07-10' },
-          { status: 'Relancé', date: '2026-07-12' },
-          { status: 'Conversation déclenchée', date: '2026-07-14' }
-        ]
-      },
-      {
-        id: 'p-3',
-        name: '@miko_studio',
-        currentStatus: 'Appel booké',
-        maxIndex: 6,
-        lost: false,
-        history: [
-          { status: '1er DM envoyé', date: '2026-07-05' },
-          { status: 'Conversation déclenchée', date: '2026-07-06' },
-          { status: 'Appel booké', date: '2026-07-12' }
-        ]
-      },
-      {
-        id: 'p-4',
-        name: '@lola_agency',
-        currentStatus: 'Closé gagné',
-        maxIndex: 9,
-        lost: false,
-        dealAmount: 1500,
-        dealDate: '2026-07-14',
-        history: [
-          { status: '1er DM envoyé', date: '2026-07-02' },
-          { status: 'Appel booké', date: '2026-07-05' },
-          { status: 'Closé gagné', date: '2026-07-14' }
-        ]
-      },
-      {
-        id: 'p-5',
-        name: '@sam_prod',
-        currentStatus: 'Perdu',
-        maxIndex: 4,
-        lost: true,
-        history: [
-          { status: '1er DM envoyé', date: '2026-07-01' },
-          { status: 'Conversation de qualité', date: '2026-07-04' },
-          { status: 'Perdu', date: '2026-07-08' }
-        ]
-      },
-      {
-        id: 'p-6',
-        name: '@design_hub',
-        currentStatus: 'Closé gagné',
-        maxIndex: 9,
-        lost: false,
-        dealAmount: 1800,
-        dealDate: '2026-06-25',
-        history: [
-          { status: '1er DM envoyé', date: '2026-06-15' },
-          { status: 'Closé gagné', date: '2026-06-25' }
-        ]
-      }
-    ],
-    launches: {
-      '2026-07': {
-        id: 'l-1',
-        month: '2026-07',
-        launchType: 'Publicitaire',
-        commStartDate: '2026-07-01',
-        webinarDate: '2026-07-10',
-        adsBudget: 1500,
-        adsSpent: 1420,
-        registered: 650,
-        live: 280,
-        daySalesCount: 12,
-        daySalesAmount: 2400,
-        reminders: [
-          { id: 'r-1', date: '2026-07-12', count: 4, amount: 800 },
-          { id: 'r-2', date: '2026-07-14', count: 3, amount: 600 }
-        ]
-      },
-      '2026-06': {
-        id: 'l-2',
-        month: '2026-06',
-        launchType: 'Publicitaire',
-        commStartDate: '2026-06-01',
-        webinarDate: '2026-06-10',
-        adsBudget: 1200,
-        adsSpent: 1200,
-        registered: 520,
-        live: 210,
-        daySalesCount: 8,
-        daySalesAmount: 1600,
-        reminders: [
-          { id: 'r-3', date: '2026-06-12', count: 5, amount: 1000 }
-        ]
-      }
-    },
-    collabs: [
-      { id: 'co-1', brand: 'Mistral AI', amount: 1500, publishDate: '2026-07-15', status: 'Publié' },
-      { id: 'co-2', brand: 'Make.com', amount: 2500, publishDate: '2026-07-22', status: 'Confirmé' },
-      { id: 'co-3', brand: 'OpenAI France', amount: 3000, publishDate: '2026-06-18', status: 'Payé' },
-    ],
-    expenses: [
-      { id: 'e-1', name: 'Abonnement ChatGPT Plus', amount: 24, frequency: 'Mensuel', date: '2026-06-01' },
-      { id: 'e-2', name: 'Abonnement Veed.io Pro', amount: 30, frequency: 'Mensuel', date: '2026-06-15' },
-      { id: 'e-3', name: 'Graphiste ponctuel logo', amount: 450, frequency: 'Ponctuel', date: '2026-07-02' },
-      { id: 'e-4', name: 'Hébergement annuel Gandi', amount: 120, frequency: 'Annuel', date: '2026-07-05' },
-      { id: 'e-5', name: 'Abonnement Make.com', amount: 16, frequency: 'Mensuel', date: '2026-06-01' },
-    ],
-    blueprintChallenges: [
-      {
-        id: 'bp-1',
-        title: 'Blueprint IA 7J - Session Lancement Mars 2026',
-        month: '2026-03',
-        startDate: '2026-03-02',
-        endDate: '2026-03-08',
-        organicPostsCount: 15,
-        communityMembersCount: 450,
-        paidParticipantsCount: 250,
-        registrationFee: 15000,
-        currency: 'FCFA',
-        status: 'Planifié',
-        notes: 'Lancement du challenge 7 jours le lundi 2 mars 2026. 250 accompagnements visés à 15 000 FCFA.'
-      },
-      {
-        id: 'bp-2',
-        title: 'Blueprint IA 7J - Session Février 2026',
-        month: '2026-02',
-        startDate: '2026-02-09',
-        endDate: '2026-02-15',
-        organicPostsCount: 12,
-        communityMembersCount: 320,
-        paidParticipantsCount: 180,
-        registrationFee: 15000,
-        currency: 'FCFA',
-        status: 'Terminé',
-        notes: '320 personnes dans la communauté -> 180 passés à l\'action (2,7M FCFA encaissés).'
-      }
-    ],
-    objectives: DEFAULT_OBJECTIVES
+    contents: [],
+    sales: [],
+    prospects: [],
+    launches: {},
+    collabs: [],
+    expenses: [],
+    blueprintChallenges: [],
+    objectives: {},
+    monthlyGoals: [],
+    iaWeekendTickets: []
   };
 };
-
-
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().toISOString().substring(0, 7));
